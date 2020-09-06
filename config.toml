@@ -1,7 +1,7 @@
 # Site settings
-baseURL = "http://example.org/"
+baseURL = "https://plaschke-portfolio.netlify.app/""
 languageCode = "en-us"
-title = "Forty"
+title = "Portfolio website for Kostis Christodoulou"
 theme = "forty"
 
 # Enter your tracking code to enable Google Analytics
@@ -19,8 +19,8 @@ disqusShortname = ""
   # CSS class.
 
   # Provide your metadata here.
-  name = "Your name"
-  description = "Your description"
+  name = "Anna Plaschke"
+  description = "MAM student at LBS, WU Graduate"
 
   # Link custom assets relative to /static
   custom_css = []
@@ -37,8 +37,8 @@ disqusShortname = ""
 
   # Navigation Section
   [params.navigation]
-    title = "Forty"
-    subtitle = "By HTML5 Up"
+    title = "Anna Plaschke"
+    subtitle = "MAM Student"
     menu = "Menu"
     # Optional logo as brand stored in img/
     # logo = "logo.png"
@@ -48,15 +48,15 @@ disqusShortname = ""
       url = "#"
 
     [[params.navigation.links]]
-      name = "Blogs"
-      url = "blogs"
+      name = "Resume"
+      url = "resume"
 
     [[params.navigation.links]]
-      name = "Generic Blog"
-      url = "blogs/ipsum"
+      name = "Projects"
+      url = "projects"
 
     [[params.navigation.links]]
-      name = "Elements"
+      name = "Contact"
       url = "elements.html"
 
     # Add custom links here by uncommenting code below. To remove links just delete
@@ -67,23 +67,23 @@ disqusShortname = ""
     #    url = "UrlOfLink"
 
     # Button Style 1
-    [[params.navigation.button1]]
-      name = "Get Started"
-      url = "blogs"
+    #[[params.navigation.button1]]
+    #  name = "Get Started"
+    #  url = "blogs"
 
     # Button Style 2
-    [[params.navigation.button2]]
-      name = "Log In"
-      url = "#"
+    #[[params.navigation.button2]]
+     # name = "Log In"
+      #url = "#"
 
 
   # Banner section
   [params.banner]
     # To change the background image on the homepage banner, replace 'banner.jpg' in
     # the 'static/img' folder.
-    title = "Hi, my name is Forty"
-    subtitle = "A RESPONSIVE SITE TEMPLATE DESIGNED BY HTML5 UP\nAND RELEASED UNDER THE CREATIVE COMMONS."
-    buttonText = "Get Started"
+    title = "Anna Plaschke"
+    subtitle = "Welcome to my personal site! I am an Analytics and Management student at LBS and share here my recent experiences with R."
+    buttonText = "My projects"
 
 
   # Tiles Section
@@ -92,40 +92,40 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
-      title = "Aliquam"
-      subtitle = "Ipsum Dolor Sit Amet"
-      image = "pic01.jpg"
-      url = "blogs/aliquam"
+      title = "About me"
+      subtitle = "Curriculum vitae"
+      image = "pic02.jpg"
+      url = "blogs/about"
 
     [[params.tiles.showcase]]
-      title = "Tempus"
-      subtitle = "Feugiat Amet Tempus"
-      image = "pic02.jpg"
+      title = "My projects"
+      subtitle = "First programming experiences with R"
+      image = "pic06.jpg"
       url = "blogs/tempus"
 
-    [[params.tiles.showcase]]
-      title = "Magna"
-      subtitle = "Lorem Etiam Nullam"
-      image = "pic03.jpg"
-      url = "blogs/magna"
+    #[[params.tiles.showcase]]
+     # title = "Magna"
+    #  subtitle = "Lorem Etiam Nullam"
+   #   image = "pic03.jpg"
+  #    url = "blogs/magna"
 
-    [[params.tiles.showcase]]
-      title = "Ipsum"
-      subtitle = "Nisl Sed Aliquam"
-      image = "pic04.jpg"
-      url = "blogs/ipsum"
+   # [[params.tiles.showcase]]
+      #title = "Ipsum"
+      #subtitle = "Nisl Sed Aliquam"
+     # image = "pic04.jpg"
+    #  url = "blogs/ipsum"
 
-    [[params.tiles.showcase]]
-      title = "Consequat"
-      subtitle = "Ipsum Dolor Sit Amet"
-      image = "pic05.jpg"
-      url = "blogs/ipsum"
+  #  [[params.tiles.showcase]]
+      #title = "Consequat"
+      #subtitle = "Ipsum Dolor Sit Amet"
+     # image = "pic05.jpg"
+    #  url = "blogs/ipsum"
 
-    [[params.tiles.showcase]]
-      title = "Etiam"
-      subtitle = "Feugiat Amet Tempus"
-      image = "pic06.jpg"
-      url = "blogs/ipsum"
+#    [[params.tiles.showcase]]
+      #title = "Etiam"
+      #subtitle = "Feugiat Amet Tempus"
+     # image = "pic06.jpg"
+    #  url = "blogs/ipsum"
     # You can make more showcases by copy and pasting the code above
 
   [params.blog]
@@ -172,47 +172,47 @@ disqusShortname = ""
     # by copying the corresponding map with frontmatter code.
     [[params.contact.email]]
     title = "Email"
-    email = "example@domain.com"
+    email = "aplaschke.mam2021@london.edu"
 
     [[params.contact.phone]]
     title = "Phone"
-    phone = "(000) 000-0000 x1234"
+    phone = "(0039) 345 7843717"
 
     [[params.contact.address]]
-    title = "Address"
-    street = "Street"
-    city = "City, ST 00000"
-    country = "Country"
+    #title = "Address"
+    #street = "8 Paveley Streer, Flat 38"
+    #city = "London, NW8 8TJ"
+    #country = "United Kingdom"
 
   # Footer section
   [params.footer]
-    enable = true
-    copyright = "Company Name"
+    #enable = true
+    #copyright = "Company Name"
 
     # Uses font awesome icons
     [[params.footer.social]]
-      icon = "fa-twitter"
-      url= "https://www.twitter.com"
-      label = "Twitter"
+  #    icon = "fa-twitter"
+   #   url= "https://www.twitter.com"
+    #  label = "Twitter"
 
     [[params.footer.social]]
-      icon = "fa-facebook"
-      url= "https://www.facebook.com"
-      label = "Facebook"
+     # icon = "fa-facebook"
+      #url= "https://www.facebook.com"
+      #label = "Facebook"
 
     [[params.footer.social]]
-      icon = "fa-instagram"
-      url= "https://www.instagram.com"
-      label = "Instagram"
+      #icon = "fa-instagram"
+      #url= "https://www.instagram.com"
+      #label = "Instagram"
     
     [[params.footer.social]]
       icon = "fa-github"
-      url= "https://www.github.com"
+      url= "https://github.com/anna-plaschke"
       label = "GitHub"
 
     [[params.footer.social]]
       icon = "fa-linkedin"
-      url= "https://www.linkedin.com"
+      url= "https://www.linkedin.com/in/anna-plaschke-740792170/"
       label = "LinkedIn"
 
     [[params.footer.quicklinks]]
