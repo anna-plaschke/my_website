@@ -1,5 +1,5 @@
 # Site settings
-baseURL = "https://anna-plaschke-portfolio.netlify.app/""
+baseURL = "https://plaschke-portfolio.netlify.app/"
 languageCode = "en-us"
 title = "Portfolio website for Kostis Christodoulou"
 theme = "forty"
