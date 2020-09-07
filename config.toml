@@ -95,13 +95,13 @@ disqusShortname = ""
       title = "About me"
       subtitle = "Curriculum vitae"
       image = "pic02.jpg"
-      url = "blogs/about"
+      url = "resume/about"
 
     [[params.tiles.showcase]]
       title = "My projects"
       subtitle = "First programming experiences with R"
       image = "pic06.jpg"
-      url = "blogs/tempus"
+      url = "projects/my_projects"
 
     #[[params.tiles.showcase]]
      # title = "Magna"
