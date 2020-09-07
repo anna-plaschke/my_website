@@ -1,7 +1,7 @@
 # Site settings
 baseURL = "https://plaschke-portfolio.netlify.app/"
 languageCode = "en-us"
-title = "Portfolio website for Kostis Christodoulou"
+title = "Portfolio website for Anna Plaschke"
 theme = "forty"
 
 # Enter your tracking code to enable Google Analytics
