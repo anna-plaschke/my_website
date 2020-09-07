@@ -181,8 +181,8 @@ disqusShortname = ""
     [[params.contact.address]]
     #title = "Address"
     #street = "8 Paveley Streer, Flat 38"
-    #city = "London, NW8 8TJ"
-    #country = "United Kingdom"
+    city = "London, NW8 8TJ"
+    country = "United Kingdom"
 
   # Footer section
   [params.footer]
