@@ -83,7 +83,7 @@ disqusShortname = ""
     # the 'static/img' folder.
     title = "Anna Plaschke"
     subtitle = "Welcome to my personal site! I am an Analytics and Management student at LBS and share here my recent experiences with R."
-    buttonText = "My projects"
+    buttonText = "About me"
 
 
   # Tiles Section
