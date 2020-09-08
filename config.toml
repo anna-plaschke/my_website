@@ -52,12 +52,12 @@ disqusShortname = ""
       url = "resume"
 
     [[params.navigation.links]]
-      name = "Projects"
-      url = "projects"
+      name = "Blogs"
+      url = "blogs"
 
-    [[params.navigation.links]]
-      name = "Contact"
-      url = "elements.html"
+    #[[params.navigation.links]]
+    #  name = "Contact"
+    #  url = "elements.html"
 
     # Add custom links here by uncommenting code below. To remove links just delete
     # the [[params.navigation.links]] map associated with that link. Copy and paste
@@ -66,15 +66,15 @@ disqusShortname = ""
     #    name = "NameOfLink"
     #    url = "UrlOfLink"
 
-    # Button Style 1
-    #[[params.navigation.button1]]
-    #  name = "Get Started"
-    #  url = "blogs"
+    #Button Style 1
+    [[params.navigation.button1]]
+    name = "My projects"
+    url = "projects"
 
     # Button Style 2
     #[[params.navigation.button2]]
-     # name = "Log In"
-      #url = "#"
+    # name = "Log In"
+    # url = "#"
 
 
   # Banner section
