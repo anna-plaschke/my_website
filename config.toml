@@ -100,7 +100,7 @@ disqusShortname = ""
     [[params.tiles.showcase]]
       title = "My projects"
       subtitle = "First programming experiences with R"
-      image = "programming.jpg"
+      image = "pic07.jpg"
       url = "projects/my_projects"
 
     #[[params.tiles.showcase]]
