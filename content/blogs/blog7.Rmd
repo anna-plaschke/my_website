@@ -9,6 +9,7 @@ image: pic09.jpg
 keywords: ""
 slug: blog7
 title: HIV rate, Life expectancy and GDP
+subtitle: Various analyses
 ---
 
 ```{r, setup, include=FALSE}
