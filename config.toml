@@ -178,16 +178,16 @@ disqusShortname = ""
     title = "Phone"
     phone = "(0039) 345 7843717"
 
-    #[[params.contact.address]]
+    [[params.contact.address]]
     #title = "Address"
-    #street = "8 Paveley Streer, Flat 38"
-    #city = "London, NW8 8TJ"
-    #country = "United Kingdom"
+    street = "Regent's Park"
+    city = "London, NW1 4SA"
+    country = "United Kingdom"
 
   # Footer section
- # [params.footer]
-    #enable = true
-    #copyright = "Company Name"
+    [params.footer]
+    enable = true
+    copyright = "Anna Plaschke"
 
     # Uses font awesome icons
   #  [[params.footer.social]]
