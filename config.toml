@@ -99,7 +99,7 @@ disqusShortname = ""
 
     [[params.tiles.showcase]]
       title = "HIV rate, Life expectancy and GDP"
-     subtitle = "Gapminder data"
+      subtitle = "Gapminder data"
       image = "pic04.jpg"
       url = "blogs/blog7"
 
