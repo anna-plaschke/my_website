@@ -1,0 +1,40 @@
+---
+categories:
+- ""
+- ""
+date: "2020-09-14T22:42:51-05:00"
+description: Short description about me
+draft: false
+image: pic07.jpg
+keywords: ""
+slug: blog6
+title: Anna Plaschke
+---
+## My biography
+\
+My name is __Anna Plaschke__, I am 23 years old and I grew up in the German speaking region of Italy, South Tyrol. I went to the German speaking school _Realgymnasium Bozen_ and did an exchange in the Italian counterpart-school, _Liceo Scientifico Torricelli_.
+\
+I graduated with honours in Business, Economics and Social Sciences from _Vienna University of Economics and Business_ and did an exchange semester in Hongkong.n\
+\
+Next to university I did the education to become a ski instructure and I have tought ever since during the winter holidays at Skischool 2000 in Selva, Val Gardena.n\
+![](/Users\annap\OneDrive\Dokumente\UNI\LBS\Advanced Statistics\portfolio_plaschke\my_website\static\img\blogs\pic09.jpeg)
+\
+During the summer holidays I have interned at:
+
+  + EmiControls by Technoalpin, _worldleader in snow making systems_
+  + Pompadour, _tea trading company_
+
+
+In the time between my undergraduate studies and my Masters in London I worked in the following companies as an intern or visiting consultant:
+
+  + Simon Kucher & Partner 
+  + Mercedes-Benz Management Consulting
+  + Axel Springer Digital
+
+
+With my Masters at LBS I now want to learn programming languages as well. 
+
+
+If you are interested in my profile, you can look at my [linkedin profile](https://www.linkedin.com/in/anna-plaschke-740792170/).
+
+![](https://upload.wikimedia.org/wikipedia/commons/4/47/RS9327_LBS_Standard_Logo_RGB_AW-hpr.jpg)

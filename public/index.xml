@@ -6,19 +6,38 @@
     <description>Recent content on Portfolio website for Anna Plaschke</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 07 Sep 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 14 Sep 2020 22:42:51 -0500</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Mask Acceptance</title>
+      <title>Anna Plaschke</title>
+      <link>/blogs/blog6/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog6/</guid>
+      <description>My biography
+My name is Anna Plaschke, I am 23 years old and I grew up in the German speaking region of Italy, South Tyrol. I went to the German speaking school Realgymnasium Bozen and did an exchange in the Italian counterpart-school, Liceo Scientifico Torricelli.
+I graduated with honours in Business, Economics and Social Sciences from Vienna University of Economics and Business and did an exchange semester in Hongkong.</description>
+    </item>
+    
+    <item>
+      <title>Climate Change and Temperature Anomalies</title>
       <link>/blogs/blog5/</link>
-      <pubDate>Mon, 07 Sep 2020 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog5/</guid>
-      <description>NYT mask useGithub source for data https://github.com/nytimes/covid-19-data/tree/master/mask-use
-Getting the dataurl &amp;lt;- &amp;quot;https://github.com/nytimes/covid-19-data/raw/master/mask-use/mask-use-by-county.csv&amp;quot;nyt_mask_survey &amp;lt;- read_csv(url)nyt_mask_survey &amp;lt;- nyt_mask_survey %&amp;gt;%clean_names() %&amp;gt;% mutate(mostly_yes= frequently+always,mostly_no = never+rarely,delta = mostly_yes-mostly_no)glimpse(nyt_mask_survey)## Rows: 3,142## Columns: 9## $ countyfp &amp;lt;chr&amp;gt; &amp;quot;01001&amp;quot;, &amp;quot;01003&amp;quot;, &amp;quot;01005&amp;quot;, &amp;quot;01007&amp;quot;, &amp;quot;01009&amp;quot;, &amp;quot;01011&amp;quot;, &amp;quot;0...## $ never &amp;lt;dbl&amp;gt; 0.053, 0.083, 0.067, 0.020, 0.053, 0.031, 0.102, 0.152, ...## $ rarely &amp;lt;dbl&amp;gt; 0.</description>
+      <description>Climate change and temperature anomalies#to study climate change, we use: data on the *Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies* in the Northern Hemisphere at [NASA&amp;#39;s Goddard Institute for Space Studies](https://data.giss.nasa.gov/gistemp) and the [tabular data of temperature anomalies can be found here](https://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts+dSST.txt)#we load this file using read_csv, skipping the first (redundant) row and coding NASAs NA&amp;#39;s (***) as &amp;quot;na&amp;quot;weather &amp;lt;- read_csv(&amp;quot;https://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts+dSST.csv&amp;quot;, skip = 1, na = &amp;quot;***&amp;quot;)#we inspect the dataframe&amp;#39;s key variables and structureskim(weather)(#tab:inspecting_the_dataframe)Data summaryNameweatherNumber of rows140Number of columns19_______________________Column type frequency:numeric19________________________Group variablesNoneVariable type: numeric</description>
+    </item>
+    
+    <item>
+      <title>HIV rate, Life expectancy and GDP</title>
+      <link>/blogs/blog7/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog7/</guid>
+      <description>Gapminder revisited# load gapminder HIV datahiv &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;adults_with_hiv_percent_age_15_49.csv&amp;quot;))life_expectancy &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;life_expectancy_years.csv&amp;quot;))# get World bank data using wbstatsindicators &amp;lt;- c(&amp;quot;SP.DYN.TFRT.IN&amp;quot;,&amp;quot;SE.PRM.NENR&amp;quot;, &amp;quot;SH.DYN.MORT&amp;quot;, &amp;quot;NY.GDP.PCAP.KD&amp;quot;)library(wbstats)worldbank_data &amp;lt;- wb_data(country=&amp;quot;countries_only&amp;quot;, #countries only- no aggregates like Latin America, Europe, etc.indicator = indicators, start_date = 1960, end_date = 2016)# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels, from the World Bank API countries &amp;lt;- wbstats::wb_cachelist$countries(1) - You have to join the 3 dataframes (life_expectancy, worldbank_data, and HIV) into one.</description>
     </item>
     
     <item>
