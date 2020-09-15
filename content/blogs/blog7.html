@@ -20,8 +20,8 @@ subtitle: Various analyses
 <div id="gapminder-revisited" class="section level1">
 <h1>Gapminder revisited</h1>
 <pre class="r"><code># load gapminder HIV data
-hiv &lt;- read_csv(here::here(&quot;data&quot;,&quot;adults_with_hiv_percent_age_15_49.csv&quot;))
-life_expectancy &lt;- read_csv(here::here(&quot;data&quot;,&quot;life_expectancy_years.csv&quot;))
+hiv &lt;- read_csv(here::here(&quot;static&quot;, &quot;data&quot;,&quot;adults_with_hiv_percent_age_15_49.csv&quot;))
+life_expectancy &lt;- read_csv(here::here(&quot;static&quot;,&quot;data&quot;,&quot;life_expectancy_years.csv&quot;))
 
 # get World bank data using wbstats
 indicators &lt;- c(&quot;SP.DYN.TFRT.IN&quot;,&quot;SE.PRM.NENR&quot;, &quot;SH.DYN.MORT&quot;, &quot;NY.GDP.PCAP.KD&quot;)

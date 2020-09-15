@@ -12,22 +12,13 @@
     
     
     <item>
-      <title>Alcohol consumption by country</title>
+      <title>Alcohol Consumption by Country</title>
       <link>/blogs/blog6/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog6/</guid>
       <description>knitr::opts_chunk$set(message = FALSE, warning = FALSE, tidy=FALSE, # display code as typedsize=&amp;quot;small&amp;quot;) # slightly smaller font for codeoptions(digits = 3)# default figure sizeknitr::opts_chunk$set(fig.width=6.75, fig.height=6.75,fig.align = &amp;quot;center&amp;quot;)Where Do People Drink The Most Beer, Wine And Spirits?Let’s first load the data:
 library(fivethirtyeight)data(drinks) #I load in the dataset from the fivethirtyeight package(1) - Exploring the variable types and checking for any missing values</description>
-    </item>
-    
-    <item>
-      <title>CDC COVID-19 Public Use Data</title>
-      <link>/blogs/blog8/</link>
-      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
-      
-      <guid>/blogs/blog8/</guid>
-      <description>CDC COVID-19 Public Use Data#I am unsing the [CDC Covid-19 Case Surveillance Data](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf). There are well over 3 million entries of individual, de-identified patient data. Since this is a large file, I use `vroom` to load it and you keep `cache=TRUE` in the chunk options.# URL link to CDC to download dataurl &amp;lt;- &amp;quot;https://data.cdc.gov/api/views/vbim-akqf/rows.csv?accessType=DOWNLOAD&amp;quot;covid_data &amp;lt;- vroom(url)%&amp;gt;%clean_names()(1) - Given the data I have, I would like to produce a graph that shows death % rate: by age group, sex, and whether the patient had co-morbidities or not</description>
     </item>
     
     <item>
@@ -40,12 +31,12 @@ library(fivethirtyeight)data(drinks) #I load in the dataset from the fivethirty
     </item>
     
     <item>
-      <title>HIV rate, Life expectancy and GDP</title>
+      <title>HIV Rate, Life Expectancy and GDP</title>
       <link>/blogs/blog7/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog7/</guid>
-      <description>Gapminder revisited# load gapminder HIV datahiv &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;adults_with_hiv_percent_age_15_49.csv&amp;quot;))life_expectancy &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;life_expectancy_years.csv&amp;quot;))# get World bank data using wbstatsindicators &amp;lt;- c(&amp;quot;SP.DYN.TFRT.IN&amp;quot;,&amp;quot;SE.PRM.NENR&amp;quot;, &amp;quot;SH.DYN.MORT&amp;quot;, &amp;quot;NY.GDP.PCAP.KD&amp;quot;)library(wbstats)worldbank_data &amp;lt;- wb_data(country=&amp;quot;countries_only&amp;quot;, #countries only- no aggregates like Latin America, Europe, etc.indicator = indicators, start_date = 1960, end_date = 2016)# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels, from the World Bank API countries &amp;lt;- wbstats::wb_cachelist$countries(1) - You have to join the 3 dataframes (life_expectancy, worldbank_data, and HIV) into one.</description>
+      <description>Gapminder revisited# load gapminder HIV datahiv &amp;lt;- read_csv(here::here(&amp;quot;static&amp;quot;, &amp;quot;data&amp;quot;,&amp;quot;adults_with_hiv_percent_age_15_49.csv&amp;quot;))life_expectancy &amp;lt;- read_csv(here::here(&amp;quot;static&amp;quot;,&amp;quot;data&amp;quot;,&amp;quot;life_expectancy_years.csv&amp;quot;))# get World bank data using wbstatsindicators &amp;lt;- c(&amp;quot;SP.DYN.TFRT.IN&amp;quot;,&amp;quot;SE.PRM.NENR&amp;quot;, &amp;quot;SH.DYN.MORT&amp;quot;, &amp;quot;NY.GDP.PCAP.KD&amp;quot;)library(wbstats)worldbank_data &amp;lt;- wb_data(country=&amp;quot;countries_only&amp;quot;, #countries only- no aggregates like Latin America, Europe, etc.indicator = indicators, start_date = 1960, end_date = 2016)# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels, from the World Bank API countries &amp;lt;- wbstats::wb_cachelist$countries(1) - You have to join the 3 dataframes (life_expectancy, worldbank_data, and HIV) into one.</description>
     </item>
     
   </channel>
