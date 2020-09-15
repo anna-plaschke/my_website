@@ -17,9 +17,11 @@ My name is __Anna Plaschke__, I am 23 years old and I grew up in the German spea
 I graduated with honours in Business, Economics and Social Sciences from _Vienna University of Economics and Business_ and did an exchange semester in Hongkong.\
 \
 Next to university I did the education to become a ski instructure and I have tought ever since during the winter holidays at Skischool 2000 in Selva, Val Gardena.\
-![](/Users\annap\OneDrive\Dokumente\UNI\LBS\Advanced Statistics\portfolio_plaschke\my_website\static\img\pic06.jpeg)
 \
 During the summer holidays I have interned at:
+```{r ski_picture, echo=FALSE, out.width="30%"}
+knitr::include_graphics("/img/pic06.jpeg", error = FALSE)
+```
 
   + EmiControls by Technoalpin, _worldleader in snow making systems_
   + Pompadour, _tea trading company_
@@ -37,4 +39,7 @@ With my Masters at LBS I now want to learn programming languages as well.
 
 If you are interested in my profile, you can look at my [linkedin profile](https://www.linkedin.com/in/anna-plaschke-740792170/).
 
-![](https://upload.wikimedia.org/wikipedia/commons/4/47/RS9327_LBS_Standard_Logo_RGB_AW-hpr.jpg)
+```{r LBS_logo, echo=FALSE, out.width="20%"}
+knitr::include_graphics("/img/pic07.jped", error = FALSE)
+```
+
