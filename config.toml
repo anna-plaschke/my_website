@@ -48,7 +48,7 @@ disqusShortname = ""
       url = "#"
 
     [[params.navigation.links]]
-      name = "Resume"
+      name = "About me"
       url = "blogs/blog6"
 
   #  [[params.navigation.links]]
@@ -69,7 +69,7 @@ disqusShortname = ""
     #Button Style 1
     [[params.navigation.button1]]
     name = "My projects"
-    url = "blogs/blog5"
+    url = "blogs"
 
     # Button Style 2
     #[[params.navigation.button2]]
@@ -91,11 +91,11 @@ disqusShortname = ""
     enable = true
     # Display your showcases here.
     
-    [[params.tiles.showcase]]
-      title = "About me"
-      subtitle = "Curriculum vitae"
-      image = "pic02.jpg"
-      url = "blogs/blog6"
+#    [[params.tiles.showcase]]
+#      title = "About me"
+#      subtitle = "Curr"
+#      image = "pic02.jpg"
+#      url = "about/blog6"
 
     [[params.tiles.showcase]]
       title = "HIV rate, Life expectancy and GDP"
