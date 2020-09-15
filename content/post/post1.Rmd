@@ -13,15 +13,12 @@ title: Anna Plaschke
 ## My biography
 \
 My name is __Anna Plaschke__, I am 23 years old and I grew up in the German speaking region of Italy, South Tyrol. I went to the German speaking school _Realgymnasium Bozen_ and did an exchange in the Italian counterpart-school, _Liceo Scientifico Torricelli_.
-\
+
 I graduated with honours in Business, Economics and Social Sciences from _Vienna University of Economics and Business_ and did an exchange semester in Hongkong.\
 \
 Next to university I did the education to become a ski instructure and I have tought ever since during the winter holidays at Skischool 2000 in Selva, Val Gardena.\
-\
+
 During the summer holidays I have interned at:
-```{r ski_picture, echo=FALSE, out.width="30%"}
-knitr::include_graphics("/img/pic06.jpeg", error = FALSE)
-```
 
   + EmiControls by Technoalpin, _worldleader in snow making systems_
   + Pompadour, _tea trading company_
@@ -33,13 +30,12 @@ In the time between my undergraduate studies and my Masters in London I worked i
   + Mercedes-Benz Management Consulting
   + Axel Springer Digital
 
-
 With my Masters at LBS I now want to learn programming languages as well. 
 
 
 If you are interested in my profile, you can look at my [linkedin profile](https://www.linkedin.com/in/anna-plaschke-740792170/).
 
 ```{r LBS_logo, echo=FALSE, out.width="20%"}
-knitr::include_graphics("/img/pic07.jped", error = FALSE)
+knitr::include_graphics("/img/pic07.jpg", error = FALSE)
 ```
 
