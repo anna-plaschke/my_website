@@ -93,18 +93,18 @@ disqusShortname = ""
     
     [[params.tiles.showcase]]
       title = "About me"
-      subtitle = "Anna Plaschke"
+      subtitle = "Anna Plaschke, MAM Student at LBS"
       image = "pic02.jpg"
       url = "post/post1"
 
     [[params.tiles.showcase]]
-      title = "HIV rate, Life expectancy and GDP"
+      title = "HIV Rate, Life Expectancy and GDP"
       subtitle = "Gapminder data"
       image = "pic04.jpg"
    #   url = "blogs/blog7"
 
     [[params.tiles.showcase]]
-      title = "It is getting warm in here!"
+      title = "It is Getting Warm in Here!"
       subtitle = "Climate change"
       image = "pic03.jpg"
       url = "blogs/blog5"
@@ -116,8 +116,8 @@ disqusShortname = ""
       url = "blogs/blog6"
 
     [[params.tiles.showcase]]
-      title = "What affected the death rate of COVID 19?"
-      subtitle = "CDC Covid-19 Case Surveillance"
+      title = "What Affected the Death Rate of COVID 19?"
+      subtitle = "Covid-19 Case Surveillance"
       image = "pic06.jpg"
       url = "blogs/blog8"
 

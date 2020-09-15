@@ -3,7 +3,7 @@ categories:
 - ""
 - ""
 date: "2020-09-14T22:42:51-05:00"
-description: Is the Weather Changing?
+description: Is the weather changing?
 draft: false
 image: pic08.jpg
 keywords: ""
