@@ -116,7 +116,7 @@ disqusShortname = ""
       url = "blogs/blog6"
 
     [[params.tiles.showcase]]
-      title = "What affected the death reate of COVID 19?"
+      title = "What affected the death rate of COVID 19?"
       subtitle = "CDC Covid-19 Case Surveillance"
       image = "pic06.jpg"
       url = "blogs/blog8"
