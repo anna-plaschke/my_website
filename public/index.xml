@@ -33,6 +33,15 @@ I graduated with honours in Business, Economics and Social Sciences from Vienna 
     </item>
     
     <item>
+      <title>CDC COVID-19 Public Use Data</title>
+      <link>/blogs/blog8/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog8/</guid>
+      <description>CDC COVID-19 Public Use Data#I am unsing the [CDC Covid-19 Case Surveillance Data](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf). There are well over 3 million entries of individual, de-identified patient data. Since this is a large file, I use `vroom` to load it and you keep `cache=TRUE` in the chunk options.# URL link to CDC to download dataurl &amp;lt;- &amp;quot;https://data.cdc.gov/api/views/vbim-akqf/rows.csv?accessType=DOWNLOAD&amp;quot;covid_data &amp;lt;- vroom(url)%&amp;gt;%clean_names()(1) - Given the data I have, I would like to produce a graph that shows death % rate: by age group, sex, and whether the patient had co-morbidities or not</description>
+    </item>
+    
+    <item>
       <title>Climate Change and Temperature Anomalies</title>
       <link>/blogs/blog5/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>

@@ -104,22 +104,22 @@ disqusShortname = ""
    #   url = "blogs/blog7"
 
     [[params.tiles.showcase]]
-      title = "Climate change"
-      subtitle = "Is it getting warmer?"
+      title = "It is getting warm in here!"
+      subtitle = "Climate change"
       image = "pic03.jpg"
       url = "blogs/blog5"
 
     [[params.tiles.showcase]]
-      title = "Alcohol consumption by country"
-      subtitle = "In which country are people drinks the most?"
+      title = "Where Do People Drink The Most Beer, Wine And Spirits?"
+      subtitle = "Alcohol consumption by country"
       image = "pic05.jpg"
       url = "blogs/blog6"
 
-  #  [[params.tiles.showcase]]
-      #title = "Consequat"
-      #subtitle = "Ipsum Dolor Sit Amet"
-     # image = "pic05.jpg"
-    #  url = "blogs/ipsum"
+    [[params.tiles.showcase]]
+      title = "What affected the death reate of COVID 19?"
+      subtitle = "CDC Covid-19 Case Surveillance"
+      image = "pic06.jpg"
+      url = "blogs/blog8"
 
 #    [[params.tiles.showcase]]
       #title = "Etiam"
