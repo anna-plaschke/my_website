@@ -17,15 +17,19 @@ subtitle: Various analyses
 <link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
 
 
-<div id="gapminder-revisited" class="section level1">
-<h1>Gapminder revisited</h1>
+<div id="hiv-rate-life-expectancy-and-gdp" class="section level3">
+<h3>HIV Rate, Life Expectancy and GDP</h3>
+<p>In this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.</p>
+<p><strong>Loading data</strong>
+The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.</p>
 <pre class="r"><code># load gapminder HIV data
 hiv &lt;- read_csv(here::here(&quot;static&quot;, &quot;data&quot;,&quot;adults_with_hiv_percent_age_15_49.csv&quot;))
+
+#load life expectancy data
 life_expectancy &lt;- read_csv(here::here(&quot;static&quot;,&quot;data&quot;,&quot;life_expectancy_years.csv&quot;))
 
 # get World bank data using wbstats
 indicators &lt;- c(&quot;SP.DYN.TFRT.IN&quot;,&quot;SE.PRM.NENR&quot;, &quot;SH.DYN.MORT&quot;, &quot;NY.GDP.PCAP.KD&quot;)
-
 
 library(wbstats)
 
@@ -36,13 +40,17 @@ worldbank_data &lt;- wb_data(country=&quot;countries_only&quot;, #countries only
 
 # get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels,  from the World Bank API 
 countries &lt;-  wbstats::wb_cachelist$countries</code></pre>
-<p><strong>(1) - You have to join the 3 dataframes (life_expectancy, worldbank_data, and HIV) into one. You may need to tidy your data first and then perform <a href="http://r4ds.had.co.nz/relational-data.html">join operations</a>. Think about what type makes the most sense and explain why you chose it.</strong></p>
+<p><strong>Joining the datframes (life_expectancy, worldbank_data, and HIV)</strong></p>
+<p>Before joining the datasets I need to tidy the data first.
+I skim the datasets to get a basic understanding of the structure, the missingness and the variable types. Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don’t tidy this dataset. Furthermore, I change the data type of the variable “year” in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
+Finally, I perform the relevant join function. In order to select the correct join function I look at the different <a href="http://r4ds.had.co.nz/relational-data.html">join operations</a>.</p>
+<p>To control the changes made, I skim the cleaned datasets.</p>
 <pre class="r"><code>#we first skim the dataset to find missing values and understand the structure of the datatset
 
 skim(worldbank_data)
 skim(hiv)
 skim(life_expectancy)</code></pre>
-<p>All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrolment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast).</p>
+<p>All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast).</p>
 <pre class="r"><code>#we clean the data by tidying it up (tidyr)
 life_expectancy_clean &lt;- life_expectancy %&gt;% 
   pivot_longer(names_to=&quot;year&quot;, values_to=&quot;life_expect&quot;, cols= -country) %&gt;% 

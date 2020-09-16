@@ -47,17 +47,23 @@ library(scales)
 ```
 
 
-# Gapminder revisited
+### HIV Rate, Life Expectancy and GDP
+In this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions. 
+
+**Loading data**
+The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don't need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.
+
 
 ```{r, get_data, cache=TRUE}
 
 # load gapminder HIV data
 hiv <- read_csv(here::here("static", "data","adults_with_hiv_percent_age_15_49.csv"))
+
+#load life expectancy data
 life_expectancy <- read_csv(here::here("static","data","life_expectancy_years.csv"))
 
 # get World bank data using wbstats
 indicators <- c("SP.DYN.TFRT.IN","SE.PRM.NENR", "SH.DYN.MORT", "NY.GDP.PCAP.KD")
-
 
 library(wbstats)
 
@@ -71,7 +77,13 @@ countries <-  wbstats::wb_cachelist$countries
 
 ```
 
-**(1) - You have to join the 3 dataframes (life_expectancy, worldbank_data, and HIV) into one. You may need to tidy your data first and then perform [join operations](http://r4ds.had.co.nz/relational-data.html). Think about what type makes the most sense and explain why you chose it.**
+**Joining the datframes (life_expectancy, worldbank_data, and HIV)**
+
+Before joining the datasets I need to tidy the data first. 
+I skim the datasets to get a basic understanding of the structure, the missingness and the variable types. Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don't tidy this dataset. Furthermore, I change the data type of the variable "year" in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
+Finally, I perform the relevant join function. In order to select the correct join function I look at the different [join operations](http://r4ds.had.co.nz/relational-data.html).
+
+To control the changes made, I skim the cleaned datasets.
 
 ```{r evaluating_the_data, echo=TRUE, results='hide'}
 
@@ -82,7 +94,7 @@ skim(hiv)
 skim(life_expectancy)
 
 ```
-All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrolment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast). 
+All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast). 
 
 ```{r cleaning_the_data, , echo=TRUE, results='hide'}
 
