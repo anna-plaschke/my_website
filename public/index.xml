@@ -47,7 +47,8 @@ I graduated with honours in Business, Economics and Social Sciences from Vienna 
       
       <guid>/blogs/blog7/</guid>
       <description>HIV Rate, Life Expectancy and GDPIn this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.
-Loading dataThe first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date.</description>
+Loading data
+The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date.</description>
     </item>
     
     <item>
