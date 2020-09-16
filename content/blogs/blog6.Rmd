@@ -46,7 +46,7 @@ library(patchwork)
 
 ```
   
-### Where Do People Drink The Most Beer, Wine And Spirits?
+## Where Do People Drink The Most Beer, Wine And Spirits?
 With this project I want to analyse how the consumption of alcohol of beer, wine and spirits variy by country. 
 
 Let's first load the data: To load the dataset I use the package: Fivethirtyeight.
@@ -56,7 +56,7 @@ library(fivethirtyeight)
 data(drinks) #I load in the dataset from the fivethirtyeight package
 ```
   
-**Exploring the variable types and checking for any missing values**
+### Exploring the variable types and checking for any missing values
 
 Before executing the analyses, I make sure that every variable type is allocated correctly and how many values are missing. To do that I use the functions glimpse() and skim():
 
@@ -77,7 +77,7 @@ Variable types are as follows:
 - total_litres_of_pure_alcohol | total litres of pure alcohol per person | type:numeric (double)  
 
 
-**(1) - Top 25 beer consuming countries**
+### Top 25 beer consuming countries
 
 After inspecting all the data, I make a plot that shows the top 25 beer consuming countries. To do that I first have to select() the relevant variables 'beer' and 'country'. Then, I arrange the outcome in a descending order. To have a list og the top 25 beer consuming countries I use the function head().
 Finally, the plot can be created with ggplot.
@@ -106,7 +106,7 @@ ggplot(top25_beer, aes(x = reorder(country, desc(beer_servings)), y= beer_servin
 ```
 This plot shows that Namibia is the top beer-consuming country, followed by the Czech Republic, Gabon, Germany and Lithuania.  
 
-**(2) - Top 25 wine consuming countries**
+### Top 25 wine consuming countries
 
 Now, I follow exactly the same procedure with wine to create a plot that shows the top 25 wine consuming countries:
 ```{r wine_plot}
@@ -131,7 +131,7 @@ ggplot(top25_wine, aes(x = reorder(country, desc(wine_servings)), y= wine_servin
 ```
 This plot shows that France is the top wine-consuming country, followed by Portugal, Andorra, Switzerland and Denmark. 
 
-**(3) -Top 25 spirit consuming countries**
+### Top 25 spirit consuming countries
 
 Finally, I do the same for spirits and create the last plot that shows the top 25 spirit consuming countries:
 ```{r spirit_plot}
@@ -158,7 +158,7 @@ ggplot(top25_spirit, aes(x = reorder(country, desc(spirit_servings)), y= spirit_
 ```
 This plot shows that Grenada is the top spirit-consuming country, followed by Belaris, Haiti, Russia and St. Lucia.  
 
-**What can be inferred from these plots?**
+### What can be inferred from these plots?
 
 Namibia, France and Grenada have the largest per capita consumption of beer, wine and spirits, respectively. Unsurprisingly, these countries are some of the largest producers of the alcohols they consumed most. While we are familiar with French wine production, releasing 7-8 billion bottles per year, less known is Namibian ('German') beer production or Granadian spirit (read 'Rum') production figures. 
 

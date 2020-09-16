@@ -47,8 +47,10 @@ library(scales)
 ```
 
 
-### HIV Rate, Life Expectancy and GDP
+## HIV Rate, Life Expectancy and GDP
 In this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions. 
+
+### Loading, inspecting and joining datasets
 
 **Loading data**
 
@@ -78,7 +80,7 @@ countries <-  wbstats::wb_cachelist$countries
 
 ```
 
-**Joining the datframes (life_expectancy, worldbank_data, and HIV)**
+**Inspecting the dataframes (life_expectancy, worldbank_data, and HIV)**
 
 Before joining the datasets I need to tidy the data first. 
 I skim the datasets to get a basic understanding of the structure, the missingness and the variable types. 
@@ -94,11 +96,11 @@ skim(life_expectancy)
 ```
 All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast). 
 
+**Tidying datasets**
 
 Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don't tidy this dataset. Furthermore, I change the data type of the variable "year" in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
 To control the changes made, I skim the cleaned datasets.
 ```{r cleaning_the_data, , echo=TRUE, results='hide'}
-
 #we clean the data by tidying it up (tidyr)
 life_expectancy_clean <- life_expectancy %>% 
   pivot_longer(names_to="year", values_to="life_expect", cols= -country) %>% 
@@ -122,6 +124,9 @@ skim(life_expectancy_clean)
 skim(worldbank_data_clean)
 
 ```
+
+**Adding key for countries**
+
 In the various datasets the countries are named slightly different. Therefore, I am adding the countrycode "iso3c" to all datasets. After checking the result, I add the missing countries ("Kosovo" and "Channel Islands") manually.  
 ```{r adding_the_iso3c_code}
 
@@ -148,6 +153,8 @@ unique(region_missing[is.na(region_missing$region),]$country)
 
 ```
 
+**Joining datasets**
+
 Finally, I perform the relevant join function. In order to select the correct join function I look at the different [join operations](http://r4ds.had.co.nz/relational-data.html).
 ```{r joining_the_data, echo=TRUE, results='hide'}
 
@@ -167,7 +174,7 @@ skim(worldbank_hiv_life_expectancy_region) #check the new dataset for missingnes
 ```
 We decide to use the full_join() function to join the three datasets in order to not lose any of the values, especially because we are later asked which region has the most observations with missing HIV data. Otherwise, we would have selected only the years in which we have relevant hiv data (1990 - 2011). To add the regions, we used the left join as we only want to add the region to the existing observations.
 
-**What is the relationship between HIV prevalence and life expectancy?**
+### What is the relationship between HIV prevalence and life expectancy?
 
 In order to analyse the relationship between HIV prevalence and life expectancy I create a scatterplot using ggplot.
 ```{r relationship_HIV_life_expectancy, fig.width=12, fig.height=6}
@@ -200,7 +207,7 @@ ggplot(worldbank_hiv_life_expectancy_region, aes(y=life_expect, x=hiv_rate, na.r
 ```
 The plot above depicts the relationship between HIV rate and life expectancy faceted by region and demonstrates that there is no clear relationship between the two variables. For the South Asian and the Sub-Saharan African region, for exampl, life expectancy doesn't seem to change depending on the HIV rate at all. Also in North America, Europe & Central Asia and East Asia & Pacific no compelling relationship can be seen. Only in Latin America & Caribbean and the Middle East & North Africa does the life expectancy decrease notably with an increasing HIV rate. Overall, no compelling relationship between HIV prevalence and life expectancy can be established. 
 
-**What is the relationship between fertility rate and GDP per capita?**
+### What is the relationship between fertility rate and GDP per capita?
 To answer the question I generate a scatterplot with a smoothing line to report my results and I facet by region.
 
 ```{r fertility_rate_GDP, fig.width=15, fig.height=8}
@@ -220,7 +227,7 @@ These faceted plots demonstrate a clear relationship for all regions besides Mid
 
 In the two regional outliers, we find that while at relatively low levels of GDP per capita, GDP per capita increases are correlated with decreased fertility rates, past a certain point increased GDP per capita is positively correlated with fertility rates. This u-shaped relationship is explained by the fact that in early stages of development, families choose to have many children to 'hedge' against high mortality rates, since children are assets in the labour market. Therefore, in countries with relatively low levels of GDP per capita, fertility rates are high. However, as GDP per capita increases, families can afford better healthcare and nutrition and therefore child mortality falls, meaning fertility rates decrease in line with mortality rates. However, once GDP per capita has reached a relatively high point, families are then sufficiently well-off to sustain larger families, and children become luxury goods, meaning fertility rates increase with disposable income. 
 
-**Which regions have the most observations with missing HIV data?**
+### Which regions have the most observations with missing HIV data?
 
 To detect which region has the most observations with missing values I create a table in descending order:
 ```{r HIV_missingness}
@@ -250,7 +257,7 @@ ggplot(missing_hiv, aes(x= count, y=reorder(region, count)))+
 We find that the Europe & Central Asia region has the most observations with missing HIV data, in raw terms, followed by Sub Sahran Africa.
 
 
-**How has mortality rate for under 5 changed by region?**
+### How has mortality rate for under 5 changed by region?
 In each region, I am looking for the top 5 countries that have seen the greatest improvement, as well as those 5 countries where mortality rates have had the least improvement or even deterioration.
 
 First, I look at the general trend and the trend in each region:
@@ -324,7 +331,7 @@ kable_styling()
 ```
 The tables above demonstrate the top 5 countries in each region that have seen the greatest improvement in under 5 child mortality rate over time (as ranked by percentage and absolute value), as well as the worst 5 countries which have seen the smallest improvement in under 5 child mortality rate over time (as ranked by percentage and absolute value).
 
-**Is there a relationship between primary school enrollment and fertility rate?**
+### Is there a relationship between primary school enrollment and fertility rate?
 
 To answer that question I create a scatterplot between primary school and fertility rate:
 

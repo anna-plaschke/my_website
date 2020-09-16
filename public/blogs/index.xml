@@ -22,23 +22,25 @@ Let’s first load the data: To load the dataset I use the package: Fivethirtyei
     </item>
     
     <item>
-      <title>Climate Change and Temperature Anomalies</title>
-      <link>/blogs/blog5/</link>
-      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
-      
-      <guid>/blogs/blog5/</guid>
-      <description>Climate change and temperature anomalies#to study climate change, I use: data on the *Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies* in the Northern Hemisphere at [NASA&amp;#39;s Goddard Institute for Space Studies](https://data.giss.nasa.gov/gistemp) and the [tabular data of temperature anomalies can be found here](https://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts+dSST.txt)#I load this file using read_csv, skipping the first (redundant) row and coding NASAs NA&amp;#39;s (***) as &amp;quot;na&amp;quot;weather &amp;lt;- read_csv(&amp;quot;https://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts+dSST.csv&amp;quot;, skip = 1, na = &amp;quot;***&amp;quot;)#I inspect the dataframe&amp;#39;s key variables and structure using skimskim(weather)(#tab:inspecting_the_dataframe)Data summaryNameweatherNumber of rows140Number of columns19_______________________Column type frequency:numeric19________________________Group variablesNoneVariable type: numeric</description>
-    </item>
-    
-    <item>
       <title>HIV Rate, Life Expectancy and GDP</title>
       <link>/blogs/blog7/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog7/</guid>
       <description>HIV Rate, Life Expectancy and GDPIn this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.
-Loading data
-The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date.</description>
+Loading, inspecting and joining datasetsLoading data
+The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats.</description>
+    </item>
+    
+    <item>
+      <title>It is Getting Warm in Here!</title>
+      <link>/blogs/blog5/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog5/</guid>
+      <description>Climate change and temperature anomaliesThe whole world is talking about climate change and global warming. Let’s look at the data from Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies in the Northern Hemisphere at NASA’s Goddard Institute for Space Studies and analyse what the data states.
+Loading, inspecting and selecting dataLoading dataAs first step, I load the data with the function read_csv().
+#I use: data on the *Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies* in the Northern Hemisphere at [NASA&amp;#39;s Goddard Institute for Space Studies](https://data.</description>
     </item>
     
   </channel>
