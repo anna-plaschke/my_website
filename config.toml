@@ -119,7 +119,7 @@ disqusShortname = ""
       title = "What Affected the Death Rate of COVID 19?"
       subtitle = "Covid-19 Case Surveillance"
       image = "pic06.jpg"
-#      url = "blogs/blog9"
+    #  url = "blogs/blog8"
 
 #    [[params.tiles.showcase]]
       #title = "Etiam"

@@ -17,8 +17,8 @@
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog6/</guid>
-      <description>knitr::opts_chunk$set(message = FALSE, warning = FALSE, tidy=FALSE, # display code as typedsize=&amp;quot;small&amp;quot;) # slightly smaller font for codeoptions(digits = 3)# default figure sizeknitr::opts_chunk$set(fig.width=6.75, fig.height=6.75,fig.align = &amp;quot;center&amp;quot;)Where Do People Drink The Most Beer, Wine And Spirits?Let’s first load the data:
-library(fivethirtyeight)data(drinks) #I load in the dataset from the fivethirtyeight package(1) - Exploring the variable types and checking for any missing values</description>
+      <description>knitr::opts_chunk$set(message = FALSE, warning = FALSE, tidy=FALSE, # display code as typedsize=&amp;quot;small&amp;quot;) # slightly smaller font for codeoptions(digits = 3)# default figure sizeknitr::opts_chunk$set(fig.width=6.75, fig.height=6.75,fig.align = &amp;quot;center&amp;quot;)Where Do People Drink The Most Beer, Wine And Spirits?With this project I want to analyse how the consumption of alcohol of beer, wine and spirits variy by country.
+Let’s first load the data: To load the dataset I use the package:Fivethirtyeight:</description>
     </item>
     
     <item>

@@ -46,16 +46,18 @@ library(patchwork)
 
 ```
   
-  
 # Where Do People Drink The Most Beer, Wine And Spirits?
-Let's first load the data:
+With this project I want to analyse how the consumption of alcohol of beer, wine and spirits variy by country. 
+
+Let's first load the data: To load the dataset I use the package:Fivethirtyeight:
+
 ```{r load_alcohol_data}
 library(fivethirtyeight)
 data(drinks) #I load in the dataset from the fivethirtyeight package
 ```
   
-  
 **(1) - Exploring the variable types and checking for any missing values**
+Now, I use the functions glimpse() and skim() to explore the datatypes and check for missingness.
 
 ```{r glimpse_skim_data}
 
@@ -63,7 +65,6 @@ glimpse(drinks) #I glimpse() the dataset in order to preview the data entries th
 skim(drinks) # I use skim() to obtain all the necessary information (variable types, missingness, distribution)
 
 ```
-
 Skim demonstrates that the 'drinks' dataset has 193 rows (entries) and 5 columns (variables). These variables are: country; beer_servings; spirit_servings; wine_servings; and total_litres_of_pure_alcohol. There are no missing values in the dataset. 
 
 Variable types are as follows:
@@ -77,13 +78,15 @@ Variable types are as follows:
 
 **(2) - Top 25 beer consuming countries**
 
-I make a plot that shows the top 25 beer consuming countries:
+After inspecting all the data, I make a plot that shows the top 25 beer consuming countries. To do that I first have to select() the relevant variables 'beer' and 'country'. Then, I arrange the outcome in a descending order. To have a list og the top 25 beer consumig countries I use the function head().
+Finally, the plot can be created with ggplot.
+
 ```{r beer_plot}
 
 #I use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
 
 beer <- drinks %>% 
-  select(country, beer_servings) %>% #select the volumns country and beer
+  select(country, beer_servings) %>% #select the columns country and beer
   arrange(desc(beer_servings)) #arrange in descending order
 
 #I again use the pipe to select only the top 25 entries in the list created above
@@ -104,7 +107,7 @@ This plot shows that Namibia is the top beer-consuming country, followed by the 
 
 **(3) - Top 25 wine consuming countries**
 
-Now, I make a plot that shows the top 25 wine consuming countries:
+Now, I follow exactly the same procedure with wine to create a plot that shows the top 25 wine consuming countries:
 ```{r wine_plot}
 
 #We use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
@@ -129,7 +132,7 @@ This plot shows that France is the top wine-consuming country, followed by Portu
 
 **(4) -Top 25 spirit consuming countries**
 
-Now, I make a plot that shows the top 25 spirit consuming countries:
+Finally, I do the same for spirits and create the last plot that shows the top 25 spirit consuming countries:
 ```{r spirit_plot}
 
 #I use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving

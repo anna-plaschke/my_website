@@ -29,10 +29,12 @@ knitr::opts_chunk$set(
 )</code></pre>
 <div id="where-do-people-drink-the-most-beer-wine-and-spirits" class="section level1">
 <h1>Where Do People Drink The Most Beer, Wine And Spirits?</h1>
-<p>Let’s first load the data:</p>
+<p>With this project I want to analyse how the consumption of alcohol of beer, wine and spirits variy by country.</p>
+<p>Let’s first load the data: To load the dataset I use the package:Fivethirtyeight:</p>
 <pre class="r"><code>library(fivethirtyeight)
 data(drinks) #I load in the dataset from the fivethirtyeight package</code></pre>
-<p><strong>(1) - Exploring the variable types and checking for any missing values</strong></p>
+<p><strong>(1) - Exploring the variable types and checking for any missing values</strong>
+Now, I use the functions glimpse() and skim() to explore the datatypes and check for missingness.</p>
 <pre class="r"><code>glimpse(drinks) #I glimpse() the dataset in order to preview the data entries themselves</code></pre>
 <pre><code>## Rows: 193
 ## Columns: 5
@@ -377,11 +379,12 @@ total_litres_of_pure_alcohol
 <li>total_litres_of_pure_alcohol | total litres of pure alcohol per person | type:numeric (double)</li>
 </ul>
 <p><strong>(2) - Top 25 beer consuming countries</strong></p>
-<p>I make a plot that shows the top 25 beer consuming countries:</p>
+<p>After inspecting all the data, I make a plot that shows the top 25 beer consuming countries. To do that I first have to select() the relevant variables ‘beer’ and ‘country’. Then, I arrange the outcome in a descending order. To have a list og the top 25 beer consumig countries I use the function head().
+Finally, the plot can be created with ggplot.</p>
 <pre class="r"><code>#I use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
 
 beer &lt;- drinks %&gt;% 
-  select(country, beer_servings) %&gt;% #select the volumns country and beer
+  select(country, beer_servings) %&gt;% #select the columns country and beer
   arrange(desc(beer_servings)) #arrange in descending order
 
 #I again use the pipe to select only the top 25 entries in the list created above
@@ -399,7 +402,7 @@ ggplot(top25_beer, aes(x = reorder(country, desc(beer_servings)), y= beer_servin
 <p><img src="/blogs/blog6_files/figure-html/beer_plot-1.png" width="648" style="display: block; margin: auto;" />
 This plot shows that Namibia is the top beer-consuming country, followed by the Czech Republic, Gabon, Germany and Lithuania.</p>
 <p><strong>(3) - Top 25 wine consuming countries</strong></p>
-<p>Now, I make a plot that shows the top 25 wine consuming countries:</p>
+<p>Now, I follow exactly the same procedure with wine to create a plot that shows the top 25 wine consuming countries:</p>
 <pre class="r"><code>#We use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
 
 wine &lt;- drinks %&gt;% 
@@ -418,7 +421,7 @@ ggplot(top25_wine, aes(x = reorder(country, desc(wine_servings)), y= wine_servin
 <p><img src="/blogs/blog6_files/figure-html/wine_plot-1.png" width="648" style="display: block; margin: auto;" />
 This plot shows that France is the top wine-consuming country, followed by Portugal, Andorra, Switzerland and Denmark.</p>
 <p><strong>(4) -Top 25 spirit consuming countries</strong></p>
-<p>Now, I make a plot that shows the top 25 spirit consuming countries:</p>
+<p>Finally, I do the same for spirits and create the last plot that shows the top 25 spirit consuming countries:</p>
 <pre class="r"><code>#I use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
 
 spirit &lt;- drinks %&gt;% 
