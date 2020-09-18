@@ -5,7 +5,7 @@ categories:
 date: "2020-09-14T22:42:51-05:00"
 description: Does school enrollment and GDP per capita affect the fertility rate? How has mortality rate for under 5 changed by region?
 draft: false
-image: pic10.jpg
+image: pic12.jpg
 keywords: ""
 slug: blog8
 title: Life Expectancy, School enrollment, Fertility Rate and GDP
@@ -147,8 +147,7 @@ Finally, I perform the relevant join function. In order to select the correct jo
 ```{r joining_the_data, echo=TRUE, results='hide'}
 
 worldbank_life_expectancy <- worldbank_data_clean %>% 
-  full_join(life_expectancy_clean,by=c("iso3c", "year")) %>%  #we don't want to lose data
-  select(!c("country", "country.x", "country.y")) # we don't want to have plenty different values for country
+  full_join(life_expectancy_clean,by=c("iso3c", "year"))
 
 # adding regions and countryname from the datset countries
 worldbank_life_expectancy_region <- worldbank_life_expectancy %>% 

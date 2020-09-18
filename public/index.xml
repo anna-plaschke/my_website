@@ -43,17 +43,6 @@ The first step, is to load the data: I load the gapminder HIV data and life expe
     </item>
     
     <item>
-      <title>HIV Rate, Life Expectancy, Fertility Rate and GDP</title>
-      <link>/blogs/blog7/</link>
-      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
-      
-      <guid>/blogs/blog7/</guid>
-      <description>HIV Rate, Life Expectancy and GDPIn this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.
-Loading, inspecting and joining datasetsLoading data
-The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats.</description>
-    </item>
-    
-    <item>
       <title>It is Getting Warm in Here!</title>
       <link>/blogs/blog5/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
@@ -62,6 +51,17 @@ The first step, is to load the data: I load the gapminder HIV data and life expe
       <description>Climate change and temperature anomaliesThe whole world is talking about climate change and global warming. Let’s look at the data from Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies in the Northern Hemisphere at NASA’s Goddard Institute for Space Studies and analyse what the data states.
 Loading, inspecting and selecting dataLoading dataAs first step, I load the data with the function read_csv().
 #I use: data on the *Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies* in the Northern Hemisphere at [NASA&amp;#39;s Goddard Institute for Space Studies](https://data.</description>
+    </item>
+    
+    <item>
+      <title>Life Expectancy, School enrollment, Fertility Rate and GDP</title>
+      <link>/blogs/blog8/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog8/</guid>
+      <description>Fertiliy Rate, School Entrollment, Life Expectancy and GDPIn this project I want to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions.
+Loading, inspecting and joining datasetsLoading data
+The first step, is to load the data: I load the gapminder life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats.</description>
     </item>
     
     <item>

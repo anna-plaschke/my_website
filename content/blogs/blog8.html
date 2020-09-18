@@ -3,12 +3,12 @@ categories:
 - ""
 - ""
 date: "2020-09-14T22:42:51-05:00"
-description: Is life expactancy influenced by the HIV rate? Does GDP per capita and school enrollment have an influence on the fertility? How did life expectancy change over time in the different countries?
+description: Does school enrollment and GDP per capita affect the fertility rate? How has mortality rate for under 5 changed by region?
 draft: false
-image: pic09.jpg
+image: pic12.jpg
 keywords: ""
-slug: blog7
-title: HIV Rate, Life Expectancy, Fertility Rate and GDP
+slug: blog8
+title: Life Expectancy, School enrollment, Fertility Rate and GDP
 subtitle: Various analyses
 ---
 
@@ -17,17 +17,14 @@ subtitle: Various analyses
 <link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
 
 
-<div id="hiv-rate-life-expectancy-and-gdp" class="section level2">
-<h2>HIV Rate, Life Expectancy and GDP</h2>
-<p>In this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.</p>
+<div id="fertiliy-rate-school-entrollment-life-expectancy-and-gdp" class="section level2">
+<h2>Fertiliy Rate, School Entrollment, Life Expectancy and GDP</h2>
+<p>In this project I want to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions.</p>
 <div id="loading-inspecting-and-joining-datasets" class="section level3">
 <h3>Loading, inspecting and joining datasets</h3>
 <p><strong>Loading data</strong></p>
-<p>The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.</p>
-<pre class="r"><code># load gapminder HIV data
-hiv &lt;- read_csv(here::here(&quot;static&quot;, &quot;data&quot;,&quot;adults_with_hiv_percent_age_15_49.csv&quot;))
-
-#load life expectancy data
+<p>The first step, is to load the data: I load the gapminder life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.</p>
+<pre class="r"><code>#load life expectancy data
 life_expectancy &lt;- read_csv(here::here(&quot;static&quot;,&quot;data&quot;,&quot;life_expectancy_years.csv&quot;))
 
 # get World bank data using wbstats
@@ -42,26 +39,22 @@ worldbank_data &lt;- wb_data(country=&quot;countries_only&quot;, #countries only
 
 # get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels,  from the World Bank API 
 countries &lt;-  wbstats::wb_cachelist$countries</code></pre>
-<p><strong>Inspecting the dataframes (life_expectancy, worldbank_data, and HIV)</strong></p>
+<p><strong>Inspecting the dataframes (life_expectancy, worldbank_data)</strong></p>
 <p>Before joining the datasets I need to tidy the data first.
 I skim the datasets to get a basic understanding of the structure, the missingness and the variable types.</p>
 <pre class="r"><code>#we first skim the dataset to find missing values and understand the structure of the datatset
 
 skim(worldbank_data)
-skim(hiv)
 skim(life_expectancy)</code></pre>
-<p>All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast).</p>
+<p>All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast).</p>
 <p><strong>Tidying datasets</strong></p>
-<p>Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don’t tidy this dataset. Furthermore, I change the data type of the variable “year” in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
+<p>Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean. In this case, I did it for life expectancy. Because I will not need a different structure for the worldbank data I don’t tidy this dataset. Furthermore, I change the data type of the variable “year” in life_expectancy_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
 To control the changes made, I skim the cleaned datasets.</p>
 <pre class="r"><code>#we clean the data by tidying it up (tidyr)
 life_expectancy_clean &lt;- life_expectancy %&gt;% 
   pivot_longer(names_to=&quot;year&quot;, values_to=&quot;life_expect&quot;, cols= -country) %&gt;% 
   transform(year = as.numeric(year)) #in order to be able to join the three datasets we need the same data types
 
-hiv_clean &lt;- hiv %&gt;% 
-  pivot_longer(names_to=&quot;year&quot;, values_to =&quot;hiv_rate&quot;, cols= - country) %&gt;% 
-  transform(year = as.numeric(year)) #in order to be able to join the three datasets we need the same data types
 
 worldbank_data_clean &lt;- worldbank_data %&gt;% 
   #we change the names to have more meaningful names, but we don&#39;t use pivot_longer as this is not needed to resolve the questions
@@ -72,164 +65,43 @@ worldbank_data_clean &lt;- worldbank_data %&gt;%
          &quot;year&quot;=date)
 
 #we check if the data types have been changed
-skim(hiv_clean)
 skim(life_expectancy_clean)
 skim(worldbank_data_clean)</code></pre>
 <p><strong>Adding key for countries</strong></p>
 <p>In the various datasets the countries are named slightly different. Therefore, I am adding the countrycode “iso3c” to all datasets. After checking the result, I add the missing countries (“Kosovo” and “Channel Islands”) manually.</p>
 <pre class="r"><code>#creating iso3c code to join datasets and joining datasets
 library(countrycode)
-hiv_clean &lt;- hiv_clean %&gt;% 
-  mutate(&quot;iso3c&quot; = countrycode(hiv_clean$country, origin = &#39;country.name&#39;, destination = &#39;iso3c&#39;, #creating the iso3c column to join
-                               custom_match = c(&quot;Kosovo&quot;=&quot;XKX&quot;, &quot;Channel Islands&quot; =&quot;CHI&quot;)))  #joining the missing 2 countries manually
 life_expectancy_clean &lt;-life_expectancy_clean %&gt;% 
   mutate(&quot;iso3c&quot; = countrycode(life_expectancy_clean$country, origin = &#39;country.name&#39;, destination = &#39;iso3c&#39;, #creating the iso3c column to join
                                custom_match = c(&quot;Kosovo&quot;=&quot;XKX&quot;, &quot;Channel Islands&quot; =&quot;CHI&quot;)))  #joining the missing 2 countries manually</code></pre>
-<p>As we found 46,483 missing observations by only merging by “country”, we created the iso3c code for the dataset hiv_clean and life_expectancy. Two countries, “Channel Islands” and “Kosovo” have to be matched with the country dataset manually.</p>
+<p>As we found 46,483 missing observations by only merging by “country”, we created the iso3c code for the dataset life_expectancy. Two countries, “Channel Islands” and “Kosovo” have to be matched with the country dataset manually.</p>
 <p>Let’s check if all countries are assigned:</p>
 <pre class="r"><code>#we check if we can match correctly by: 
-region_missing &lt;- hiv_clean %&gt;% 
-  full_join(worldbank_data_clean, by=c(&quot;country&quot;, &quot;year&quot;)) %&gt;% #we don&#39;t want to lose data
+region_missing &lt;- worldbank_data_clean %&gt;% 
   full_join(life_expectancy_clean, by=c(&quot;country&quot;, &quot;year&quot;)) %&gt;% #we don&#39;t want to lose data  
   left_join(select(countries, c(&quot;country&quot;, &quot;region&quot;)), by= c(&quot;country&quot;)) #We don&#39;t want to lose values
 unique(region_missing[is.na(region_missing$region),]$country)</code></pre>
-<pre><code>##  [1] &quot;Bahamas&quot;     &quot;Cape Verde&quot;  &quot;Egypt&quot;       &quot;Gambia&quot;      &quot;Iran&quot;       
-##  [6] &quot;Lao&quot;         &quot;Russia&quot;      &quot;South Korea&quot; &quot;Swaziland&quot;   &quot;Venezuela&quot;  
-## [11] &quot;Yemen&quot;       &quot;Brunei&quot;      &quot;North Korea&quot; &quot;Palestine&quot;   &quot;Syria&quot;</code></pre>
+<pre><code>##  [1] &quot;Bahamas&quot;     &quot;Brunei&quot;      &quot;Cape Verde&quot;  &quot;Egypt&quot;       &quot;Gambia&quot;     
+##  [6] &quot;Iran&quot;        &quot;Lao&quot;         &quot;North Korea&quot; &quot;Palestine&quot;   &quot;Russia&quot;     
+## [11] &quot;South Korea&quot; &quot;Swaziland&quot;   &quot;Syria&quot;       &quot;Venezuela&quot;   &quot;Yemen&quot;</code></pre>
 <p><strong>Joining datasets</strong></p>
 <p>Finally, I perform the relevant join function. In order to select the correct join function I look at the different <a href="http://r4ds.had.co.nz/relational-data.html">join operations</a>.</p>
-<pre class="r"><code>worldbank_hiv_life_expectancy &lt;- worldbank_data_clean %&gt;% 
-  full_join(hiv_clean,by=c(&quot;iso3c&quot;, &quot;year&quot;)) %&gt;% #we don&#39;t want to lose data
-  full_join(life_expectancy_clean,by=c(&quot;iso3c&quot;, &quot;year&quot;)) %&gt;%  #we don&#39;t want to lose data
-  select(!c(&quot;country&quot;, &quot;country.x&quot;, &quot;country.y&quot;)) # we don&#39;t want to have plenty different values for country
+<pre class="r"><code>worldbank_life_expectancy &lt;- worldbank_data_clean %&gt;% 
+  full_join(life_expectancy_clean,by=c(&quot;iso3c&quot;, &quot;year&quot;))
 
 # adding regions and countryname from the datset countries
-worldbank_hiv_life_expectancy_region &lt;- worldbank_hiv_life_expectancy %&gt;% 
+worldbank_life_expectancy_region &lt;- worldbank_life_expectancy %&gt;% 
   left_join(select(countries, c(&quot;iso3c&quot;, &quot;region&quot;,&quot;country&quot;)), by= c(&quot;iso3c&quot;))
 
 
-unique(worldbank_hiv_life_expectancy_region[is.na(worldbank_hiv_life_expectancy_region$region),]$country) #identify missing values by region
-skim(worldbank_hiv_life_expectancy_region) #check the new dataset for missingness</code></pre>
-<p>We decide to use the full_join() function to join the three datasets in order to not lose any of the values, especially because we are later asked which region has the most observations with missing HIV data. Otherwise, we would have selected only the years in which we have relevant hiv data (1990 - 2011). To add the regions, we used the left join as we only want to add the region to the existing observations.</p>
-</div>
-<div id="what-is-the-relationship-between-hiv-prevalence-and-life-expectancy" class="section level3">
-<h3>What is the relationship between HIV prevalence and life expectancy?</h3>
-<p>In order to analyse the relationship between HIV prevalence and life expectancy I create a scatterplot using ggplot.</p>
-<pre class="r"><code>#we create a scatterplot with a smoothing line, and remove 2 outliers with life expectancy below 40 years in order to increase the interpretability of the output
-
-ggplot(worldbank_hiv_life_expectancy_region, aes(y=life_expect, x=hiv_rate))+ #we want to inspect how HIV rate changes the life expectancy
-  geom_point(alpha=0.1, na.rm=TRUE)+ #scatterplot
-  geom_smooth(na.rm=TRUE)+ #ading a line
-  theme_fivethirtyeight()+ #sleceted theme
-  theme(axis.title = element_text())+ #adding title (has been removed by theme)
-  labs(y=&quot;Life Expectancy (Years)&quot;, x= &quot;HIV Rate (%)&quot;, title=&quot;On Average, People in Countries with Less than 5% HIV Rates Live Longer&quot;, subtitle = &quot;Relationship between HIV rate and life expectancy&quot;)+ scale_x_continuous(breaks=seq(0,25,5), limits=c(0,25)) + scale_y_continuous(breaks=seq(40,85,10), limits=c(40,85))+ #adding labels
-  NULL</code></pre>
-<p><img src="/blogs/blog8_files/figure-html/relationship_HIV_life_expectancy-1.png" width="1152" style="display: block; margin: auto;" />
-This scatterplot depicts the average relationship between HIV rate and the life expectancy across all sampled countries. It appears that, on average, life expectancy decreases with an increasing HIV rate. There seems to be a strong negative relationship in countries with life expectancy between 0 and 5%, where each percentage increase in HIV rate is correlated with a steep decrease in average life expectancy. Above 5% the life expectancy remains almost stable.</p>
-<p>Now, let’s facet by region. I am using scales = “free” to make every facet of the plot readable.</p>
-<pre class="r"><code>ggplot(worldbank_hiv_life_expectancy_region, aes(y=life_expect, x=hiv_rate, na.rm=TRUE))+ #we want to inspect how hiv rate changes the life expectancy
-  geom_point(alpha=0.1, na.rm=TRUE)+
-  geom_smooth(na.rm=TRUE, size=0.5)+
-  facet_wrap(~region,scales=&quot;free&quot;)+ #facet by region with free scale- otherwise data of some regions not readable
-  theme_fivethirtyeight()+
-  theme(axis.title = element_text())+
-  labs(y=&quot;Life Expectancy (Years)&quot;, x= &quot;HIV Rate (%)&quot;, title=&quot;The Relationship between HIV Rate and Life Expectancy is Region-Specific&quot;, subtitle = &quot;Relationship between HIV rate and life expectancy across world regions&quot;)</code></pre>
-<p><img src="/blogs/blog8_files/figure-html/HIV_presence_life_expectancy_facet-1.png" width="960" style="display: block; margin: auto;" />
-The plot above depicts the relationship between HIV rate and life expectancy faceted by region and demonstrates that there is no clear relationship between the two variables. For the South Asian and the Sub-Saharan African region, for exampl, life expectancy doesn’t seem to change depending on the HIV rate at all. Also in North America, Europe &amp; Central Asia and East Asia &amp; Pacific no compelling relationship can be seen. Only in Latin America &amp; Caribbean and the Middle East &amp; North Africa does the life expectancy decrease notably with an increasing HIV rate. Overall, no compelling relationship between HIV prevalence and life expectancy can be established.
-### Which regions have the most observations with missing HIV data?</p>
-<p>To detect which region has the most observations with missing values I create a table in descending order:</p>
-<pre class="r"><code>missing_hiv &lt;- worldbank_hiv_life_expectancy_region %&gt;% 
-  select(&quot;hiv_rate&quot;,&quot;region&quot;) %&gt;% 
-  filter(is.na(hiv_rate)) %&gt;% #filtered only values with regions and NA&#39;s for HIV rate
-  group_by(region) %&gt;% 
-  summarise(count =n()) %&gt;% 
-  arrange(desc(count))
-
-kbl(missing_hiv,col.names=c(&quot;Region&quot;,&quot;Number of NA Values in HIV Rate Data&quot;)) %&gt;%
-  kable_styling()</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Region
-</th>
-<th style="text-align:right;">
-Number of NA Values in HIV Rate Data
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-Europe &amp; Central Asia
-</td>
-<td style="text-align:right;">
-14325
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Sub-Saharan Africa
-</td>
-<td style="text-align:right;">
-13478
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Latin America &amp; Caribbean
-</td>
-<td style="text-align:right;">
-9609
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-East Asia &amp; Pacific
-</td>
-<td style="text-align:right;">
-8337
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Middle East &amp; North Africa
-</td>
-<td style="text-align:right;">
-6082
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-South Asia
-</td>
-<td style="text-align:right;">
-2252
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-North America
-</td>
-<td style="text-align:right;">
-613
-</td>
-</tr>
-</tbody>
-</table>
-<p>Now, I visualize the table with a bar chart (<code>geom_col()</code>), in descending order.</p>
-<pre class="r"><code>ggplot(missing_hiv, aes(x= count, y=reorder(region, count)))+
-  geom_col()+
-  labs(x=&quot;Number of N/A&quot;, y=&quot;Region&quot;, title=&quot;Europe &amp; Central Asia Has the Greatest Number of Missing Values in HIV Rate Data&quot;, subtitle=&quot;Number of missing values for HIV rate by region&quot;)+
-  theme_fivethirtyeight()+
-  theme(axis.title=element_text())</code></pre>
-<p><img src="/blogs/blog8_files/figure-html/HIV_missingness_plot-1.png" width="1440" style="display: block; margin: auto;" />
-We find that the Europe &amp; Central Asia region has the most observations with missing HIV data, in raw terms, followed by Sub Sahran Africa.</p>
+unique(worldbank_life_expectancy_region[is.na(worldbank_life_expectancy_region$region),]$country) #identify missing values by region
+skim(worldbank_life_expectancy_region) #check the new dataset for missingness</code></pre>
+<p>We decide to use the full_join() function to join the three datasets in order to not lose any of the values.</p>
 </div>
 <div id="what-is-the-relationship-between-fertility-rate-and-gdp-per-capita" class="section level3">
 <h3>What is the relationship between fertility rate and GDP per capita?</h3>
 <p>To answer the question I generate a scatterplot with a smoothing line to report my results and I facet by region.</p>
-<pre class="r"><code>ggplot(worldbank_hiv_life_expectancy_region, aes(x=GDP_per_capita, y=Fertility_rate))+ 
+<pre class="r"><code>ggplot(worldbank_life_expectancy_region, aes(x=GDP_per_capita, y=Fertility_rate))+ 
   geom_point(alpha=0.1, na.rm=TRUE)+
   geom_smooth(na.rm=TRUE)+
   facet_wrap(~region, nrow =2, scales = &quot;free&quot;)+ #changed scale
@@ -245,7 +117,7 @@ These faceted plots demonstrate a clear relationship for all regions besides Mid
 <div id="is-there-a-relationship-between-primary-school-enrollment-and-fertility-rate" class="section level3">
 <h3>Is there a relationship between primary school enrollment and fertility rate?</h3>
 <p>To answer that question I create a scatterplot between primary school and fertility rate:</p>
-<pre class="r"><code>p1 &lt;- ggplot(worldbank_hiv_life_expectancy_region, aes(x=School_enrollment_primary, y=Fertility_rate))+ 
+<pre class="r"><code>p1 &lt;- ggplot(worldbank_life_expectancy_region, aes(x=School_enrollment_primary, y=Fertility_rate))+ 
   geom_smooth(se=FALSE, na.rm=TRUE, size=0.3)+
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
@@ -253,7 +125,7 @@ These faceted plots demonstrate a clear relationship for all regions besides Mid
 
 
 
-p2 &lt;-ggplot(worldbank_hiv_life_expectancy_region, aes(x=School_enrollment_primary, y=Fertility_rate, colour=region))+ 
+p2 &lt;-ggplot(worldbank_life_expectancy_region, aes(x=School_enrollment_primary, y=Fertility_rate, colour=region))+ 
   geom_smooth(se=FALSE, na.rm=TRUE, size=0.3)+
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
@@ -269,7 +141,7 @@ The scatterplots above depict a strong relationship between fertility rate and p
 <h3>How has mortality rate for under 5 changed by region?</h3>
 <p>In each region, I am looking for the top 5 countries that have seen the greatest improvement, as well as those 5 countries where mortality rates have had the least improvement or even deterioration.</p>
 <p>First, I look at the general trend and the trend in each region:</p>
-<pre class="r"><code>ggplot(worldbank_hiv_life_expectancy_region, aes(x=year, y=Mortality_rate_under5, colour=region))+ 
+<pre class="r"><code>ggplot(worldbank_life_expectancy_region, aes(x=year, y=Mortality_rate_under5, colour=region))+ 
   geom_smooth(se=FALSE, na.rm=TRUE, size=0.5)+
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
@@ -277,7 +149,7 @@ The scatterplots above depict a strong relationship between fertility rate and p
 <p><img src="/blogs/blog8_files/figure-html/mortality_rate_by_region-1.png" width="960" />
 We can see that the Mortality Rates for the given 1960-2016 period have declined in every Region. It is important to note that “North America”,“Latin America &amp; Caribbean” and “Middle East &amp; North Africa” have shown convexity in their decline and hence the change in Mortality Rates was greater earlier on in these regions. In particular, Sub-Saharan Africa has seen the most recent and pronounced improvement in under-5 child mortality rates, though rates remain considerably higher in this region than the rest of the world. South Asia has experienced a more prolonged and steep decline in its child mortality rate, resulting in it falling from being the region with the highest child mortality rate in 1960 to a rate similar to most other regions, besides Europe &amp; Central Asia and North America. Let us look at the country wide trends:</p>
 <pre class="r"><code>#we plot country-wide under-5 child mortality over time
- ggplot(data = worldbank_hiv_life_expectancy_region , mapping = aes(x = year , y = Mortality_rate_under5 , colour= country))+
+ ggplot(data = worldbank_life_expectancy_region , mapping = aes(x = year , y = Mortality_rate_under5 , colour= country))+
    geom_point(size=0.5, na.rm=TRUE) +
    geom_smooth(se = FALSE,size=0.5, na.rm=TRUE) +
    facet_wrap(~region, scales=&quot;free&quot;) +  theme_fivethirtyeight()+
@@ -286,7 +158,7 @@ We can see that the Mortality Rates for the given 1960-2016 period have declined
 <p><img src="/blogs/blog8_files/figure-html/country_wide_mortality_rates-1.png" width="1440" style="display: block; margin: auto;" />
 We can see that the plots for each country are monotonically decreasing. There is only one instance of a country’s child mortality rate in the “Sub-Saharan Africa” region that is not monotonous. Hence, we can conclude that the “Absolute Difference in Mortality Rates” and “Percentage Change in Mortality Rates” in the years where data is available for a country are sensible metrics to gauge the improvement in mortality rates.</p>
 <p>Finally, let us then find out the 5 countries in each region with greatest and least improvement in mortality rates:</p>
-<pre class="r"><code>change_mortality&lt;-worldbank_hiv_life_expectancy_region %&gt;%
+<pre class="r"><code>change_mortality&lt;-worldbank_life_expectancy_region %&gt;%
   group_by(region,country) %&gt;%
   arrange(desc(-year))%&gt;%
         summarise(first_value = first(na.omit(Mortality_rate_under5)),
