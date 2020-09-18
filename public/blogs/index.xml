@@ -22,7 +22,18 @@ Let’s first load the data: To load the dataset I use the package: Fivethirtyei
     </item>
     
     <item>
-      <title>HIV Rate, Life Expectancy and GDP</title>
+      <title>HIV Rate, Life Expectancy, Fertility Rate and GDP</title>
+      <link>/blogs/blog7/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog7/</guid>
+      <description>HIV Rate, Life Expectancy and GDPIn this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.
+Loading, inspecting and joining datasetsLoading data
+The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats.</description>
+    </item>
+    
+    <item>
+      <title>HIV Rate, Life Expectancy, Fertility Rate and GDP</title>
       <link>/blogs/blog7/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
