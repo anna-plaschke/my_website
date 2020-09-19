@@ -109,6 +109,12 @@ disqusShortname = ""
       url = "blogs/blog5"
       
     [[params.tiles.showcase]]
+      title = "How much does it cost to sleep in Copenhagen?"
+      subtitle = "Regression and Prediction Model of AirBnB Prices in Copenhagen"
+      image = "copenhagen.jpg"
+      url = "blogs/blog4"
+      
+    [[params.tiles.showcase]]
       title = "Does the HIV Rate Affect Life Expectancy?"
       subtitle = "Relationship between HIV rate and life expectancy by region"
       image = "pic04.jpg"
