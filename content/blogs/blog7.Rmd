@@ -98,7 +98,7 @@ The dataset HIV rate has extensive missingness. Notably, in the World Bank data,
 
 **Tidying datasets**
 
-Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don't tidy this dataset. Furthermore, I change the data type of the variable "year" in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
+Then I use the function pivot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don't tidy this dataset. Furthermore, I change the data type of the variable "year" in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
 To control the changes made, I skim the cleaned datasets.
 ```{r cleaning_the_data, , echo=TRUE, results='hide'}
 #we clean the data by tidying it up (tidyr)
@@ -146,9 +146,9 @@ Let's check if all countries are assigned:
 
 #we check if we can match correctly by: 
 region_missing <- hiv_clean %>% 
-  full_join(worldbank_data_clean, by=c("country", "year")) %>% #we don't want to lose data
-  full_join(life_expectancy_clean, by=c("country", "year")) %>% #we don't want to lose data  
-  left_join(select(countries, c("country", "region")), by= c("country")) #We don't want to lose values
+  full_join(worldbank_data_clean, by=c("iso3c", "year")) %>% #we don't want to lose data
+  full_join(life_expectancy_clean, by=c("iso3c", "year")) %>% #we don't want to lose data  
+  left_join(select(countries, c("iso3c", "region")), by= c("iso3c")) #We don't want to lose values
 unique(region_missing[is.na(region_missing$region),]$country)
 
 ```
