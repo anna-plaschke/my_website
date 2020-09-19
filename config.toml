@@ -96,12 +96,6 @@ disqusShortname = ""
       image = "pic02.jpg"
       url = "post/post1"
 
-    [[params.tiles.showcase]]
-      title = "Does Life Expectancy affect the HIV rate?P"
-      subtitle = "HIV Rate and Life Expectancy"
-      image = "pic04.jpg"
-      url = "blogs/blog7"
-
    [[params.tiles.showcase]]
       title = "Where Do People Drink The Most Beer, Wine And Spirits?"
       subtitle = "Alcohol consumption by country"
@@ -113,6 +107,12 @@ disqusShortname = ""
       subtitle = "Climate change"
       image = "pic03.jpg"
       url = "blogs/blog5"
+      
+    [[params.tiles.showcase]]
+      title = "Does Life Expectancy affect the HIV rate?P"
+      subtitle = "HIV Rate and Life Expectancy"
+      image = "pic04.jpg"
+      url = "blogs/blog7"
 
     [[params.tiles.showcase]]
       title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate? How has Mortality Rate for under 5 Changed by Region?"
