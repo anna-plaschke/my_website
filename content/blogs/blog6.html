@@ -29,8 +29,9 @@ knitr::opts_chunk$set(
 )</code></pre>
 <div id="where-do-people-drink-the-most-beer-wine-and-spirits" class="section level2">
 <h2>Where Do People Drink The Most Beer, Wine And Spirits?</h2>
-<p>With this project I want to analyse how the consumption of alcohol of beer, wine and spirits variy by country.</p>
-<p>Let’s first load the data: To load the dataset I use the package: Fivethirtyeight.</p>
+<p>Germans drink beer, Italians drink wine and in Russia they drink Vodka.</p>
+<p>These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consume per capita? And Italiany the one with the highest wine consume? Let’s find that out: The goal of this project is to analyze how the consumption of alcohol of beer, wine and spirits vary by country.</p>
+<p>The first step is to load the relevant data from the package Fivethirtyeight.</p>
 <pre class="r"><code>library(fivethirtyeight)
 data(drinks) #I load in the dataset from the fivethirtyeight package</code></pre>
 <div id="exploring-the-variable-types-and-checking-for-any-missing-values" class="section level3">
@@ -398,11 +399,11 @@ top25_beer &lt;- beer %&gt;% #save new lsit under top25_beer
 
 #I use ggplot() to plot only the top 25 entries summarised in top25_beer, adjusting the x-axis labels for readibility, as well as colour, axis labels and title
 
-ggplot(top25_beer, aes(x = reorder(country, desc(beer_servings)), y= beer_servings),)+
-  geom_col(fill=&quot;blue&quot;) + #choosing type of plot and adding color
-  labs(x=&quot;Country&quot;,y = &quot;Beer Servings Consumed Per Person&quot;, title = &quot;Top 25 Beer Consuming Countries&quot;) + #adding titles
-  theme(axis.text.x = element_text(angle=30, size=7)) #change angle of text of x-axis</code></pre>
-<p><img src="/blogs/blog6_files/figure-html/beer_plot-1.png" width="648" style="display: block; margin: auto;" />
+ggplot(top25_beer, aes(y = reorder(country, beer_servings), x= beer_servings),)+
+  geom_col(fill=&quot;yellow&quot;) + #choosing type of plot and adding color
+  labs(y=&quot;Country&quot;,x = &quot;Beer Servings Consumed Per Person&quot;, title = &quot;Top 25 Beer Consuming Countries&quot;) + #adding titles
+  NULL</code></pre>
+<p><img src="/blogs/blog6_files/figure-html/beer_plot-1.png" width="960" style="display: block; margin: auto;" />
 This plot shows that Namibia is the top beer-consuming country, followed by the Czech Republic, Gabon, Germany and Lithuania.</p>
 </div>
 <div id="top-25-wine-consuming-countries" class="section level3">
@@ -422,8 +423,8 @@ top25_wine &lt;- wine %&gt;%
 
 #We use ggplot() to plot only the top 25 entries summarised in top25_wine, adjusting the x-axis labels for readability, as well as colour, axis labels and title
 
-ggplot(top25_wine, aes(x = reorder(country, desc(wine_servings)), y= wine_servings),) + geom_col(fill=&quot;red&quot;) + labs(x=&quot;Country&quot;,y = &quot;Wine Servings Consumed Per Person&quot;, title = &quot;Top 25 Wine Consuming Countries&quot;) + theme(axis.text.x = element_text(angle=30, size=7))</code></pre>
-<p><img src="/blogs/blog6_files/figure-html/wine_plot-1.png" width="648" style="display: block; margin: auto;" />
+ggplot(top25_wine, aes(y = reorder(country, wine_servings), x= wine_servings),) + geom_col(fill=&quot;dark red&quot;) + labs(x=&quot;Country&quot;,y = &quot;Wine Servings Consumed Per Person&quot;, title = &quot;Top 25 Wine Consuming Countries&quot;) </code></pre>
+<p><img src="/blogs/blog6_files/figure-html/wine_plot-1.png" width="960" style="display: block; margin: auto;" />
 This plot shows that France is the top wine-consuming country, followed by Portugal, Andorra, Switzerland and Denmark.</p>
 </div>
 <div id="top-25-spirit-consuming-countries" class="section level3">
@@ -443,11 +444,11 @@ top25_spirit &lt;- spirit %&gt;%
 
 #I use ggplot() to plot only the top 25 entries summarised in top25_spirit, adjusting the x-axis labels for readibility, as well as colour, axis labels and title
 
-ggplot(top25_spirit, aes(x = reorder(country, desc(spirit_servings)), y= spirit_servings),) + 
-  geom_col(fill=&quot;dark green&quot;) + 
-  labs(x=&quot;Country&quot;,y = &quot;Spirit Servings Consumed Per Person&quot;, title = &quot;Top 25 spirit Consuming Countries&quot;) +
-  theme(axis.text.x = element_text(angle=30, size=7))</code></pre>
-<p><img src="/blogs/blog6_files/figure-html/spirit_plot-1.png" width="648" style="display: block; margin: auto;" />
+ggplot(top25_spirit, aes(y = reorder(country, spirit_servings), x= spirit_servings),) + 
+  geom_col(fill=&quot;white&quot;) + 
+  labs(y=&quot;Country&quot;,x = &quot;Spirit Servings Consumed Per Person&quot;, title = &quot;Top 25 spirit Consuming Countries&quot;) +
+  NULL</code></pre>
+<p><img src="/blogs/blog6_files/figure-html/spirit_plot-1.png" width="960" style="display: block; margin: auto;" />
 This plot shows that Grenada is the top spirit-consuming country, followed by Belaris, Haiti, Russia and St. Lucia.</p>
 </div>
 <div id="what-can-be-inferred-from-these-plots" class="section level3">
@@ -455,5 +456,32 @@ This plot shows that Grenada is the top spirit-consuming country, followed by Be
 <p>Namibia, France and Grenada have the largest per capita consumption of beer, wine and spirits, respectively. Unsurprisingly, these countries are some of the largest producers of the alcohols they consumed most. While we are familiar with French wine production, releasing 7-8 billion bottles per year, less known is Namibian (‘German’) beer production or Granadian spirit (read ‘Rum’) production figures.</p>
 <p>Namibia Breweries Limited (NBL) produces 214 million litres of Beer, including Tafel Lager, Heiniken and Guiness. Though approximately 60% of its production is exported, predominantly to South Africa, given the country’s small (2.4 million) population, beer is widely and cheaply available, and readily consumed. Similarly, with 4 major rum distillers and a population of just 111,000 people, spirit consumption in Grenada is high even relative to infamous Russian, or even Belarusian, levels.</p>
 <p>Finally, comparing the plots to one another, we find that the level of consumption is considerably higher in the Top 25 consumers of Spirits, than amongst the consumers of Wine or Beer. Given that spirits are generally produced in far lower volumes than either wine or beer, retaining a larger share of spirit production to meet domestic consumption demand seems to be a logical assumption. This implies that top spirit consuming countries (and thus producers) potentially export a lower share of their production than top wine and beer producing (consuming) countries. This would help to maintain depressed prices (in France, foreign export demand inflates domestic prices), fueling disproportionately high domestic consumption relative to major wine and beer producing countries.</p>
+</div>
+<div id="deep-dive-germany-and-italy" class="section level3">
+<h3>Deep Dive Germany and Italy</h3>
+<p>So, surprisingly, Germany is not the country where the people consume most beer, but people from Namibia consume more per person. And french people drink more wine that Italians! But do germans drink more beer than any other type of alcohol, and Italians wine?
+Let’s figure that out:</p>
+<pre class="r"><code>library(patchwork)
+drinks_longer_germany &lt;- drinks %&gt;% 
+  filter(country == &quot;Germany&quot;) %&gt;% 
+  pivot_longer(names_to =&quot;type&quot;, values_to =&quot;quantity&quot;, cols= -c(&quot;total_litres_of_pure_alcohol&quot;, &quot;country&quot;))
+  
+
+p1 &lt;- ggplot(drinks_longer_germany, aes(y = reorder(type, quantity), x= quantity),) + 
+  geom_col(fill=&quot;yellow&quot;) + 
+  labs(y=&quot;&quot;,x = &quot;Servings Consumed Per Person&quot;, title = &quot;Germans do love beer!&quot;, subtitle= &quot;Alcohol consumption of beer, wine, and spirits in Germany&quot;) 
+
+drinks_longer_italy &lt;- drinks %&gt;% 
+  filter(country == &quot;Italy&quot;) %&gt;% 
+  pivot_longer(names_to =&quot;type&quot;, values_to =&quot;quantity&quot;, cols= -c(&quot;total_litres_of_pure_alcohol&quot;, &quot;country&quot;))
+  
+
+p2 &lt;- ggplot(drinks_longer_italy, aes(y = reorder(type, quantity), x= quantity),) + 
+  geom_col(fill=&quot;dark red&quot;) + 
+  labs(y=&quot;&quot;,x = &quot;Servings Consumed Per Person&quot;, title = &quot;... and Italians wine!&quot;, subtitle= &quot;Alcohol consumption of beer, wine, and spirits in Italy&quot;)
+
+
+p1 + p2</code></pre>
+<p><img src="/blogs/blog6_files/figure-html/germany-1.png" width="1440" style="display: block; margin: auto;" /></p>
 </div>
 </div>

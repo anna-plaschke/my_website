@@ -828,7 +828,7 @@ SON
 </div>
 <div id="plotting-information" class="section level3">
 <h3>Plotting Information</h3>
-<p>I will plot the data using a time-series scatter plot, and add a trendline. To do that, we first need to create a new variable called <code>date</code> in order to ensure that the <code>delta</code> values are plotted chronologically.</p>
+<p>I plot the data using a time-series scatter plot, and add a trendline. To do that, we first need to create a new variable called <code>date</code> in order to ensure that the <code>delta</code> values are plotted chronologically.</p>
 <pre class="r"><code>#I create a new variable, &#39;date&#39; to ensure delta values are plotted chronologically
 
 tidyweather &lt;- tidyweather %&gt;% 
@@ -888,7 +888,7 @@ comparison &lt;- tidyweather %&gt;%
     TRUE ~ &quot;2011-present&quot;
   ))</code></pre>
 <p><strong>Density plot</strong>
-Now that I have the <code>interval</code> variable, I can create a density plot to study the distribution of monthly deviations (<code>delta</code>), grouped by the different time periods we are interested in. I set <code>fill</code> to <code>interval</code> to group and colour the data by different time periods.</p>
+Now that I have the <code>interval</code> variable, I can create a density plot to study the distribution of monthly deviations (<code>delta</code>), grouped by the different time periods we are interested in. I set <code>fill</code> to <code>interval</code> to group and color the data by different time periods.</p>
 <pre class="r"><code>#I create a density plot which allows me to study the distribution of monthly temperature deviations across the time periods specified
 
 ggplot(comparison, aes(x=delta, fill=interval))+
@@ -1007,7 +1007,7 @@ Mean Annual Delta (2011-Present): Upper Limit
   geom_vline(xintercept = percentile_ci$lower_ci, colour = &quot;red&quot;)+
   geom_vline(xintercept = percentile_ci$upper_ci, colour = &quot;red&quot;) + theme_fivethirtyeight() + theme(axis.title=element_text()) +labs(x=&quot;Mean Annual Deviation From Expected Temperature (°C)&quot;, y=&quot;Count&quot;,title=&quot;Mean Annual Temperature Anomalies from 2011-Present&quot;, subtitle=&quot;Bootstrap-generated confidence interval (1000 simulations) for average annual temperature anomalies relative to a 1951-1980 base period&quot;)</code></pre>
 <p><img src="/blogs/blog5_files/figure-html/plotting_the_bootstrap_ci-1.png" width="1152" style="display: block; margin: auto;" /></p>
-<p><strong>So, is it really getting war in here?</strong></p>
+<p><strong>So, is it really getting warm in here?</strong></p>
 <p>These investigations demonstrate that monthly temperature deviations, versus a 1951-1980 base period, have been increasing sharply over the past 50 years. While there are no immediately evident patterns in monthly deviations over time, we find that mean deviations vary cyclically, and are greatest in Spring and Autumn months, peaking in March and October. This means that, relative to months in the 1951-1980 period, Spring and Autumn months have seen the greatest temperature increases in recent years. Exploring trends periodically, our initial overview of monthly deviations is ratified by the shifting distributions of monthly temperature anomalies across periods. It is evident that the periods 1981-2010 and 2011-present mark sharp upward deviations in temperature, on average, relative to the 1951-1980 base period, and to an even greater extent relative to the 1881-1920 period. Evaluating anomalies on an annual basis, we find not only that deviations have increased over the overall period surveyed, but that they have been increasing exponentially - the size of temperature anomalies increasing more in the past 20 years than in the previous 100.</p>
 <p>Having observed steep increases in monthly temperature deviations over time, as well as periodic and annual deviations, our confidence interval demonstrates that even the most conservative temperature anomalies, of 0.92, are likely to have severe repercussions according to NASA’s historical evaluation. As a whole, this data paints a worrying picture of the future of our planet and the need for urgent action to moderate exponential temperature increases which threaten the habitability of Earth.</p>
 </div>
