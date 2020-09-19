@@ -47,7 +47,7 @@ library(scales)
 ```
 
 
-## Fertiliy Rate, School Entrollment, Life Expectancy and GDP
+## School entrollment, GDP per capita and fertiliy rate
 The purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
 
 ### Loading, inspecting and joining datasets
