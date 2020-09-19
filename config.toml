@@ -85,7 +85,6 @@ disqusShortname = ""
     subtitle = "Welcome to my personal site! I am an Analytics and Management student at LBS and share here my recent experiences with R."
     buttonText = "About me"
 
-
   # Tiles Section
   [params.tiles]
     enable = true
@@ -103,17 +102,17 @@ disqusShortname = ""
       image = "pic04.jpg"
       url = "blogs/blog7"
 
+   [[params.tiles.showcase]]
+      title = "Where Do People Drink The Most Beer, Wine And Spirits?"
+      subtitle = "Alcohol consumption by country"
+      image = "pic05.jpg"
+      url = "blogs/blog6"
+
     [[params.tiles.showcase]]
       title = "It is Getting Warm in Here!"
       subtitle = "Climate change"
       image = "pic03.jpg"
       url = "blogs/blog5"
-
-    [[params.tiles.showcase]]
-      title = "Where Do People Drink The Most Beer, Wine And Spirits?"
-      subtitle = "Alcohol consumption by country"
-      image = "pic05.jpg"
-      url = "blogs/blog6"
 
     [[params.tiles.showcase]]
       title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate? How has Mortality Rate for under 5 Changed by Region?"
