@@ -27,7 +27,7 @@ Let’s first load the data: To load the dataset I use the package: Fivethirtyei
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog7/</guid>
-      <description>HIV Rate, Life Expectancy and GDPIn this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.
+      <description>HIV Rate, Life Expectancy and GDPThe purpose of this project is to analyze the relationship between HIV rate, life expectancy and GDP per capita by regions.
 Loading, inspecting and joining datasetsLoading data
 The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats.</description>
     </item>
@@ -49,9 +49,20 @@ Loading, inspecting and selecting dataLoading dataAs first step, I load the da
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog8/</guid>
-      <description>Fertiliy Rate, School Entrollment, Life Expectancy and GDPIn this project I want to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions.
+      <description>Fertiliy Rate, School Entrollment, Life Expectancy and GDPThe purpose of this project is to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
 Loading, inspecting and joining datasetsLoading data
-The first step, is to load the data: I load the gapminder life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats.</description>
+The first step, is to load the data: I load the gapminder life expectancy data using read_csv to convert the csv files.</description>
+    </item>
+    
+    <item>
+      <title>Life Expectancy, School enrollment, Fertility Rate and GDP</title>
+      <link>/blogs/blog8/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog8/</guid>
+      <description>Fertiliy Rate, School Entrollment, Life Expectancy and GDPThe purpose of this project is to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
+Loading, inspecting and joining datasetsLoading data
+The first step, is to load the data: I load the worldbank data instead is loaded from the package wbstats.</description>
     </item>
     
   </channel>

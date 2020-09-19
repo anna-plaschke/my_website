@@ -19,7 +19,7 @@ subtitle: Various analyses
 
 <div id="hiv-rate-life-expectancy-and-gdp" class="section level2">
 <h2>HIV Rate, Life Expectancy and GDP</h2>
-<p>In this project I want to analyse the relationship between HIV rate, life expectancy and GDP per capita by regions.</p>
+<p>The purpose of this project is to analyze the relationship between HIV rate, life expectancy and GDP per capita by regions.</p>
 <div id="loading-inspecting-and-joining-datasets" class="section level3">
 <h3>Loading, inspecting and joining datasets</h3>
 <p><strong>Loading data</strong></p>
@@ -50,7 +50,7 @@ I skim the datasets to get a basic understanding of the structure, the missingne
 skim(worldbank_data)
 skim(hiv)
 skim(life_expectancy)</code></pre>
-<p>All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast).</p>
+<p>The dataset HIV rate has extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast).</p>
 <p><strong>Tidying datasets</strong></p>
 <p>Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don’t tidy this dataset. Furthermore, I change the data type of the variable “year” in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
 To control the changes made, I skim the cleaned datasets.</p>

@@ -48,20 +48,16 @@ library(scales)
 
 
 ## Fertiliy Rate, School Entrollment, Life Expectancy and GDP
-In this project I want to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. 
+The purpose of this project is to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
 
 ### Loading, inspecting and joining datasets
 
 **Loading data**
 
-The first step, is to load the data: I load the gapminder life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don't need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.
+The first step, is to load the data: I load the  worldbank data instead is loaded from the package wbstats. Because I don't need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.
 
 
 ```{r, get_data, cache=TRUE}
-
-#load life expectancy data
-life_expectancy <- read_csv(here::here("static","data","life_expectancy_years.csv"))
-
 # get World bank data using wbstats
 indicators <- c("SP.DYN.TFRT.IN","SE.PRM.NENR", "SH.DYN.MORT", "NY.GDP.PCAP.KD")
 
@@ -77,32 +73,12 @@ countries <-  wbstats::wb_cachelist$countries
 
 ```
 
-**Inspecting the dataframes (life_expectancy, worldbank_data)**
-
-Before joining the datasets I need to tidy the data first. 
-I skim the datasets to get a basic understanding of the structure, the missingness and the variable types. 
-
-```{r evaluating_the_data, echo=TRUE, results='hide'}
-
-#we first skim the dataset to find missing values and understand the structure of the datatset
-
-skim(worldbank_data)
-skim(life_expectancy)
-
-```
-All the three datasets have extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast). 
-
 **Tidying datasets**
 
-Then I use the function picot_longer() to tidy the datasets where needed creating life_expectancy_clean. In this case, I did it for life expectancy. Because I will not need a different structure for the worldbank data I don't tidy this dataset. Furthermore, I change the data type of the variable "year" in life_expectancy_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
+I change the data type of the variable "year" in life_expectancy_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
+
 To control the changes made, I skim the cleaned datasets.
 ```{r cleaning_the_data, , echo=TRUE, results='hide'}
-#we clean the data by tidying it up (tidyr)
-life_expectancy_clean <- life_expectancy %>% 
-  pivot_longer(names_to="year", values_to="life_expect", cols= -country) %>% 
-  transform(year = as.numeric(year)) #in order to be able to join the three datasets we need the same data types
-
-
 worldbank_data_clean <- worldbank_data %>% 
   #we change the names to have more meaningful names, but we don't use pivot_longer as this is not needed to resolve the questions
   rename("GDP_per_capita"=NY.GDP.PCAP.KD, 
@@ -112,61 +88,27 @@ worldbank_data_clean <- worldbank_data %>%
          "year"=date)
 
 #we check if the data types have been changed
-skim(life_expectancy_clean)
 skim(worldbank_data_clean)
 
 ```
+### Joining datasets
 
-**Adding key for countries**
-
-In the various datasets the countries are named slightly different. Therefore, I am adding the countrycode "iso3c" to all datasets. After checking the result, I add the missing countries ("Kosovo" and "Channel Islands") manually.  
-```{r adding_the_iso3c_code}
-
-#creating iso3c code to join datasets and joining datasets
-library(countrycode)
-life_expectancy_clean <-life_expectancy_clean %>% 
-  mutate("iso3c" = countrycode(life_expectancy_clean$country, origin = 'country.name', destination = 'iso3c', #creating the iso3c column to join
-                               custom_match = c("Kosovo"="XKX", "Channel Islands" ="CHI")))  #joining the missing 2 countries manually
-```
-As we found 46,483 missing observations by only merging by "country", we created the iso3c code for the dataset life_expectancy. Two countries, "Channel Islands" and "Kosovo" have to be matched with the country dataset manually.
-
-Let's check if all countries are assigned:
-```{r check_to_join_the_data}
-
-#we check if we can match correctly by: 
-region_missing <- worldbank_data_clean %>% 
-  full_join(life_expectancy_clean, by=c("country", "year")) %>% #we don't want to lose data  
-  left_join(select(countries, c("country", "region")), by= c("country")) #We don't want to lose values
-unique(region_missing[is.na(region_missing$region),]$country)
-
-```
-
-**Joining datasets**
-
-Finally, I perform the relevant join function. In order to select the correct join function I look at the different [join operations](http://r4ds.had.co.nz/relational-data.html).
-```{r joining_the_data, echo=TRUE, results='hide'}
-
-worldbank_life_expectancy <- worldbank_data_clean %>% 
-  full_join(life_expectancy_clean,by=c("iso3c", "year"))
-
+Now, I add the region to the worldbank data:
+```{r, joining_datasets}
 # adding regions and countryname from the datset countries
-worldbank_life_expectancy_region <- worldbank_life_expectancy %>% 
-  left_join(select(countries, c("iso3c", "region","country")), by= c("iso3c"))
+worldbank_data_region <- worldbank_data_clean %>% 
+  left_join(select(countries, c("iso3c", "region")), by= c("iso3c"))
 
-
-unique(worldbank_life_expectancy_region[is.na(worldbank_life_expectancy_region$region),]$country) #identify missing values by region
-skim(worldbank_life_expectancy_region) #check the new dataset for missingness
-
+unique(worldbank_data_region[is.na(worldbank_data_region$region),]$country) #identify missing values by region
 ```
-We decide to use the full_join() function to join the three datasets in order to not lose any of the values. 
-
+All observations of the worlbank data have a region assigned.
 
 ### What is the relationship between fertility rate and GDP per capita?
 To answer the question I generate a scatterplot with a smoothing line to report my results and I facet by region.
 
 ```{r fertility_rate_GDP, fig.width=15, fig.height=8}
 
-ggplot(worldbank_life_expectancy_region, aes(x=GDP_per_capita, y=Fertility_rate))+ 
+ggplot(worldbank_data_region, aes(x=GDP_per_capita, y=Fertility_rate))+ 
   geom_point(alpha=0.1, na.rm=TRUE)+
   geom_smooth(na.rm=TRUE)+
   facet_wrap(~region, nrow =2, scales = "free")+ #changed scale
@@ -187,7 +129,7 @@ To answer that question I create a scatterplot between primary school and fertil
 
 ```{r primary_enrolment_and_fertility, fig.width=13, fig.height=5, fig.align="centre"}
 
-p1 <- ggplot(worldbank_life_expectancy_region, aes(x=School_enrollment_primary, y=Fertility_rate))+ 
+p1 <- ggplot(worldbank_data_region, aes(x=School_enrollment_primary, y=Fertility_rate))+ 
   geom_smooth(se=FALSE, na.rm=TRUE, size=0.3)+
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
@@ -195,7 +137,7 @@ p1 <- ggplot(worldbank_life_expectancy_region, aes(x=School_enrollment_primary, 
 
 
 
-p2 <-ggplot(worldbank_life_expectancy_region, aes(x=School_enrollment_primary, y=Fertility_rate, colour=region))+ 
+p2 <-ggplot(worldbank_data_region, aes(x=School_enrollment_primary, y=Fertility_rate, colour=region))+ 
   geom_smooth(se=FALSE, na.rm=TRUE, size=0.3)+
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
@@ -218,7 +160,7 @@ First, I look at the general trend and the trend in each region:
 
 ```{r mortality_rate_by_region, fig.height=5, fig.width=10, fig.align="centre"}
 
-ggplot(worldbank_life_expectancy_region, aes(x=year, y=Mortality_rate_under5, colour=region))+ 
+ggplot(worldbank_data_region, aes(x=year, y=Mortality_rate_under5, colour=region))+ 
   geom_smooth(se=FALSE, na.rm=TRUE, size=0.5)+
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
@@ -230,7 +172,7 @@ We can see that the Mortality Rates for the given 1960-2016 period have declined
 ```{r country_wide_mortality_rates, fig.height=10, fig.width=15}
 
 #we plot country-wide under-5 child mortality over time
- ggplot(data = worldbank_life_expectancy_region , mapping = aes(x = year , y = Mortality_rate_under5 , colour= country))+
+ ggplot(data = worldbank_data_region , mapping = aes(x = year , y = Mortality_rate_under5 , colour= country))+
    geom_point(size=0.5, na.rm=TRUE) +
    geom_smooth(se = FALSE,size=0.5, na.rm=TRUE) +
    facet_wrap(~region, scales="free") +  theme_fivethirtyeight()+
@@ -244,19 +186,19 @@ Finally, let us then find out the 5 countries in each region with greatest and l
 
 ```{r ranked_mortality_rate_changes}
 
-change_mortality<-worldbank_life_expectancy_region %>%
+change_mortality<-worldbank_data_region %>%
   group_by(region,country) %>%
   arrange(desc(-year))%>%
         summarise(first_value = first(na.omit(Mortality_rate_under5)),
             last_value = last(na.omit(Mortality_rate_under5)),
             count_years = length(na.omit(Mortality_rate_under5))) %>%
   mutate(rate_diff = last_value- first_value,
-         rate_diff_percent= -rate_diff/first_value)
+         rate_diff_percent= rate_diff/first_value)
 
 top5_percent_change<- change_mortality %>%
   group_by(region) %>%
   select(1:2,6:7) %>% 
-  slice_max(order_by = rate_diff_percent,n=5)
+  slice_min(order_by = rate_diff_percent,n=5)
 top5_absolute_change <- change_mortality %>%
   group_by(region) %>%
   select(1:2,6:7) %>% 
@@ -264,7 +206,7 @@ top5_absolute_change <- change_mortality %>%
 bottom5_percent_change <- change_mortality %>%
   group_by(region) %>%
   select(1:2,6:7) %>% 
-  slice_max(order_by = (-rate_diff_percent),n=5)
+  slice_max(order_by = (rate_diff_percent),n=5)
 bottom5_absolute_change <- change_mortality %>%
   group_by(region) %>%
   select(1:2,6:7) %>% 
