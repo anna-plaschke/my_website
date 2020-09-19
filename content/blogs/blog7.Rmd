@@ -48,7 +48,7 @@ library(scales)
 
 
 ## HIV Rate, Life Expectancy and GDP
-The purpose of this project is to analyze the relationship between HIV rate, life expectancy and GDP per capita by regions. 
+The purpose of this project is to analyze the relationship between HIV rate and life expectancy by regions. 
 
 ### Loading, inspecting and joining datasets
 

@@ -104,19 +104,19 @@ disqusShortname = ""
 
     [[params.tiles.showcase]]
       title = "It is Getting Warm in Here!"
-      subtitle = "Climate change"
+      subtitle = "Climate change and global warming"
       image = "pic03.jpg"
       url = "blogs/blog5"
       
     [[params.tiles.showcase]]
-      title = "Does Life Expectancy affect the HIV rate?P"
-      subtitle = "HIV Rate and Life Expectancy"
+      title = "Does the HIV Rate Affect Life Expectancy?"
+      subtitle = "Relationship between HIV rate and life expectancy"
       image = "pic04.jpg"
       url = "blogs/blog7"
 
     [[params.tiles.showcase]]
-      title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate? How has Mortality Rate for under 5 Changed by Region?"
-      subtitle = "Effects of School enrollment and GDP on the fertility rate and mortality rate development"
+      title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate?"
+      subtitle = "Effects of school enrollment and GDP per capita on the fertility rate and mortality rate development"
       image = "pic10.jpg"
       url = "blogs/blog8"
 

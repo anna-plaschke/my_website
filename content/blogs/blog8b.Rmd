@@ -8,7 +8,7 @@ draft: false
 image: pic12.jpg
 keywords: ""
 slug: blog8
-title: Influence of School enrollment and GDP on the Fertility Rate
+title: Influence of School Enrollment and GDP on the Fertility Rate
 subtitle: Various analyses
 ---
 
@@ -48,7 +48,7 @@ library(scales)
 
 
 ## Fertiliy Rate, School Entrollment, Life Expectancy and GDP
-The purpose of this project is to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
+The purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
 
 ### Loading, inspecting and joining datasets
 
