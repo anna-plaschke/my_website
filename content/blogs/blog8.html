@@ -3,12 +3,12 @@ categories:
 - ""
 - ""
 date: "2020-09-14T22:42:51-05:00"
-description: Does school enrollment and GDP per capita affect the fertility rate? How has mortality rate for under 5 changed by region?
+description: Does school enrollment and GDP per capita affect the fertility rate? How has mortality rate under 5 changed by region?
 draft: false
 image: pic12.jpg
 keywords: ""
 slug: blog8
-title: Life Expectancy, School enrollment, Fertility Rate and GDP
+title: Does School Enrollment and GDP per Capita Affect the Fertility Rate?
 subtitle: Various analyses
 ---
 
@@ -17,9 +17,9 @@ subtitle: Various analyses
 <link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
 
 
-<div id="fertiliy-rate-school-entrollment-life-expectancy-and-gdp" class="section level2">
-<h2>Fertiliy Rate, School Entrollment, Life Expectancy and GDP</h2>
-<p>The purpose of this project is to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.</p>
+<div id="school-entrollment-gdp-per-capita-and-fertiliy-rate" class="section level2">
+<h2>School entrollment, GDP per capita and fertiliy rate</h2>
+<p>The purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.</p>
 <div id="loading-inspecting-and-joining-datasets" class="section level3">
 <h3>Loading, inspecting and joining datasets</h3>
 <p><strong>Loading data</strong></p>
@@ -73,7 +73,7 @@ unique(worldbank_data_region[is.na(worldbank_data_region$region),]$country) #ide
   labs(x=&quot;GDP Per Capita&quot;, y= &quot;Fertility Rate&quot;, title=&quot;The Fertility Rate in Rich Countries is Decreasing&quot;, subtitle = &quot;Relationship between fertility rate (average number of children per woman) and GDP per capita ($)&quot;)+
   scale_x_continuous(labels = scales::dollar)+ #added dollar signs
   NULL</code></pre>
-<p><img src="/blogs/blog8b_files/figure-html/fertility_rate_GDP-1.png" width="1440" style="display: block; margin: auto;" />
+<p><img src="/blogs/blog8_files/figure-html/fertility_rate_GDP-1.png" width="1440" style="display: block; margin: auto;" />
 These faceted plots demonstrate a clear relationship for all regions besides Middle East &amp; North Africa and Sub-Saharan Africa. Evidently, in all other regions, fertility rate falls sharply as GDP per capita rises, until a certain GDP threshold, at which point further increases in GDP/capita is no longer correlated with drastic changes in fertility rate. This suggests a clear negative correlation between fertility, but only in countries with relatively low GDP per capita, where GDP increases have a marked effect on fertility. Indeed, we find that as GDP per capita rises, healthcare and education access and provision improves, child mortality rates fall, and families are capable of raising the number of children they desire without the need to have many more children (high fertility rates) to hedge against potential risks.</p>
 <p>In the two regional outliers, we find that while at relatively low levels of GDP per capita, GDP per capita increases are correlated with decreased fertility rates, past a certain point increased GDP per capita is positively correlated with fertility rates. This u-shaped relationship is explained by the fact that in early stages of development, families choose to have many children to ‘hedge’ against high mortality rates, since children are assets in the labour market. Therefore, in countries with relatively low levels of GDP per capita, fertility rates are high. However, as GDP per capita increases, families can afford better healthcare and nutrition and therefore child mortality falls, meaning fertility rates decrease in line with mortality rates. However, once GDP per capita has reached a relatively high point, families are then sufficiently well-off to sustain larger families, and children become luxury goods, meaning fertility rates increase with disposable income.</p>
 </div>
@@ -95,7 +95,7 @@ p2 &lt;-ggplot(worldbank_data_region, aes(x=School_enrollment_primary, y=Fertili
   labs(x=&quot;Primary School Enrollment (%)&quot;, y= &quot;Fertility Rate&quot;, subtitle = &quot;Relationship between school enrollment and fertility rate \nbetween 1960 and 2016 by region&quot;) + scale_x_continuous(breaks=seq(0, 100, by = 10), limits=c(0,100)) + scale_y_continuous(breaks=seq(2, 7, by = 1), limits=c(2,7))
 
 p1+p2+ plot_annotation(&#39;Primary School Enrollment is Negatively Correlated with Fertility Rate Across All Regions&#39;)</code></pre>
-<p><img src="/blogs/blog8b_files/figure-html/primary_enrolment_and_fertility-1.png" width="1248" />
+<p><img src="/blogs/blog8_files/figure-html/primary_enrolment_and_fertility-1.png" width="1248" />
 The scatterplots above depict a strong relationship between fertility rate and primary school enrollment. On average, across all regions, higher the school enrollment rate is correlated with a lower fertility rate. This is not surprising, as with an education women have greater job opportunities and are less dependent on raising a family to provide children for family labour.</p>
 <p>This relationship is most pronounced in the Middle East &amp; North Africa and South Asia, which shows the steepest negative correlation between primary school enrolment and fertility, though only in the 75%-100% school enrollment interval. This demonstrates how the relationship between the two variables is relatively weak at lower levels of school enrolment, and becomes pronounced only when school enrollment increases from an already relatively high level, i.e. from around 75% enrolment to 100% enrollment. Indeed, while increasing from 25% to 75% enrolment is correlated with a decrease of approximately 1 in fertility rate, increasing from 75% to 100% school enrolment is correlated with a decrease in fertility rate of approximately 2.</p>
 <p>This implies that fertility rates are only consistently and strongly negatively correlated with primary school enrollment once enrollment has surpassed a certain threshold, which appears to be approximately 75%. This suggests that women only really start to choose not to have children once a sufficiently large portion of their country/region is educated, though the reason for this is unclear.</p>
@@ -109,7 +109,7 @@ The scatterplots above depict a strong relationship between fertility rate and p
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
   labs(x=&quot;&quot;, y= &quot;Mortality Rate (per 1,000 live births)&quot;, title=&quot;Under-5 Child Mortality Rate Has Decreased in All World Regions Since 1960&quot;, subtitle = &quot;Evolution of under-5 child mortality rate by region, 1960-2016&quot;) + scale_x_continuous(breaks=seq(1960, 2016, by = 5), limits=c(1960,2016)) + scale_y_continuous(breaks=seq(0, 250, by = 25), limits=c(0,250)) + NULL</code></pre>
-<p><img src="/blogs/blog8b_files/figure-html/mortality_rate_by_region-1.png" width="960" />
+<p><img src="/blogs/blog8_files/figure-html/mortality_rate_by_region-1.png" width="960" />
 We can see that the Mortality Rates for the given 1960-2016 period have declined in every Region. It is important to note that “North America”,“Latin America &amp; Caribbean” and “Middle East &amp; North Africa” have shown convexity in their decline and hence the change in Mortality Rates was greater earlier on in these regions. In particular, Sub-Saharan Africa has seen the most recent and pronounced improvement in under-5 child mortality rates, though rates remain considerably higher in this region than the rest of the world. South Asia has experienced a more prolonged and steep decline in its child mortality rate, resulting in it falling from being the region with the highest child mortality rate in 1960 to a rate similar to most other regions, besides Europe &amp; Central Asia and North America. Let us look at the country wide trends:</p>
 <pre class="r"><code>#we plot country-wide under-5 child mortality over time
  ggplot(data = worldbank_data_region , mapping = aes(x = year , y = Mortality_rate_under5 , colour= country))+
@@ -118,7 +118,7 @@ We can see that the Mortality Rates for the given 1960-2016 period have declined
    facet_wrap(~region, scales=&quot;free&quot;) +  theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
    theme(legend.position=&quot;none&quot;) + labs(x=&quot;&quot;, y= &quot;Mortality Rate (per 1,000 live births)&quot;, title=&quot;There are Country-Level Differences in Under-5 Mortality Rates Within Regions&quot;, subtitle = &quot;Evolution of under-5 child mortality rate by country within each region, 1960-2016&quot;) + scale_x_continuous(breaks=seq(1960, 2016, by = 5), limits=c(1960,2016)) </code></pre>
-<p><img src="/blogs/blog8b_files/figure-html/country_wide_mortality_rates-1.png" width="1440" style="display: block; margin: auto;" />
+<p><img src="/blogs/blog8_files/figure-html/country_wide_mortality_rates-1.png" width="1440" style="display: block; margin: auto;" />
 We can see that the plots for each country are monotonically decreasing. There is only one instance of a country’s child mortality rate in the “Sub-Saharan Africa” region that is not monotonous. Hence, we can conclude that the “Absolute Difference in Mortality Rates” and “Percentage Change in Mortality Rates” in the years where data is available for a country are sensible metrics to gauge the improvement in mortality rates.</p>
 <p>Finally, let us then find out the 5 countries in each region with greatest and least improvement in mortality rates:</p>
 <pre class="r"><code>change_mortality&lt;-worldbank_data_region %&gt;%

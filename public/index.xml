@@ -32,14 +32,35 @@ I graduated with honours in Business, Economics and Social Sciences from Vienna 
     </item>
     
     <item>
-      <title>HIV Rate, Life Expectancy, Fertility Rate and GDP</title>
+      <title>Does School Enrollment and GDP per Capita Affect the Fertility Rate?</title>
+      <link>/blogs/blog8/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog8/</guid>
+      <description>School entrollment, GDP per capita and fertiliy rateThe purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
+Loading, inspecting and joining datasetsLoading data
+The first step, is to load the data: I load the worldbank data instead is loaded from the package wbstats.</description>
+    </item>
+    
+    <item>
+      <title>Does the HIV Rate Affect Life Expectancy?</title>
       <link>/blogs/blog7/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog7/</guid>
-      <description>HIV Rate, Life Expectancy and GDPThe purpose of this project is to analyze the relationship between HIV rate, life expectancy and GDP per capita by regions.
+      <description>HIV Rate, Life ExpectancyThe purpose of this project is to analyze the relationship between HIV rate and life expectancy by regions.
 Loading, inspecting and joining datasetsLoading data
-The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats.</description>
+The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date.</description>
+    </item>
+    
+    <item>
+      <title>How much does it cost to sleep in Copenhagen?</title>
+      <link>/blogs/blog4/</link>
+      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/blog4/</guid>
+      <description>Executive SummaryOverviewThe purpose of this report is to explore data on AirBnB listings in Copenhagen and understand the key drivers of price variability, specifically focused on the price for a 4-night stay for 2 guests.
+The ProblemWhat is the best model to predict overall price of AirBnB accommodation in Copenhagen for 2 people wishing to spend 4 nights in the city?</description>
     </item>
     
     <item>
@@ -50,17 +71,6 @@ The first step, is to load the data: I load the gapminder HIV data and life expe
       <guid>/blogs/blog5/</guid>
       <description>Climate change and temperature anomaliesThe whole world is talking about climate change and global warming. Let’s look at the data from Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies in the Northern Hemisphere at NASA’s Goddard Institute for Space Studies and analyze if the data confirms global warming.
 Loading, inspecting and selecting dataLoading dataAs first step, I load the data with the function read_csv().</description>
-    </item>
-    
-    <item>
-      <title>Life Expectancy, School enrollment, Fertility Rate and GDP</title>
-      <link>/blogs/blog8/</link>
-      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
-      
-      <guid>/blogs/blog8/</guid>
-      <description>Fertiliy Rate, School Entrollment, Life Expectancy and GDPThe purpose of this project is to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
-Loading, inspecting and joining datasetsLoading data
-The first step, is to load the data: I load the worldbank data instead is loaded from the package wbstats.</description>
     </item>
     
     <item>
