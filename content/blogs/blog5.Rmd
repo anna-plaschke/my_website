@@ -94,7 +94,7 @@ tidyweather<- weather %>%
 ### Plotting Information
 
 
-I plot the data using a time-series scatter plot, and add a trendline. To do that, we first need to create a new variable called `date` in order to ensure that the `delta` values are plotted chronologically.
+I plot the data using a time-series scatter plot, and add a trendline. To do that, I first need to create a new variable called `date` in order to ensure that the `delta` values are plotted chronologically.
 
 ```{r scatter_plot,fig.height=7, fig.width=10, fig.align="center"}
 
@@ -116,7 +116,7 @@ ggplot(tidyweather, aes(x=date, y = delta))+ #let's see if the date influeneces 
   theme(axis.title=element_text()) #add the title (previously deleted by theme-selection)
     
 ```
-In the scatterplot we see the monthly temperature deviations from 1880-2016 using as a base period the average between 1951-1980. The overall trend seems to be an increase in temperature deviations over the analysed time period. Since 1980, the temperature increase has been even higher. 
+In the scatterplot I see the monthly temperature deviations from 1880-2016 using as a base period the average between 1951-1980. The overall trend seems to be an increase in temperature deviations over the analysed time period. Since 1980, the temperature increase has been even higher. 
 
 
 **Is the effect of increasing temperature more pronounced in some months?**
@@ -171,7 +171,7 @@ comparison <- tidyweather %>%
 ```
 
 **Density plot**
-Now that I have the `interval` variable, I can create a density plot to study the distribution of monthly deviations (`delta`), grouped by the different time periods we are interested in. I set `fill` to `interval` to group and color the data by different time periods.
+Now that I have the `interval` variable, I can create a density plot to study the distribution of monthly deviations (`delta`), grouped by the different time periods I are interested in. I set `fill` to `interval` to group and color the data by different time periods.
 
 ```{r density_plot, fig.height=7, fig.width=10, fig.align="center"}
 
@@ -279,7 +279,7 @@ visualize(boot_delta) +
 
 **So, is it really getting warm in here?**
 
-These investigations demonstrate that monthly temperature deviations, versus a 1951-1980 base period, have been increasing sharply over the past 50 years. While there are no immediately evident patterns in monthly deviations over time, we find that mean deviations vary cyclically, and are greatest in Spring and Autumn months, peaking in March and October. This means that, relative to months in the 1951-1980 period, Spring and Autumn months have seen the greatest temperature increases in recent years. Exploring trends periodically, our initial overview of monthly deviations is ratified by the shifting distributions of monthly temperature anomalies across periods. It is evident that the periods 1981-2010 and 2011-present mark sharp upward deviations in temperature, on average, relative to the 1951-1980 base period, and to an even greater extent relative to the 1881-1920 period. Evaluating anomalies on an annual basis, we find not only that deviations have increased over the overall period surveyed, but that they have been increasing exponentially - the size of temperature anomalies increasing more in the past 20 years than in the previous 100.
+These investigations demonstrate that monthly temperature deviations, versus a 1951-1980 base period, have been increasing sharply over the past 50 years. While there are no immediately evident patterns in monthly deviations over time, I find that mean deviations vary cyclically, and are greatest in Spring and Autumn months, peaking in March and October. This means that, relative to months in the 1951-1980 period, Spring and Autumn months have seen the greatest temperature increases in recent years. Exploring trends periodically, our initial overview of monthly deviations is ratified by the shifting distributions of monthly temperature anomalies across periods. It is evident that the periods 1981-2010 and 2011-present mark sharp upward deviations in temperature, on average, relative to the 1951-1980 base period, and to an even greater extent relative to the 1881-1920 period. Evaluating anomalies on an annual basis, I find not only that deviations have increased over the overall period surveyed, but that they have been increasing exponentially - the size of temperature anomalies increasing more in the past 20 years than in the previous 100.
 
 Having observed steep increases in monthly temperature deviations over time, as well as periodic and annual deviations, our confidence interval demonstrates that even the most conservative temperature anomalies, of 0.92, are likely to have severe repercussions according  to NASA's historical evaluation. As a whole, this data paints a worrying picture of the future of our planet and the need for urgent action to moderate exponential temperature increases which threaten the habitability of Earth. 
 

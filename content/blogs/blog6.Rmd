@@ -114,19 +114,19 @@ This plot shows that Namibia is the top beer-consuming country, followed by the 
 Now, I follow exactly the same procedure with wine to create a plot that shows the top 25 wine consuming countries:
 ```{r wine_plot, fig.width=10}
 
-#We use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
+#I use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
 
 wine <- drinks %>% 
   select(country, wine_servings) %>% 
   arrange(desc(wine_servings))
 
-#We again use the pipe to select only the top 25 entries in the list created above
+#I again use the pipe to select only the top 25 entries in the list created above
 
 top25_wine <- wine %>% 
   
   head(25)
 
-#We use ggplot() to plot only the top 25 entries summarised in top25_wine, adjusting the x-axis labels for readability, as well as colour, axis labels and title
+#I use ggplot() to plot only the top 25 entries summarised in top25_wine, adjusting the x-axis labels for readability, as well as colour, axis labels and title
 
 ggplot(top25_wine, aes(y = reorder(country, wine_servings), x= wine_servings),) + geom_col(fill="dark red") + labs(x="Country",y = "Wine Servings Consumed Per Person", title = "Top 25 Wine Consuming Countries") 
 
@@ -163,11 +163,11 @@ This plot shows that Grenada is the top spirit-consuming country, followed by Be
 
 ### What can be inferred from these plots?
 
-Namibia, France and Grenada have the largest per capita consumption of beer, wine and spirits, respectively. Unsurprisingly, these countries are some of the largest producers of the alcohols they consumed most. While we are familiar with French wine production, releasing 7-8 billion bottles per year, less known is Namibian ('German') beer production or Granadian spirit (read 'Rum') production figures. 
+Namibia, France and Grenada have the largest per capita consumption of beer, wine and spirits, respectively. Unsurprisingly, these countries are some of the largest producers of the alcohols they consumed most. While I are familiar with French wine production, releasing 7-8 billion bottles per year, less known is Namibian ('German') beer production or Granadian spirit (read 'Rum') production figures. 
 
 Namibia Breweries Limited (NBL) produces 214 million litres of Beer, including Tafel Lager, Heiniken and Guiness. Though approximately 60% of its production is exported, predominantly to South Africa, given the country's small (2.4 million) population, beer is widely and cheaply available, and readily consumed. Similarly, with 4 major rum distillers and a population of just 111,000 people, spirit consumption in Grenada is high even relative to infamous Russian, or even Belarusian, levels. 
 
-Finally, comparing the plots to one another, we find that the level of consumption is considerably higher in the Top 25 consumers of Spirits, than amongst the consumers of Wine or Beer. Given that spirits are generally produced in far lower volumes than either wine or beer, retaining a larger share of spirit production to meet domestic consumption demand seems to be a logical assumption. This implies that top spirit consuming countries (and thus producers) potentially export a lower share of their production than top wine and beer producing (consuming) countries. This would help to maintain depressed prices (in France, foreign export demand inflates domestic prices), fueling disproportionately high domestic consumption relative to major wine and beer producing countries.  
+Finally, comparing the plots to one another, I find that the level of consumption is considerably higher in the Top 25 consumers of Spirits, than amongst the consumers of Wine or Beer. Given that spirits are generally produced in far lower volumes than either wine or beer, retaining a larger share of spirit production to meet domestic consumption demand seems to be a logical assumption. This implies that top spirit consuming countries (and thus producers) potentially export a lower share of their production than top wine and beer producing (consuming) countries. This would help to maintain depressed prices (in France, foreign export demand inflates domestic prices), fueling disproportionately high domestic consumption relative to major wine and beer producing countries.  
 
 ### Deep Dive Germany and Italy
 

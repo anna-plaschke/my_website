@@ -80,14 +80,14 @@ I change the data type of the variable "year" in life_expectancy_clean to numeri
 To control the changes made, I skim the cleaned datasets.
 ```{r cleaning_the_data, , echo=TRUE, results='hide'}
 worldbank_data_clean <- worldbank_data %>% 
-  #we change the names to have more meaningful names, but we don't use pivot_longer as this is not needed to resolve the questions
+  #I change the names to have more meaningful names, but I don't use pivot_longer as this is not needed to resolve the questions
   rename("GDP_per_capita"=NY.GDP.PCAP.KD, 
          "School_enrollment_primary"= SE.PRM.NENR, 
          "Mortality_rate_under5"=SH.DYN.MORT,
          "Fertility_rate" =SP.DYN.TFRT.IN, 
          "year"=date)
 
-#we check if the data types have been changed
+#I check if the data types have been changed
 skim(worldbank_data_clean)
 
 ```
@@ -119,9 +119,9 @@ ggplot(worldbank_data_region, aes(x=GDP_per_capita, y=Fertility_rate))+
   NULL
 
 ```
-These faceted plots demonstrate a clear relationship for all regions besides Middle East & North Africa and Sub-Saharan Africa. Evidently, in all other regions, fertility rate falls sharply as GDP per capita rises, until a certain GDP threshold, at which point further increases in GDP/capita is no longer correlated with drastic changes in fertility rate. This suggests a clear negative correlation between fertility, but only in countries with relatively low GDP per capita, where GDP increases have a marked effect on fertility. Indeed, we find that as GDP per capita rises, healthcare and education access and provision improves, child mortality rates fall, and families are capable of raising the number of children they desire without the need to have many more children (high fertility rates) to hedge against potential risks. 
+These faceted plots demonstrate a clear relationship for all regions besides Middle East & North Africa and Sub-Saharan Africa. Evidently, in all other regions, fertility rate falls sharply as GDP per capita rises, until a certain GDP threshold, at which point further increases in GDP/capita is no longer correlated with drastic changes in fertility rate. This suggests a clear negative correlation between fertility, but only in countries with relatively low GDP per capita, where GDP increases have a marked effect on fertility. Indeed, I find that as GDP per capita rises, healthcare and education access and provision improves, child mortality rates fall, and families are capable of raising the number of children they desire without the need to have many more children (high fertility rates) to hedge against potential risks. 
 
-In the two regional outliers, we find that while at relatively low levels of GDP per capita, GDP per capita increases are correlated with decreased fertility rates, past a certain point increased GDP per capita is positively correlated with fertility rates. This u-shaped relationship is explained by the fact that in early stages of development, families choose to have many children to 'hedge' against high mortality rates, since children are assets in the labour market. Therefore, in countries with relatively low levels of GDP per capita, fertility rates are high. However, as GDP per capita increases, families can afford better healthcare and nutrition and therefore child mortality falls, meaning fertility rates decrease in line with mortality rates. However, once GDP per capita has reached a relatively high point, families are then sufficiently well-off to sustain larger families, and children become luxury goods, meaning fertility rates increase with disposable income. 
+In the two regional outliers, I find that while at relatively low levels of GDP per capita, GDP per capita increases are correlated with decreased fertility rates, past a certain point increased GDP per capita is positively correlated with fertility rates. This u-shaped relationship is explained by the fact that in early stages of development, families choose to have many children to 'hedge' against high mortality rates, since children are assets in the labour market. Therefore, in countries with relatively low levels of GDP per capita, fertility rates are high. However, as GDP per capita increases, families can afford better healthcare and nutrition and therefore child mortality falls, meaning fertility rates decrease in line with mortality rates. However, once GDP per capita has reached a relatively high point, families are then sufficiently well-off to sustain larger families, and children become luxury goods, meaning fertility rates increase with disposable income. 
 
 ### Is there a relationship between primary school enrollment and fertility rate?
 
@@ -167,11 +167,11 @@ ggplot(worldbank_data_region, aes(x=year, y=Mortality_rate_under5, colour=region
   labs(x="", y= "Mortality Rate (per 1,000 live births)", title="Under-5 Child Mortality Rate Has Decreased in All World Regions Since 1960", subtitle = "Evolution of under-5 child mortality rate by region, 1960-2016") + scale_x_continuous(breaks=seq(1960, 2016, by = 5), limits=c(1960,2016)) + scale_y_continuous(breaks=seq(0, 250, by = 25), limits=c(0,250)) + NULL
 
 ```
-We can see that the Mortality Rates for the given 1960-2016 period have declined in every Region. It is important to note that "North America","Latin America & Caribbean" and "Middle East & North Africa" have shown convexity in their decline and hence the change in Mortality Rates was greater earlier on in these regions. In particular, Sub-Saharan Africa has seen the most recent and pronounced improvement in under-5 child mortality rates, though rates remain considerably higher in this region  than the rest of the world. South Asia has experienced a more prolonged and steep decline in its child mortality rate, resulting in it falling from being the region with the highest child mortality rate in 1960 to a rate similar to most other regions, besides Europe & Central Asia and North America. Let us look at the country wide trends:
+I can see that the Mortality Rates for the given 1960-2016 period have declined in every Region. It is important to note that "North America","Latin America & Caribbean" and "Middle East & North Africa" have shown convexity in their decline and hence the change in Mortality Rates was greater earlier on in these regions. In particular, Sub-Saharan Africa has seen the most recent and pronounced improvement in under-5 child mortality rates, though rates remain considerably higher in this region  than the rest of the world. South Asia has experienced a more prolonged and steep decline in its child mortality rate, resulting in it falling from being the region with the highest child mortality rate in 1960 to a rate similar to most other regions, besides Europe & Central Asia and North America. Let us look at the country wide trends:
 
 ```{r country_wide_mortality_rates, fig.height=10, fig.width=15}
 
-#we plot country-wide under-5 child mortality over time
+#I plot country-wide under-5 child mortality over time
  ggplot(data = worldbank_data_region , mapping = aes(x = year , y = Mortality_rate_under5 , colour= country))+
    geom_point(size=0.5, na.rm=TRUE) +
    geom_smooth(se = FALSE,size=0.5, na.rm=TRUE) +
@@ -180,7 +180,7 @@ We can see that the Mortality Rates for the given 1960-2016 period have declined
    theme(legend.position="none") + labs(x="", y= "Mortality Rate (per 1,000 live births)", title="There are Country-Level Differences in Under-5 Mortality Rates Within Regions", subtitle = "Evolution of under-5 child mortality rate by country within each region, 1960-2016") + scale_x_continuous(breaks=seq(1960, 2016, by = 5), limits=c(1960,2016)) 
 
 ```
-We can see that the plots for each country are monotonically decreasing. There is only one instance of a country's child mortality rate in the "Sub-Saharan Africa" region that is not monotonous. Hence, we can conclude that the "Absolute Difference in Mortality Rates" and "Percentage Change in Mortality Rates" in the years where data is available for a country are sensible metrics to gauge the improvement in mortality rates. 
+I can see that the plots for each country are monotonically decreasing. There is only one instance of a country's child mortality rate in the "Sub-Saharan Africa" region that is not monotonous. Hence, I can conclude that the "Absolute Difference in Mortality Rates" and "Percentage Change in Mortality Rates" in the years where data is available for a country are sensible metrics to gauge the improvement in mortality rates. 
 
 Finally, let us then find out the 5 countries in each region with greatest and least improvement in mortality rates:
 
