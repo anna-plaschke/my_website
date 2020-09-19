@@ -50,7 +50,7 @@ library(patchwork)
 
 Germans drink beer, Italians drink wine and in Russia they drink Vodka.
 
-These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consume per capita? And Italiany the one with the highest wine consume? Let's find that out: The goal of this project is to analyze how the consumption of alcohol of beer, wine and spirits vary by country. 
+These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consume per capita? And Italy the one with the highest wine consume? Let's find that out: The goal of this project is to analyze how the consumption of alcohol of beer, wine and spirits vary by country. 
 
 The first step is to load the relevant data from the package Fivethirtyeight.
 
@@ -154,7 +154,7 @@ top25_spirit <- spirit %>%
 #I use ggplot() to plot only the top 25 entries summarised in top25_spirit, adjusting the x-axis labels for readibility, as well as colour, axis labels and title
 
 ggplot(top25_spirit, aes(y = reorder(country, spirit_servings), x= spirit_servings),) + 
-  geom_col(fill="white") + 
+  geom_col(fill="white", color="black") + 
   labs(y="Country",x = "Spirit Servings Consumed Per Person", title = "Top 25 spirit Consuming Countries") +
   NULL
 
@@ -171,8 +171,9 @@ Finally, comparing the plots to one another, I find that the level of consumptio
 
 ### Deep Dive Germany and Italy
 
-So, surprisingly, Germany is not the country where the people consume most beer, but people from Namibia consume more per person. And french people drink more wine that Italians! But do germans drink more beer than any other type of alcohol, and Italians wine?
-Let's figure that out:
+So, by now we have found out that Germany is not the country with the highest beer consumption as people from Namibia consume more per person. And French people enjoy on average more glasses of wine per person than Italians do! But do Germans drink more beer than any other type of alcohol, and Italians more wine?
+
+Let's look at the data:
 ```{r, germany, fig.height=5, fig.width=15}
 library(patchwork)
 drinks_longer_germany <- drinks %>% 

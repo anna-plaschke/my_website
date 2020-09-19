@@ -18,7 +18,7 @@
       
       <guid>/blogs/blog6/</guid>
       <description>Where Do People Drink The Most Beer, Wine And Spirits?Germans drink beer, Italians drink wine and in Russia they drink Vodka.
-These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consume per capita? And Italiany the one with the highest wine consume? Let’s find that out: The goal of this project is to analyze how the consumption of alcohol of beer, wine and spirits vary by country.</description>
+These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consume per capita? And Italy the one with the highest wine consume? Let’s find that out: The goal of this project is to analyze how the consumption of alcohol of beer, wine and spirits vary by country.</description>
     </item>
     
     <item>
@@ -38,13 +38,13 @@ The first step, is to load the data: I load the worldbank data instead is loaded
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog7/</guid>
-      <description>HIV Rate, Life ExpectancyThe purpose of this project is to analyze the relationship between HIV rate and life expectancy by regions.
+      <description>HIV Rate and Life ExpectancyThe purpose of this project is to analyze the relationship between HIV rate and life expectancy by regions.
 Loading, inspecting and joining datasetsLoading data
 The first step, is to load the data: I load the gapminder HIV data and life expectancy data using read_csv to convert the csv files. The worldbank data instead is loaded from a package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date.</description>
     </item>
     
     <item>
-      <title>How much does it cost to sleep in Copenhagen?</title>
+      <title>How much Does it Cost to Sleep in Copenhagen?</title>
       <link>/blogs/blog4/</link>
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
@@ -60,7 +60,8 @@ The ProblemWhat is the best model to predict overall price of AirBnB accommodat
       
       <guid>/blogs/blog5/</guid>
       <description>Climate change and temperature anomaliesThe whole world is talking about climate change and global warming. Let’s look at the data from Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies in the Northern Hemisphere at NASA’s Goddard Institute for Space Studies and analyze if the data confirms global warming.
-Loading, inspecting and selecting dataLoading dataAs first step, I load the data with the function read_csv().</description>
+Loading, inspecting and selecting dataLoading data
+As first step, I load the data with the function read_csv().</description>
     </item>
     
   </channel>

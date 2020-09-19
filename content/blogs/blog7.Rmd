@@ -47,7 +47,7 @@ library(scales)
 ```
 
 
-## HIV Rate, Life Expectancy
+## HIV Rate and Life Expectancy
 The purpose of this project is to analyze the relationship between HIV rate and life expectancy by regions. 
 
 ### Loading, inspecting and joining datasets

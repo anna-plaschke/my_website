@@ -55,6 +55,7 @@ The whole world is talking about climate change and global warming. Let's look a
 ### Loading, inspecting and selecting data
 
 **Loading data**
+
 As first step, I load the data with the function read_csv().
 
 ```{r weather_data, cache=TRUE}
@@ -71,6 +72,7 @@ weather <-
 ```
 
 **Inspecting data**
+
 Then, I inspect the data to detect the structure of the dataset, verify data types and missing observations. 
 ```{r inspecting_the_dataframe}
 #I inspect the dataframe's key variables and structure using skim
@@ -92,7 +94,6 @@ tidyweather<- weather %>%
 ```
 
 ### Plotting Information
-
 
 I plot the data using a time-series scatter plot, and add a trendline. To do that, I first need to create a new variable called `date` in order to ensure that the `delta` values are plotted chronologically.
 
@@ -150,6 +151,7 @@ p1+p2 #I want to depict both scatterplots next to each other
 
 ```
 **Grouping data** 
+
 It is sometimes useful to group data into different time periods to study historical data. But first, I inspect the `comparison` dataframe by clicking on it in the `Environment` pane.
 
 ```{r intervals}
@@ -171,6 +173,7 @@ comparison <- tidyweather %>%
 ```
 
 **Density plot**
+
 Now that I have the `interval` variable, I can create a density plot to study the distribution of monthly deviations (`delta`), grouped by the different time periods I are interested in. I set `fill` to `interval` to group and color the data by different time periods.
 
 ```{r density_plot, fig.height=7, fig.width=10, fig.align="center"}
@@ -265,7 +268,6 @@ percentile_ci %>%
 
 ```
 This bootstrap-calculated confidence interval demonstrates that the 95% confidence interval for average annual delta, from 2011-present, is 0.917-1.02 - almost identical to the output from the manual calculation.
-
 
 Now, I plot this bootstrapped confidence interval as follows:
 ```{r, plotting_the_bootstrap_ci, fig.height=5, fig.width=12, fig.align="center"}
