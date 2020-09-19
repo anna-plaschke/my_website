@@ -110,7 +110,7 @@ disqusShortname = ""
       
     [[params.tiles.showcase]]
       title = "Does the HIV Rate Affect Life Expectancy?"
-      subtitle = "Relationship between HIV rate and life expectancy"
+      subtitle = "Relationship between HIV rate and life expectancy by region"
       image = "pic04.jpg"
       url = "blogs/blog7"
 

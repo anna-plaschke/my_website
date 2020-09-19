@@ -3,12 +3,12 @@ categories:
 - ""
 - ""
 date: "2020-09-14T22:42:51-05:00"
-description: Is life expactancy influenced by the HIV rate?
+description: Relationship between HIV rate and life expectancy by region
 draft: false
 image: pic09.jpg
 keywords: ""
 slug: blog7
-title: HIV Rate, Life Expectancy, Fertility Rate and GDP
+title: Does the HIV Rate Affect Life Expectancy?
 subtitle: Various analyses
 ---
 
