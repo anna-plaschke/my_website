@@ -3,12 +3,12 @@ categories:
 - ""
 - ""
 date: "2020-09-14T22:42:51-05:00"
-description: Does school enrollment and GDP per capita affect the fertility rate? How has mortality rate for under 5 changed by region?
+description: Does school enrollment and GDP per capita affect the fertility rate? How has mortality rate under 5 changed by region?
 draft: false
 image: pic12.jpg
 keywords: ""
 slug: blog8
-title: Life Expectancy, School enrollment, Fertility Rate and GDP
+title: Influence of School enrollment and GDP on the Fertility Rate
 subtitle: Various analyses
 ---
 
