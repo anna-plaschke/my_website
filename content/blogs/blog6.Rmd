@@ -11,7 +11,7 @@ slug: blog6
 title: Alcohol Consumption by Country
 ---
 
-```{r setup}
+```{r setup, warning=FALSE, message=FALSE, echo=FALSE}
 knitr::opts_chunk$set(
   message = FALSE, 
   warning = FALSE, 
@@ -182,7 +182,7 @@ drinks_longer_germany <- drinks %>%
 
 p1 <- ggplot(drinks_longer_germany, aes(y = reorder(type, quantity), x= quantity),) + 
   geom_col(fill="yellow") + 
-  labs(y="",x = "Servings Consumed Per Person", title = "Germans do love beer!", subtitle= "Alcohol consumption of beer, wine, and spirits in Germany") 
+  labs(y="",x = "Servings Consumed Per Person", title = "Germans do love beer!", subtitle= "Alcohol consumption of beer, wine, and spirits in Germany", colour="white") 
 
 drinks_longer_italy <- drinks %>% 
   filter(country == "Italy") %>% 
@@ -193,7 +193,6 @@ p2 <- ggplot(drinks_longer_italy, aes(y = reorder(type, quantity), x= quantity),
   geom_col(fill="dark red") + 
   labs(y="",x = "Servings Consumed Per Person", title = "... and Italians wine!", subtitle= "Alcohol consumption of beer, wine, and spirits in Italy")
 
-
 p1 + p2
 ```
-
+Looking at the alcohol consumption behavior in Germany and Italy the stereotypes are not that wrong at all in the end. In Germany beer is the alcohol that is consumed most, and in Italy wine.
