@@ -45,11 +45,6 @@ countries &lt;-  wbstats::wb_cachelist$countries</code></pre>
 <p><strong>Inspecting the dataframes (life_expectancy, worldbank_data, and HIV)</strong></p>
 <p>Before joining the datasets I need to tidy the data first.
 I skim the datasets to get a basic understanding of the structure, the missingness and the variable types.</p>
-<pre class="r"><code>#Ifirst skim the dataset to find missing values and understand the structure of the datatset
-
-skim(worldbank_data)
-skim(hiv)
-skim(life_expectancy)</code></pre>
 <p>The dataset HIV rate has extensive missingness. Notably, in the World Bank data, Primary School enrollment has just a 33.4% complete rate. In the HIV data, there is a high rate of completeness across years, but only after 1987. In the Life Expectancy dataset, there is very low levels of missingness relative to the data size, with approximately 98% completeness across variables (whether retrospective or forecast).</p>
 <p><strong>Tidying datasets</strong></p>
 <p>Then I use the function pivot_longer() to tidy the datasets where needed creating life_expectancy_clean and hiv_clean. In this case, I did it for life expectancy and for hiv data. Because I will not need a different structure for the worldbank data I don’t tidy this dataset. Furthermore, I change the data type of the variable “year” in life_expectancy_clean and hiv_clean to numerical ones to be able to join them with the worlbank data. I change also the name of the variables of the worldbank data to more meaningful names.
