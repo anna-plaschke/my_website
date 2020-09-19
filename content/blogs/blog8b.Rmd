@@ -8,7 +8,7 @@ draft: false
 image: pic12.jpg
 keywords: ""
 slug: blog8
-title: Influence of School Enrollment and GDP on the Fertility Rate
+title: Does School Enrollment and GDP per Capita Affect the Fertility Rate?
 subtitle: Various analyses
 ---
 
