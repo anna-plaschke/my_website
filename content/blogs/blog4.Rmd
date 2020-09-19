@@ -126,9 +126,9 @@ listings <- vroom("http://data.insideairbnb.com/denmark/hovedstaden/copenhagen/2
 
 I conduct a thorough Exploratory Data Analysis (EDA), using questions to guide my investigation. In this phase of my analyses, I not only attempt to gain an understanding of my data, but also manipulate or 'wrangle' it so that each variable behaves as it should, and there is no unnecessary data missingness or structural problems. This allows us to dive deep into my data and uncover hidden relationships without fear of unexpected errors and without being constrained by poor data coding, since my dataset was scraped from AirBnB's public website. 
 
-**my Goals During EDA**
+**My Goals During EDA**
 
-my primary focus during EDA is to develop an understanding of the data. I are guided by the following questions for my investigations: 
+My primary focus during EDA is to develop an understanding of the data. I are guided by the following questions for my investigations: 
 
 - What are the variables of the data? Are some of them irrelevant?
 - How many missing values exist?
@@ -140,7 +140,7 @@ my primary focus during EDA is to develop an understanding of the data. I are gu
 ## Raw Values
 
 I use glimpse to have a first look at the dataset, in order to evaluate all columns and the data types.
-```{r EDA_raw_glimpse}
+```{r EDA_raw_glimpse, , echo=FALSE}
 
 #I glimpse the initial dataset
 glimpse(listings)
@@ -149,7 +149,7 @@ glimpse(listings)
 Using glimpse() I find that there 28,523 observations (rows) across 106 variables (columns). I can already detect that some data types are assigned wrongly (for example the host_acceptance_rate is assigned as character, but should be numeric, double). I bear this in mind, alongside an awareness of other potential issues with the data to be addressed as I proceed. 
 
 Then, I skim the data to get a better picture of the dataset:
-```{r EDA_summary_stats_skim}
+```{r EDA_summary_stats_skim, , echo=FALSE}
 #I skim the listings data in order to identify variable types and distributions
 skim(listings)
 
@@ -233,7 +233,7 @@ typeof(listings_cleaned$extra_people)
 ```
 
 I now inspect the new dataset:
-```{r, skim_data_cleaned}
+```{r, skim_data_cleaned, echo=FALSE}
 #I check that my recording has been successful
 skim(listings_cleaned)
 ```

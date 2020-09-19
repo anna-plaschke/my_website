@@ -85,7 +85,7 @@ countries <-  wbstats::wb_cachelist$countries
 Before joining the datasets I need to tidy the data first. 
 I skim the datasets to get a basic understanding of the structure, the missingness and the variable types. 
 
-```{r evaluating_the_data, echo=TRUE, results='hide'}
+```{r evaluating_the_data, echo=TRUE, results='hide',echo=FALSE}
 
 #Ifirst skim the dataset to find missing values and understand the structure of the datatset
 
