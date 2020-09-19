@@ -38,20 +38,8 @@ The first step, is to load the data: I load the gapminder HIV data and life expe
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog5/</guid>
-      <description>Climate change and temperature anomaliesThe whole world is talking about climate change and global warming. Let’s look at the data from Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies in the Northern Hemisphere at NASA’s Goddard Institute for Space Studies and analyse what the data states.
-Loading, inspecting and selecting dataLoading dataAs first step, I load the data with the function read_csv().
-#I use: data on the *Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies* in the Northern Hemisphere at [NASA&amp;#39;s Goddard Institute for Space Studies](https://data.</description>
-    </item>
-    
-    <item>
-      <title>Life Expectancy, School enrollment, Fertility Rate and GDP</title>
-      <link>/blogs/blog8/</link>
-      <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
-      
-      <guid>/blogs/blog8/</guid>
-      <description>Fertiliy Rate, School Entrollment, Life Expectancy and GDPThe purpose of this project is to analyze the relationship between school enrollment, fertility rate, life expectancy and GDP per capita by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
-Loading, inspecting and joining datasetsLoading data
-The first step, is to load the data: I load the gapminder life expectancy data using read_csv to convert the csv files.</description>
+      <description>Climate change and temperature anomaliesThe whole world is talking about climate change and global warming. Let’s look at the data from Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies in the Northern Hemisphere at NASA’s Goddard Institute for Space Studies and analyze if the data confirms global warming.
+Loading, inspecting and selecting dataLoading dataAs first step, I load the data with the function read_csv().</description>
     </item>
     
     <item>
