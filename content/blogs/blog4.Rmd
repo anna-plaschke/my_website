@@ -9,14 +9,6 @@ image: copenhagen.jpg
 keywords: ""
 slug: blog4
 title: How much Does it Cost to Sleep in Copenhagen?
-output: 
-  html_document:
-      theme: flatly
-      highlight: zenburn
-      number_sections: yes
-      toc: yes
-      toc_float: yes
-      code_folding: show
 ---
 
 ```{r, setup, include=FALSE}
