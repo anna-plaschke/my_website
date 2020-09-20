@@ -17,8 +17,8 @@
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog6/</guid>
-      <description>Where Do People Drink The Most Beer, Wine And Spirits?Germans drink beer, Italians drink wine and in Russia they drink Vodka.
-These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consume per capita? And Italy the one with the highest wine consume? Let’s find that out: The goal of this project is to analyze how the consumption of alcohol of beer, wine and spirits vary by country.</description>
+      <description>Where Do People Drink The Most Beer, Wine and Spirits?Germans drink beer, Italians drink wine and in Russia they drink Vodka.
+These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consumption per capita? And Italy the one with the highest wine consumption? Let’s find that out: With this project I want to to analyze how the consumption of alcohol of beer, wine and spirits varies by country.</description>
     </item>
     
     <item>
@@ -27,9 +27,9 @@ These are only few examples of the stereotypes that exist when it comes to the d
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog8/</guid>
-      <description>School entrollment, GDP per capita and fertiliy rateThe purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
+      <description>School entrollment, GDP per capita and fertiliy rateThe purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions.
 Loading, inspecting and joining datasetsLoading data
-The first step, is to load the data: I load the worldbank data instead is loaded from the package wbstats.</description>
+The first step, is to load the data: I load the worldbank data from the package wbstats. Because I don’t need all the data I select the indicators I am interested in and filter by indicator, start- and end-date.</description>
     </item>
     
     <item>
@@ -49,8 +49,8 @@ The first step, is to load the data: I load the gapminder HIV data and life expe
       <pubDate>Mon, 14 Sep 2020 22:42:51 -0500</pubDate>
       
       <guid>/blogs/blog4/</guid>
-      <description>Executive SummaryOverviewThe purpose of this report is to explore data on AirBnB listings in Copenhagen and understand the key drivers of price variability, specifically focused on the price for a 4-night stay for 2 guests.
-The ProblemWhat is the best model to predict overall price of AirBnB accommodation in Copenhagen for 2 people wishing to spend 4 nights in the city?</description>
+      <description>AirBnB prices in CopenhagenThe purpose of this report is to explore data on AirBnB listings in Copenhagen and understand the key drivers of price variability, specifically focused on the price for a 4-night stay for 2 guests.
+Before going into detail into my analyses showing the code, I will quickly summarize the problem, approach and findings of the project:</description>
     </item>
     
     <item>

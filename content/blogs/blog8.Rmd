@@ -3,7 +3,7 @@ categories:
 - ""
 - ""
 date: "2020-09-14T22:42:51-05:00"
-description: Does school enrollment and GDP per capita affect the fertility rate? How has mortality rate under 5 changed by region?
+description: Does school enrollment and GDP per capita affect the fertility rate?
 draft: false
 image: pic12.jpg
 keywords: ""
@@ -48,13 +48,14 @@ library(scales)
 
 
 ## School entrollment, GDP per capita and fertiliy rate
-The purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions. In addition, I will look at the improvement of the mortality rate by region and by country between 1960 and 2016.
+
+The purpose of this project is to analyze the relationship between school enrollment, GDP per capita and fertility rate by regions.
 
 ### Loading, inspecting and joining datasets
 
 **Loading data**
 
-The first step, is to load the data: I load the  worldbank data instead is loaded from the package wbstats. Because I don't need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.
+The first step, is to load the data: I load the  worldbank data from the package wbstats. Because I don't need all the data I select the indicators I am interested in and filter by indicator, start- and end-date. Last but not least, I create the dataset countries from the wbstats package.
 
 
 ```{r, get_data, cache=TRUE}
@@ -125,20 +126,23 @@ In the two regional outliers, I find that while at relatively low levels of GDP 
 
 ### Is there a relationship between primary school enrollment and fertility rate?
 
-To answer that question I create a scatterplot between primary school and fertility rate:
+While it is common sense that school enrollment for women has plenty of advantages, some claim that it has a negative impasct on the fertility rate. 
+I want to find out if these negative relationship exists. To do that I create a scatterplot between primary school and fertility rate:
 
 ```{r primary_enrolment_and_fertility, fig.width=13, fig.height=5, fig.align="centre"}
 
 p1 <- ggplot(worldbank_data_region, aes(x=School_enrollment_primary, y=Fertility_rate))+ 
-  geom_smooth(se=FALSE, na.rm=TRUE, size=0.3)+
-  theme_fivethirtyeight()+
+  geom_point(alpha=0.3)+ #creating a scatterplot
+  geom_smooth(se = FALSE, na.rm=TRUE, size=0.3, colour ="red")+ #adding a correlation
+  theme_fivethirtyeight()+ # adding a theme
   theme(axis.title = element_text(), legend.title=element_blank())+
-  labs(x="Primary School Enrollment (%)", y= "Fertility Rate", subtitle = "Relationship between school enrollment and fertility rate \n between 1960 and 2016 across all regions") + scale_x_continuous(breaks=seq(0, 100, by = 10), limits=c(0,100)) + scale_y_continuous(breaks=seq(2, 7, by = 1), limits=c(2,7))
+  labs(x="Primary School Enrollment (%)", y= "Fertility Rate", subtitle = "Relationship between school enrollment and fertility rate \n between 1960 and 2016 across all regions") + scale_x_continuous(breaks=seq(0, 100, by = 10), limits=c(0,100)) + scale_y_continuous(breaks=seq(2, 7, by = 1), limits=c(2,7))+
+  NULL
 
 
 
 p2 <-ggplot(worldbank_data_region, aes(x=School_enrollment_primary, y=Fertility_rate, colour=region))+ 
-  geom_smooth(se=FALSE, na.rm=TRUE, size=0.3)+
+  geom_smooth(se = FALSE, na.rm=TRUE, size=0.3)+
   theme_fivethirtyeight()+
   theme(axis.title = element_text(), legend.title=element_blank())+
   labs(x="Primary School Enrollment (%)", y= "Fertility Rate", subtitle = "Relationship between school enrollment and fertility rate \nbetween 1960 and 2016 by region") + scale_x_continuous(breaks=seq(0, 100, by = 10), limits=c(0,100)) + scale_y_continuous(breaks=seq(2, 7, by = 1), limits=c(2,7))
@@ -146,84 +150,8 @@ p2 <-ggplot(worldbank_data_region, aes(x=School_enrollment_primary, y=Fertility_
 p1+p2+ plot_annotation('Primary School Enrollment is Negatively Correlated with Fertility Rate Across All Regions')
 
 ```
-The scatterplots above depict a strong relationship between fertility rate and primary school enrollment. On average, across all regions, higher the school enrollment rate is correlated with a lower fertility rate. This is not surprising, as with an education women have greater job opportunities and are less dependent on raising a family to provide children for family labour. 
+The scatterplots above depict a strong relationship between fertility rate and primary school enrollment. On average, across all regions besides Europe and Central Asia, a higher school enrollment rate is correlated with a lower fertility rate. This is not surprising, as with an education women have greater job opportunities and are less dependent on raising a family to provide children for family labor. Furthermore, educated women adopt modern birth control methods more often than uneducated women.
 
-This relationship is most pronounced in the Middle East & North Africa and South Asia, which shows the steepest negative correlation between primary school enrolment and fertility, though only in the 75%-100% school enrollment interval. This demonstrates how the relationship between the two variables is relatively weak at lower levels of school enrolment, and becomes pronounced only when school enrollment increases from an already relatively high level, i.e. from around 75% enrolment to 100% enrollment. Indeed, while increasing from 25% to 75% enrolment is correlated with a decrease of approximately 1 in fertility rate, increasing from 75% to 100% school enrolment is correlated with a decrease in fertility rate of approximately 2.
+This relationship is most pronounced in the Middle East & North Africa and South Asia, which shows the steepest negative correlation between primary school enrollment and fertility, though only in the 75%-100% school enrollment interval. This demonstrates how the relationship between the two variables is relatively weak at lower levels of school enrollment, and becomes pronounced only when school enrollment increases from an already relatively high level, i.e. from around 75% enrollment to 100% enrollment. Indeed, while increasing from 25% to 75% enrollment is correlated with a decrease of approximately 1 in fertility rate, increasing from 75% to 100% school enrollment is correlated with a decrease in fertility rate of approximately 2.
 
 This implies that fertility rates are only consistently and strongly negatively correlated with primary school enrollment once enrollment has surpassed a certain threshold, which appears to be approximately 75%. This suggests that women only really start to choose not to have children once a sufficiently large portion of their country/region is educated, though the reason for this is unclear. 
-
-
-### How has mortality rate for under 5 changed by region?
-In each region, I am looking for the top 5 countries that have seen the greatest improvement, as well as those 5 countries where mortality rates have had the least improvement or even deterioration.
-
-First, I look at the general trend and the trend in each region:
-
-```{r mortality_rate_by_region, fig.height=5, fig.width=10, fig.align="centre"}
-
-ggplot(worldbank_data_region, aes(x=year, y=Mortality_rate_under5, colour=region))+ 
-  geom_smooth(se=FALSE, na.rm=TRUE, size=0.5)+
-  theme_fivethirtyeight()+
-  theme(axis.title = element_text(), legend.title=element_blank())+
-  labs(x="", y= "Mortality Rate (per 1,000 live births)", title="Under-5 Child Mortality Rate Has Decreased in All World Regions Since 1960", subtitle = "Evolution of under-5 child mortality rate by region, 1960-2016") + scale_x_continuous(breaks=seq(1960, 2016, by = 5), limits=c(1960,2016)) + scale_y_continuous(breaks=seq(0, 250, by = 25), limits=c(0,250)) + NULL
-
-```
-I can see that the Mortality Rates for the given 1960-2016 period have declined in every Region. It is important to note that "North America","Latin America & Caribbean" and "Middle East & North Africa" have shown convexity in their decline and hence the change in Mortality Rates was greater earlier on in these regions. In particular, Sub-Saharan Africa has seen the most recent and pronounced improvement in under-5 child mortality rates, though rates remain considerably higher in this region  than the rest of the world. South Asia has experienced a more prolonged and steep decline in its child mortality rate, resulting in it falling from being the region with the highest child mortality rate in 1960 to a rate similar to most other regions, besides Europe & Central Asia and North America. Let us look at the country wide trends:
-
-```{r country_wide_mortality_rates, fig.height=10, fig.width=15}
-
-#I plot country-wide under-5 child mortality over time
- ggplot(data = worldbank_data_region , mapping = aes(x = year , y = Mortality_rate_under5 , colour= country))+
-   geom_point(size=0.5, na.rm=TRUE) +
-   geom_smooth(se = FALSE,size=0.5, na.rm=TRUE) +
-   facet_wrap(~region, scales="free") +  theme_fivethirtyeight()+
-  theme(axis.title = element_text(), legend.title=element_blank())+
-   theme(legend.position="none") + labs(x="", y= "Mortality Rate (per 1,000 live births)", title="There are Country-Level Differences in Under-5 Mortality Rates Within Regions", subtitle = "Evolution of under-5 child mortality rate by country within each region, 1960-2016") + scale_x_continuous(breaks=seq(1960, 2016, by = 5), limits=c(1960,2016)) 
-
-```
-I can see that the plots for each country are monotonically decreasing. There is only one instance of a country's child mortality rate in the "Sub-Saharan Africa" region that is not monotonous. Hence, I can conclude that the "Absolute Difference in Mortality Rates" and "Percentage Change in Mortality Rates" in the years where data is available for a country are sensible metrics to gauge the improvement in mortality rates. 
-
-Finally, let us then find out the 5 countries in each region with greatest and least improvement in mortality rates:
-
-```{r ranked_mortality_rate_changes}
-
-change_mortality<-worldbank_data_region %>%
-  group_by(region,country) %>%
-  arrange(desc(-year))%>%
-        summarise(first_value = first(na.omit(Mortality_rate_under5)),
-            last_value = last(na.omit(Mortality_rate_under5)),
-            count_years = length(na.omit(Mortality_rate_under5))) %>%
-  mutate(rate_diff = last_value- first_value,
-         rate_diff_percent= rate_diff/first_value)
-
-top5_percent_change<- change_mortality %>%
-  group_by(region) %>%
-  select(1:2,6:7) %>% 
-  slice_min(order_by = rate_diff_percent,n=5)
-top5_absolute_change <- change_mortality %>%
-  group_by(region) %>%
-  select(1:2,6:7) %>% 
-  slice_min(order_by = rate_diff,n=5)
-bottom5_percent_change <- change_mortality %>%
-  group_by(region) %>%
-  select(1:2,6:7) %>% 
-  slice_max(order_by = (rate_diff_percent),n=5)
-bottom5_absolute_change <- change_mortality %>%
-  group_by(region) %>%
-  select(1:2,6:7) %>% 
-  slice_min(order_by = (-rate_diff),n=5)
-
-kbl(top5_percent_change,col.names=c("Region","Country", "Change in Number of Deaths per 1,000 Live Births", "Change (%)"), caption="Improvement in Under-5 Mortality Rate: Top 5 Countries in Each Region, Ranked by % Change") %>%
-kable_styling()
-
-kbl(top5_absolute_change,col.names=c("Region","Country", "Change in Number of Deaths per 1,000 Live Births", "Change (%)"), caption="Improvement in Under-5 Mortality Rate: Top 5 Countries in Each Region, Ranked by Absolute Change") %>%
-kable_styling()
-
-kbl(bottom5_percent_change,col.names=c("Region","Country", "Change in Number of Deaths per 1,000 Live Births", "Change (%)"), caption="Improvement in Under-5 Mortality Rate: Worst 5 Countries in Each Region, Ranked by % Change") %>%
-kable_styling()
-
-kbl(bottom5_absolute_change,col.names=c("Region","Country", "Change in Number of Deaths per 1,000 Live Births", "Change (%)"), caption="Improvement in Under-5 Mortality Rate: Worst 5 Countries in Each Region, Ranked by Absolute Change") %>%
-kable_styling()
-
-```
-The tables above demonstrate the top 5 countries in each region that have seen the greatest improvement in under 5 child mortality rate over time (as ranked by percentage and absolute value), as well as the worst 5 countries which have seen the smallest improvement in under 5 child mortality rate over time (as ranked by percentage and absolute value).
-

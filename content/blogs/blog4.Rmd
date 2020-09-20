@@ -30,11 +30,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Executive Summary
-
-## Overview
+# AirBnB prices in Copenhagen
 
 The purpose of this report is to explore data on AirBnB listings in Copenhagen and understand the key drivers of price variability, specifically focused on the price for a 4-night stay for 2 guests.
+
+Before going into detail into my analyses showing the code, I will quickly summarize the problem, approach and findings of the project:
 
 ### The Problem
 
@@ -42,21 +42,21 @@ What is the best model to predict overall price of AirBnB accommodation in Copen
 
 ### Applied methodologies
 
-The research is based on conducting Exploratory Data Analysis, folloId by Geospatial Analysis to gain more context on the variables of interest and their spatial, as well as statistical, distributions, before building, evaluating and ultimately selecting an optimal regression model to predict the price of an AirBnB stay in the city. 
+The research is based on conducting Exploratory Data Analysis, followed by Geospatial Analysis to gain more context on the variables of interest and their spatial, as well as statistical, distributions, before building, evaluating and ultimately selecting an optimal regression model to predict the price of an AirBnB stay in the city. 
 
 ## My Approach and Findings
 
 ### Exploratory Data Analysis
 
-This chapter presents the very first steps Itook to tidy the data and understand its structure. 
+This chapter presents the very first steps I took to tidy the data and understand its structure. 
 
-- The data needed wrangling, since quite a few variables were not of the appropriate data type. Furthermore, a significant number of variables were either incomplete or not readily interpretable. We: adjusted the levels of some variables, clustering and recategorising them; created new cleaned variables; ensured NA values were correctly coded as such; and imputed NA's using my judgement, wherever necessary.
+- The data needed wrangling, since quite a few variables were not of the appropriate data type. Furthermore, a significant number of variables were either incomplete or not readily interpretable. I have adjusted the levels of some variables, clustering and recategorising them; created new cleaned variables; ensured NA values were correctly coded as such; and imputed NA's using my judgment, wherever necessary.
 
-- After having selected meaningful variables, summary statistics were created and then visualized in tables, density plots, bar plots and correlation matrices. In doing so, Ifound some correlations between review-related variables and listing type-related variables.
+- After having selected meaningful variables, summary statistics were created and then visualized in tables, density plots, bar plots and correlation matrices. In doing so, I found some correlations between review-related variables and listing type-related variables.
 
 ### Mapping
 
-This chapter describes geospatial analyses conducted by using the leaflet package. These mapped visualisations were created in order to glean a more holistic perspective not only of the statistical distribution of listings across certain variables and levels, but the spatial distribution of listings with certain characteristics (such as price and type). My maps include: Nightly Prices in Copenhagen, a Clustered map of AirBnB accommodation, and a comprehensive Map of nightly price, grouped by property type. I summarise some of my key geospatial findings below:
+This chapter describes geospatial analyses conducted by using the leaflet package. These mapped visualizations were created in order to glean a more holistic perspective not only of the statistical distribution of listings across certain variables and levels, but the spatial distribution of listings with certain characteristics (such as price and type). My maps include: Nightly Prices in Copenhagen, a Clustered map of AirBnB accommodation, and a comprehensive Map of nightly price, grouped by property type. I summarize some of my key geospatial findings below:
 
 - *Nightly Prices in Copenhagen Map:* listings are highly priced in central areas, especially on the inland waterways and Eastern coastline, such as the lakes and Amager
 
@@ -66,18 +66,20 @@ This chapter describes geospatial analyses conducted by using the leaflet packag
 
 ### Regression Analysis
 
-This chapter focuses on describing the process behind building myoptimal model, guiding the reader through 7 preliminary models before identifying, specifying, testing and comparing linear regression model performance. I conclude by identifying a model which I find to explain the greatest propotion of variance in price of AirBnB listings while upholding core linear regression assumptions and showing the least overfitting of all tested models. 
+This chapter focuses on describing the process behind building the optimal model, guiding the reader through 7 preliminary models before identifying, specifying, testing and comparing linear regression model performance. I conclude by identifying a model which I find to explain the greatest proportion of variance in price of AirBnB listings while upholding core linear regression assumptions and showing the least overfitting of all tested models. 
 
 **MyBest Model**
 
-In summary, my"best", or optimal, model was generated via the following core steps:
+In summary, my "best", or optimal, model was generated via the following core steps:
 
 - The data was split into training and testing data with corresponding ratio of 3:1. 
 - The best fitted model includes variables across 4 key categories: Facility & Location, Host & Reviews, Flexibility and Amenities  and has an Adjusted R2 of 46.4%
 - The model showed the least overfitting of all models tested, and showed no concerning collinearity 
-- The point estimate generated by myoptimal model for the price of a 4-night stay in Copenhagen for 2 people was $1949 with a confidence interval of $1309 to $2597
+- The point estimate generated by the optimal model for the price of a 4-night stay in Copenhagen for 2 people was $1949 with a confidence interval of $1309 to $2597
 
-# Loading Data
+# Detailed Analyses and Code
+
+### Loading Data
 
 As first step I load the required packages for all stages of my analysis. 
 
@@ -128,7 +130,7 @@ I conduct a thorough Exploratory Data Analysis (EDA), using questions to guide m
 
 **My Goals During EDA**
 
-My primary focus during EDA is to develop an understanding of the data. I are guided by the following questions for my investigations: 
+My primary focus during EDA is to develop an understanding of the data. I am guided by the following questions for my investigations:
 
 - What are the variables of the data? Are some of them irrelevant?
 - How many missing values exist?
@@ -139,24 +141,19 @@ My primary focus during EDA is to develop an understanding of the data. I are gu
 
 ## Raw Values
 
-I use glimpse to have a first look at the dataset, in order to evaluate all columns and the data types.
-```{r EDA_raw_glimpse, , echo=FALSE}
+I use glimpse to have a first look at the dataset, in order to evaluate all columns and the data types. Then, I skim the data to get a better picture of the dataset:
+```{r EDA_raw_glimpse, echo=FALSE}
 
 #I glimpse the initial dataset
 glimpse(listings)
 
-```
-Using glimpse() I find that there 28,523 observations (rows) across 106 variables (columns). I can already detect that some data types are assigned wrongly (for example the host_acceptance_rate is assigned as character, but should be numeric, double). I bear this in mind, alongside an awareness of other potential issues with the data to be addressed as I proceed. 
-
-Then, I skim the data to get a better picture of the dataset:
-```{r EDA_summary_stats_skim, , echo=FALSE}
 #I skim the listings data in order to identify variable types and distributions
 skim(listings)
 
 ```
+Using glimpse() I find that there 28,523 observations (rows) across 106 variables (columns). I can already detect that some data types are assigned wrongly (for example the host_acceptance_rate is assigned as character, but should be numeric, double). I bear this in mind, alongside an awareness of other potential issues with the data to be addressed as I proceed. 
 
-  
-  When I skim, I make 4 prominent observations:
+When I skim, I make 4 prominent observations:
 
 - Firstly, I find that a number of variables classified as character should in fact be factor (categorical) variables, on the basis that they have few unique levels. 
 
@@ -165,28 +162,6 @@ skim(listings)
 - Thirdly, I identify a number of variables with extensive missingness
 
 - Finally, I identify a number of unnecessary variables
-
-Thus, before visualizing the data I want to classify the variables correctly. Hence, I create a list of the originally assigned variables by datatype:
-
-```{r, list_numeric_datatype}
-kbl((c(colnames(listings[sapply(listings,is.numeric)]))), col.names=c("Numeric Variables")) %>% 
-  kable_styling()
-```
-
-```{r, list_character_datatype}
-kbl((c(colnames(listings[sapply(listings,is.character)]))), col.names=c("Character Variables")) %>% 
-  kable_styling()
-```
-
-```{r, list_logical_datatype}
-kbl((c(colnames(listings[sapply(listings,is.logical)]))), col.names=c("Logical Variables")) %>% 
-  kable_styling()
-```
-
-```{r, list_date_datatype}
-kbl((c(colnames(listings[sapply(listings,is.Date)]))), col.names=c("Date Variables")) %>% 
-  kable_styling()
-```
 
 ## Data Wrangling
 
@@ -254,15 +229,13 @@ skim(listings_cleaned$host_response_rate)
 I find that in the dataset 'listings' I have two different N/A values: "N/A" and NA, while in the 'listings_cleaned' dataset, both  are grouped under NA. Moreover, I detect that in the count of n_missing there is a difference of 22887. Let's count the number of "N/A" observations in 'listings', apart from the 11 NA.
 
 ```{r listings_NAs}
-
 listings%>% 
   filter(host_response_rate=="N/A") %>% 
   summarise(count=n())
-
 ```
 The observations in listings that had "N/A" as a value are exactly 22887 and this explains the difference in the number of NA's between the unclean and cleaned dataset. The conversion of data type using parse_number() converted "N/A" into NA. The variable 'host_response_rate' is a similar case, where there are hidden missing values in the unclean dataset. 
 
-Now I can be confident that my transformation of variables has been accurateand has not created unintended NAs, I move onto selecting only the most prominent variables for my subsequent analyses. 
+Now I can be confident that my transformation of variables has been accurate and has not created unintended NAs, I move onto selecting only the most prominent variables for my subsequent analyses. 
  
 ### Selecting Variables
 
@@ -307,15 +280,7 @@ listings_necessary <-
          )
 ```
 
-Now that I have created listings_necessary, I will be working only with the columns (variables) which I think could be relevant to my subsequent analyses. Note that I deliberately excluded the following:
-
-```{r, listing_excluded}
-listings %>% 
-  select(- colnames(listings_necessary)) %>% 
-  colnames
-```
-
-Therefore, variables such as the host names, host ID and descriptive variables are not in the selected list, since they do not provide any meaningful insights. However, I have not yet reduced the variables down only to those I intend to use - there are many variables here which are likely to be redundant in my final analyses, but which I must explore further to decide whether to use in their present form, transform further into a useful form, or eliminate altogether.
+Now that I have created listings_necessary, I will be working only with the columns (variables) which I think could be relevant to my subsequent analyses.Therefore, variables such as the host names, host ID and descriptive variables are not in the selected list, since they do not provide any meaningful insights. However, I have not yet reduced the variables down only to those I intend to use - there are many variables here which are likely to be redundant in my final analyses, but which I must explore further to decide whether to use in their present form, transform further into a useful form, or eliminate altogether.
 
 Before I make further evaluations of which variables matter most to my analyses, I address missingness, which is a prominent issue for a small number of my chosen variables. 
 
@@ -334,19 +299,9 @@ skim(listings_necessary)
 
 I identify a few key variables with substantial missingness, including cleaning_fee, security_deposit, bathrooms, bedrooms, beds, and review scores, among others. I address these by asking ourselves (and investigating in the chunk below):
 
-- which variables have problematic missingness?
-- how many variables have missing values?
-- what does this missingness indicate, and therefore how should I address it?
-
-*In addition, I employ the chunk below to investigate the questions:*
-
-- How many variables have missing values for cleaning_fee?
-
-I find that the number of missing values for cleaning_fee is 8968. 
-
-- What is the most likely reason for the missing observations of cleaning_fee? In other words, what does a missing value of cleaning_fee indicate?
-
-The reason for so many missing values in cleaning_fee is likely to be be the absence of cleaning_fee in those listings. Building up on this logic, I carry out the imputation of missing values of cleaning_fee by 0. The same logic is applied for the imputation of security_deposit, since its absence in the data is most likely because there is no security deposit required for the listing. 
+- Which variables have problematic missingness?
+- How many variables have missing values?
+- What does this missingness indicate, and therefore how should I address it?
 
 **Addressing Missing Values**
 
@@ -478,7 +433,7 @@ listings_necessary <- listings_necessary %>%
     is.na(host_identity_verified) ~ FALSE, 
     TRUE ~ host_identity_verified    
   ))
-# These are probably new listings which donot have their listings recorded. I impute it by a central value (Median) 
+# These are probably new listings which do not have their listings recorded. I impute it by a central value (Median) 
 listings_necessary <- listings_necessary %>%
   mutate(host_listings_count     = case_when(
     is.na(host_listings_count) ~ median(host_listings_count, na.rm =TRUE), 
@@ -510,14 +465,10 @@ kbl(count_property_type, col.names=c("Values of property type","Frequency")) %>%
 
 ```
 
-I find that the 4 most common property types are Apartment, Condominium, House and Townhouse (in that order). 
-
-I now check the percentage of the total data points that the top 4 most frequent values of property types constitute:
+I find that the 4 most common property types are Apartment, Condominium, House and Townhouse (in that order). I now check the percentage of the total data points that the top 4 most frequent values of property types constitute:
 
 ```{r factor_percentage_datapoints}
-
 (sum(count_property_type[1:4,"n"])/sum(count_property_type[,"n"]))*100
-
 ```
 
 The 4 most common property types make up 96.5% of the total listings in my data, which is certainly high enough to use a simplified version of property type. I select the top 4 values and bundle the remaining ones into "Other".
@@ -546,7 +497,7 @@ kbl(prop_type_creation_check,col.names=c("Property Type","Property Type Simplifi
 
 **Creating Other Variables**
 
-*(1) Creating accommodates_simplified*
+*Creating accommodates_simplified*
 
 I apply the same reasoning from my recoding of property_type into property_type_simplified to create other simplified variables which will be of greater use in my subsequent analyses. 
 
@@ -588,7 +539,7 @@ kbl(accommodates_simplified_creation_check,col.names=c("Accommodates","Accommoda
   kable_styling()
 ```
 
-*(2) Changing the data type of prop_type_simplified and accommodates_simplified*
+*Changing the data type of prop_type_simplified and accommodates_simplified*
 
 Now, I change the data type of the two newly created variables, making factor variables (as they have a known set of possible values but only a few values with high frequency):
 
@@ -605,30 +556,11 @@ listings_necessary <- listings_necessary %>%
 
 ```
 
-*(3) Focusing on Leisure, not business*
-
-Further, I want to focus only on listings that are not made for business travel but merely for leisure. Therefore, I count the number of business_travel_ready listings:
-
-``` {r data_filtering_business_travel_ready}
-
-#I find out the number of listings that cater to travel   
-count_is_business_travel_ready <- listings_necessary %>% 
-  count(is_business_travel_ready) %>%
-  arrange(desc(n))
-
-#I summarise this as a tabular output
-kbl(count_is_business_travel_ready, col.names=c("Business Travel Ready?","Count")) %>% 
-kable_styling()
-
-```
-
 I find that none of the listings is ready for business travel, and thus can keep all listings as leisure listings.
 
-*(4) Putting Bedrooms, Bathrooms and Beds in relation to accommodates_simplified*
+*Putting Bedrooms, Bathrooms and Beds in relation to accommodates_simplified*
 
-Bedrooms, bathrooms and beds are more insightful if I put them into relation to the accommodates. 
-
-I do this by creating new variables:
+Bedrooms, bathrooms and beds are more insightful if I put them into relation to the accommodates. I do this by creating new variables:
 
 ``` {r build_new_variable}
 
@@ -649,7 +581,6 @@ listings_necessary <- listings_necessary %>%
   mutate(
     bathrooms_per_capacity = bathrooms/accommodates
   )
-
 ```
 
 **Evaluating minimum_nights Stay**
@@ -692,10 +623,8 @@ Above table substantiates my reasoning, since the average cleaning fee for listi
 I exclude listings for minimum nights greater than 4, since my analysis requires us to calculate the price of a 4 night stay in Copenhagen for 2 guests. 
 
 ```{r, filter_minimum_nights}
-
 listings_necessary <- listings_necessary %>%
   filter(minimum_nights <= 4) # I use the less than, equal to sign in order to filter my selection
-
 ```
 
 ### Check Resulting Data Types
@@ -716,7 +645,6 @@ I create three different lists, summarising with numeric, logical and factor var
 
 **Numeric Variables**
 ```{r, list_numeric}
-
 #I isolate and tabulate numeric variables
 num <- listings_necessary %>%
   select_if(is.numeric) %>%  #selecting numeric variables
@@ -727,7 +655,6 @@ list_num <- c(colnames(num)) #create a list of names of the variables
 
 kbl(list_num, col.names="Numeric Variables") %>%  #creating a table of the list
   kable_styling()
-
 ```
 
 **Factor Variables**
@@ -760,7 +687,7 @@ kbl(list_logical, col.names="Logical Variables") %>% #creating a table of the li
 
 ### Density plots: Continuous Variables
 
-For the continuous variables I use density plots to look at the data. I group the continuous variables into fmy different groups: property-related, host-related, review-related and price-related variables.
+For the continuous variables I use density plots to look at the data. I group the continuous variables into four different groups: property-related, host-related, review-related and price-related variables.
 
 **Property-Related Variables**
 ```{r EDA_property_visualisations, fig.width=15, fig.height=8}
@@ -847,7 +774,6 @@ Overall, my goal is to explain and be able to predict the prices of renting AirB
 For the logical values I create a table counting FALSE and TRUE for each logical variable:
 
 ```{r logical_tables}
-
 #I tidy logical variables
 logical_values_clean <- listings_necessary %>%
   select_if(is.logical) %>%  #I  check for logical values
@@ -895,7 +821,6 @@ ggplot(factor_longer, aes(y=reorder(values,count_name_occurr) , na.rm=TRUE))+ # 
 
   NULL
 
-
 ```
 
 I may observe that the categorical variable bed_type will probably not account for much variability in price, since most of its corresponding values are homogeneous. However, consistent with this rationale, it seems that neighborhood, room_type, prop_type_simplified and cancellation_policy may account for variability in prices to a greater extent, since they are more evenly distributed and thus less homogeneous.
@@ -912,9 +837,7 @@ correlation_matrix <- num %>%
 
 corrplot(correlation_matrix,
          method="color",
-         type="full",
-         title="Correlation matrix of selected numerical variables")
-      
+         type="full")
 ```
 In the correlation plot above, bluer shades represent stronger positive correlations, and redder shades reflect stronger negative correlations. I observe that much of the correlation appears within specific groups of variables (e.g. listing-type related variables or review related variables), which is not surprising. Correlation between variables such as bedrooms, beds, accommodates and price was also anticipated, since more of any of these things implies (in most cases) more of the others. 
 
@@ -922,7 +845,7 @@ In the correlation plot above, bluer shades represent stronger positive correlat
 
 **Review-Related Variables**
 
-Because all the review-related variables could be highly correlated, I look at them in detail:
+Because all the review-related variables seem to highly correlate on the heathmap. I look at them in detail:
 
 ```{r, ggpair_reviews, fig.height=15, fig.width=20, warnings=FALSE, message=FALSE}
 
@@ -934,9 +857,9 @@ listings_necessary %>%
 ```
 As expected, the correlations among the review-related variables are very high, but none of the values is higher than 0.67 so I do not need to worry about them.
 
-**Listing-Related Variables**
+**Property-Related Variables**
 
-Now, I evaluate whether listing-related variables correlate:
+Now, I evaluate whether property-related variables correlate:
 
 ```{r, ggpair_flat, fig.height=15, fig.width=20}
 
@@ -1140,13 +1063,13 @@ Most evidently, by separating out listing types in this way, I see how geographi
 
 **From these maps, I can conclude that:**
 
-- the vast majority of listings, as I would expect, are in the city centre and in key areas (highlighted in my cluster map) around the center such as Norrebro, Osterbro, Vesterbro and Fredriksberg
+- The vast majority of listings, as I would expect, are in the city centre and in key areas (highlighted in my cluster map) around the center such as Norrebro, Osterbro, Vesterbro and Fredriksberg
 
-- there are key differences in the number of AirBnB listings of certain property types, and the most common property type by far is an Apartment
+- There are key differences in the number of AirBnB listings of certain property types, and the most common property type by far is an Apartment
 
-- without separating listings by property type, I find that on average listings are more highly priced in central areas, especially on the inland waterways and Eastern coastline, such as the lakes and Amager
+- Without separating listings by property type, I find that on average listings are more highly priced in central areas, especially on the inland waterways and Eastern coastline, such as the lakes and Amager
 
-- if I discriminate by property type, I find there is heterogeneity in the relationship between centrality and price across property types, and that while Apartment and Condominium listings are most expensive in the city center, and decrease in price with distance from tourist hot-spots, House and Townhouse exhibit no such relationship and are generally clustered in similar neighborhoods
+- If I discriminate by property type, I find there is heterogeneity in the relationship between centrality and price across property types, and that while Apartment and Condominium listings are most expensive in the city center, and decrease in price with distance from tourist hot-spots, House and Townhouse exhibit no such relationship and are generally clustered in similar neighborhoods
 
 While these are interesting conclusions, the presence of expensive listings of all property types away from the city center, and in less desirable, traditionally residential areas which require use of trains and other public transport to access city sights demonstrates that location (or rather, proximity to city center) cannot be the *only* predictor of AirBnB listing price. Further, I have only analysed the base listing price so far, and not the actual cost to the AirBnB guest, which includes additional guest fees and cleaning fees.
 

@@ -15,15 +15,15 @@ title: Alcohol Consumption by Country
 
 
 <div id="where-do-people-drink-the-most-beer-wine-and-spirits" class="section level2">
-<h2>Where Do People Drink The Most Beer, Wine And Spirits?</h2>
+<h2>Where Do People Drink The Most Beer, Wine and Spirits?</h2>
 <p>Germans drink beer, Italians drink wine and in Russia they drink Vodka.</p>
-<p>These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consume per capita? And Italy the one with the highest wine consume? Let’s find that out: The goal of this project is to analyze how the consumption of alcohol of beer, wine and spirits vary by country.</p>
+<p>These are only few examples of the stereotypes that exist when it comes to the drinking behavior in the different countries. But are they true? Is Germany really the country with the highest beer consumption per capita? And Italy the one with the highest wine consumption? Let’s find that out: With this project I want to to analyze how the consumption of alcohol of beer, wine and spirits varies by country.</p>
 <p>The first step is to load the relevant data from the package Fivethirtyeight.</p>
 <pre class="r"><code>library(fivethirtyeight)
 data(drinks) #I load in the dataset from the fivethirtyeight package</code></pre>
 <div id="exploring-the-variable-types-and-checking-for-any-missing-values" class="section level3">
 <h3>Exploring the variable types and checking for any missing values</h3>
-<p>Before executing the analyses, I make sure that every variable type is allocated correctly and how many values are missing. To do that I use the functions glimpse() and skim():</p>
+<p>Before executing the analyses, I make sure that every variable type is allocated correctly and understand how many values are missing. To do that I use the functions glimpse() and skim():</p>
 <pre class="r"><code>glimpse(drinks) #I glimpse() the dataset in order to preview the data entries themselves</code></pre>
 <pre><code>## Rows: 193
 ## Columns: 5
@@ -370,7 +370,7 @@ total_litres_of_pure_alcohol
 </div>
 <div id="top-25-beer-consuming-countries" class="section level3">
 <h3>Top 25 beer consuming countries</h3>
-<p>After inspecting all the data, I make a plot that shows the top 25 beer consuming countries. To do that I first have to select() the relevant variables ‘beer’ and ‘country’. Then, I arrange the outcome in a descending order. To have a list og the top 25 beer consuming countries I use the function head().
+<p>After inspecting all the data, I make a plot that shows the top 25 beer consuming countries. To do that I first have to select() the relevant variables ‘beer’ and ‘country’. Then, I arrange the outcome in a descending order. To have a list of the top 25 beer consuming countries I use the function head().
 Finally, the plot can be created with ggplot.</p>
 <pre class="r"><code>#I use the pipe to select only the beer_servings variable, and arrange countries in descending order of serving
 
@@ -440,13 +440,13 @@ This plot shows that Grenada is the top spirit-consuming country, followed by Be
 </div>
 <div id="what-can-be-inferred-from-these-plots" class="section level3">
 <h3>What can be inferred from these plots?</h3>
-<p>Namibia, France and Grenada have the largest per capita consumption of beer, wine and spirits, respectively. Unsurprisingly, these countries are some of the largest producers of the alcohols they consumed most. While I are familiar with French wine production, releasing 7-8 billion bottles per year, less known is Namibian (‘German’) beer production or Granadian spirit (read ‘Rum’) production figures.</p>
+<p>Namibia, France and Grenada have the largest per capita consumption of beer, wine and spirits, respectively. Unsurprisingly, these countries are some of the largest producers of the alcohols they consumed most. While I am familiar with French wine production, releasing 7-8 billion bottles per year, less known is Namibian (‘German’) beer production or Granadian spirit (read ‘Rum’) production figures.</p>
 <p>Namibia Breweries Limited (NBL) produces 214 million litres of Beer, including Tafel Lager, Heiniken and Guiness. Though approximately 60% of its production is exported, predominantly to South Africa, given the country’s small (2.4 million) population, beer is widely and cheaply available, and readily consumed. Similarly, with 4 major rum distillers and a population of just 111,000 people, spirit consumption in Grenada is high even relative to infamous Russian, or even Belarusian, levels.</p>
 <p>Finally, comparing the plots to one another, I find that the level of consumption is considerably higher in the Top 25 consumers of Spirits, than amongst the consumers of Wine or Beer. Given that spirits are generally produced in far lower volumes than either wine or beer, retaining a larger share of spirit production to meet domestic consumption demand seems to be a logical assumption. This implies that top spirit consuming countries (and thus producers) potentially export a lower share of their production than top wine and beer producing (consuming) countries. This would help to maintain depressed prices (in France, foreign export demand inflates domestic prices), fueling disproportionately high domestic consumption relative to major wine and beer producing countries.</p>
 </div>
 <div id="deep-dive-germany-and-italy" class="section level3">
 <h3>Deep Dive Germany and Italy</h3>
-<p>So, by now we have found out that Germany is not the country with the highest beer consumption as people from Namibia consume more per person. And French people enjoy on average more glasses of wine per person than Italians do! But do Germans drink more beer than any other type of alcohol, and Italians more wine?</p>
+<p>So, by now I have found out that Germany is not the country with the highest beer consumption as people from Namibia consume more per person. And French people enjoy on average more glasses of wine per person than Italians do! But do Germans drink more beer than any other type of alcohol, and Italians more wine?</p>
 <p>Let’s look at the data:</p>
 <pre class="r"><code>library(patchwork)
 drinks_longer_germany &lt;- drinks %&gt;% 
@@ -469,6 +469,6 @@ p2 &lt;- ggplot(drinks_longer_italy, aes(y = reorder(type, quantity), x= quantit
 
 p1 + p2</code></pre>
 <p><img src="/blogs/blog6_files/figure-html/germany-1.png" width="1440" style="display: block; margin: auto;" />
-Looking at the alcohol consumption behavior in Germany and Italy the stereotypes are not that wrong at all in the end. In Germany beer is the alcohol that is consumed most, and in Italy wine.</p>
+Looking at the alcohol consumption behavior in Germany and Italy the stereotypes are not that wrong at all in the end. In Germany beer is by far the alcohol that is consumed most, and in Italy wine.</p>
 </div>
 </div>

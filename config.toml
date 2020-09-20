@@ -122,7 +122,7 @@ disqusShortname = ""
 
     [[params.tiles.showcase]]
       title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate?"
-      subtitle = "Effects of school enrollment and GDP per capita on the fertility rate and mortality rate development"
+      subtitle = "Effects of school enrollment and GDP per capita on the fertility rate"
       image = "pic10.jpg"
       url = "blogs/blog8"
 
