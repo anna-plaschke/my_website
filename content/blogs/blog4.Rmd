@@ -9,7 +9,11 @@ image: copenhagen.jpg
 keywords: ""
 slug: blog4
 title: How much Does it Cost to Sleep in Copenhagen?
-subtitle: Various analyses
+output: 
+  html_document:
+      number_sections: yes
+      toc: yes
+      toc_float: yes
 ---
 
 ```{r, setup, include=FALSE}
