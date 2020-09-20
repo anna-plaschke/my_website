@@ -200,7 +200,7 @@ typeof(listings_cleaned$extra_people)
 ```
 
 I now inspect the new dataset:
-```{r, skim_data_cleaned, eval = TRUE}
+```{r, skim_data_cleaned, eval=FALSE}
 #I check that my recording has been successful
 skim(listings_cleaned)
 ```
@@ -209,7 +209,7 @@ I compare the newly created dataset, listings_cleaned, to the original dataset, 
 
 To understand the reason, I inspect one variable in depth: host_response_rate. In order to do this, I print the unique values of host_response_rate for both datasets and then skim the variable characteristics in each dataset.
 
-```{r, checking_listings_cleaned}
+```{r, checking_listings_cleaned, eval=FALSE}
 #I look at the variable host_response_rate in depth
 unique(listings$host_response_rate) #levels of host_response_rate in listings
 unique(listings_cleaned$host_response_rate) #levels of host_response_rate in listings_cleaned
@@ -282,7 +282,7 @@ Before I make further evaluations of which variables matter most to my analyses,
 
 I ask the question: "are there any missing values?", as I review the transformed data with the skim() function. 
 
-```{r identifying_missing_values}
+```{r identifying_missing_values, eval=FALSE}
 
 # Looking at the transformed data to find out variables with missing values
 skim(listings_necessary)
@@ -623,7 +623,7 @@ listings_necessary <- listings_necessary %>%
 
 I now ensure that my data wrangling stages have been successful using the skim function:
 
-```{r check_data_types}
+```{r check_data_types, eval=FALSE}
 
 #I check that my recoding, imputation and variable creation has been successful, and find that it has been
 skim(listings_necessary)
