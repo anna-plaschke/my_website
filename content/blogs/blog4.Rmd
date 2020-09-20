@@ -11,9 +11,12 @@ slug: blog4
 title: How much Does it Cost to Sleep in Copenhagen?
 output: 
   html_document:
+      theme: flatly
+      highlight: zenburn
       number_sections: yes
       toc: yes
       toc_float: yes
+      code_folding: show
 ---
 
 ```{r, setup, include=FALSE}
@@ -72,7 +75,7 @@ This chapter describes geospatial analyses conducted by using the leaflet packag
 
 This chapter focuses on describing the process behind building the optimal model, guiding the reader through 7 preliminary models before identifying, specifying, testing and comparing linear regression model performance. I conclude by identifying a model which I find to explain the greatest proportion of variance in price of AirBnB listings while upholding core linear regression assumptions and showing the least overfitting of all tested models. 
 
-**MyBest Model**
+**My Best Model**
 
 In summary, my "best", or optimal, model was generated via the following core steps:
 
@@ -146,7 +149,7 @@ My primary focus during EDA is to develop an understanding of the data. I am gui
 ## Raw Values
 
 I use glimpse to have a first look at the dataset, in order to evaluate all columns and the data types. Then, I skim the data to get a better picture of the dataset:
-```{r EDA_raw_glimpse, echo=FALSE}
+```{r EDA_raw_glimpse, echo=TRUE}
 
 #I glimpse the initial dataset
 glimpse(listings)
@@ -212,7 +215,7 @@ typeof(listings_cleaned$extra_people)
 ```
 
 I now inspect the new dataset:
-```{r, skim_data_cleaned, echo=FALSE}
+```{r, skim_data_cleaned, echo=TRUE}
 #I check that my recording has been successful
 skim(listings_cleaned)
 ```
