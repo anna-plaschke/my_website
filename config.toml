@@ -109,7 +109,7 @@ disqusShortname = ""
       url = "blogs/blog5"
       
     [[params.tiles.showcase]]
-      title = "How much does it cost to sleep in Copenhagen?"
+      title = "How much does it Cost to Sleep in Copenhagen?"
       subtitle = "Regression and Prediction Model of AirBnB Prices in Copenhagen"
       image = "copenhagen.jpg"
       url = "blogs/blog4"

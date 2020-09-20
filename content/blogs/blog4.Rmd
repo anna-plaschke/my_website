@@ -141,7 +141,7 @@ My primary focus during EDA is to develop an understanding of the data. I am gui
 ## Raw Values
 
 I use glimpse to have a first look at the dataset, in order to evaluate all columns and the data types. Then, I skim the data to get a better picture of the dataset:
-```{r EDA_raw_glimpse, echo=TRUE}
+```{r EDA_raw_glimpse, echo=FALSE}
 
 #I glimpse the initial dataset
 glimpse(listings)
@@ -168,7 +168,7 @@ I found out that a lot of variables don't have the correct data type assigned. T
 
 ### Recoding Variables
 
-```{r recoding_variables, echo=FALSE, results=FALSE, messages=FALSE, warnings=FALSE}
+```{r recoding_variables, echo=TRUE, results=FALSE, messages=FALSE, warnings=FALSE}
 
 listings_cleaned <- listings %>% 
   
@@ -207,7 +207,7 @@ typeof(listings_cleaned$extra_people)
 ```
 
 I now inspect the new dataset:
-```{r, skim_data_cleaned, echo=TRUE}
+```{r, skim_data_cleaned, echo=FALSE}
 #I check that my recording has been successful
 skim(listings_cleaned)
 ```
