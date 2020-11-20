@@ -114,11 +114,11 @@ disqusShortname = ""
       image = "copenhagen.jpg"
       url = "blogs/blog4"
       
-    [[params.tiles.showcase]]
-      title = "Does the HIV Rate Affect Life Expectancy?"
-      subtitle = "Relationship between HIV rate and life expectancy by region"
-      image = "pic04.jpg"
-      url = "blogs/blog7"
+#    [[params.tiles.showcase]]
+#      title = "Does the HIV Rate Affect Life Expectancy?"
+#      subtitle = "Relationship between HIV rate and life expectancy by region"
+#      image = "pic04.jpg"
+#      url = "blogs/blog7"
 
     [[params.tiles.showcase]]
       title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate?"
