@@ -97,10 +97,10 @@ disqusShortname = ""
       url = "post/post1"
 
    [[params.tiles.showcase]]
-      title = "Where Do People Drink The Most Beer, Wine And Spirits?"
-      subtitle = "Alcohol consumption by country"
-      image = "pic05.jpg"
-      url = "blogs/blog6"
+      title = "Where in London are stop & search operations more effective?"
+      subtitle = "Stop & Search"
+      image = "london.jpg"
+      url = "blogs/blog1"
 
     [[params.tiles.showcase]]
       title = "It is Getting Warm in Here!"

@@ -1,0 +1,653 @@
+---
+categories:
+- ""
+- ""
+date: "2020-09-14T22:42:51-05:00"
+description: Stop & Search Data in London
+draft: false
+image: london.jpg
+keywords: ""
+slug: blog1
+title: Where in London are stop & search operations more effective?
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+<link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
+
+
+<div id="story-of-the-visualisation" class="section level1">
+<h1>Story of the visualisation</h1>
+<p>As starting point, I analysed changes in the number of Stop &amp; Search operations and detected offenses over time from October 2017 until September 2020. While the plots showed a significant increase in the number of both over time, the percentage of detected offenses compared to the number of stop &amp; search operations decreased from 31.3% to 24.9%.
+Furthermore, the distribution of objects of search and of ethnicity of the searched individuals did not change over time. Having detected this, I decided to not look at changes over time when it comes to these variables but rather at other variables.
+To analyse the geographical distribution of stop &amp; search operations as well as of the detected offenses, I map the respective numbers for each ward. The distribution of searches and crimes is not homogeneous, but they preliminary happen in the centre of London. But, no significant difference between the distribution of stop &amp; search operations and detected offenses can be seen. Therefore, in my further analysis I will focus solely on the geographical distribution of number of detected offenses.
+Finally, I plot the data on the map of London grouped by ethnicity and by object searched to detect patterns in the geographical distribution. From the created maps it is evident, that the detection of crimes related to offensive weapons is more geographically dispersed than related to drugs or stolen goods. Moreover, detected offences committed by white people are more concentrated in the centre of London compared to Black and Asians</p>
+</div>
+<div id="load-data-clean-data-initial-skim-of-data" class="section level1">
+<h1>Load Data, Clean Data, Initial Skim of Data</h1>
+<pre class="r"><code># read many CSV files
+data_dir &lt;- &quot;data/stop-search&quot;
+
+files &lt;- fs::dir_ls(path = data_dir, regexp = &quot;\\.csv$&quot;, recurse = TRUE) 
+#recurse=TRUE will recursively look for files further down into any folders
+
+#read them all in using vroom::vroom()
+stop_search_data &lt;- vroom(files, id = &quot;source&quot;)
+
+# I use janitor to clean names, and add more variables
+stop_search_all &lt;- stop_search_data %&gt;%
+  janitor::clean_names() %&gt;% 
+  mutate(month = month(date),
+         month_name = month(date, label=TRUE, abbr = TRUE),
+         year= year(date),
+         month_year = paste0(year, &quot;-&quot;,month_name)
+  ) %&gt;% 
+
+# rename longitude/latitude to lng/lat
+rename(lng = longitude,
+       lat = latitude)
+  
+# glimpse() to inspect and get a feel for the data         
+glimpse(stop_search_all,2)</code></pre>
+<pre><code>## Rows: 692,231
+## Columns: 20
+## $ source                                   &lt;chr&gt; ...
+## $ type                                     &lt;chr&gt; ...
+## $ date                                     &lt;dttm&gt; ...
+## $ part_of_a_policing_operation             &lt;lgl&gt; ...
+## $ policing_operation                       &lt;lgl&gt; ...
+## $ lat                                      &lt;dbl&gt; ...
+## $ lng                                      &lt;dbl&gt; ...
+## $ gender                                   &lt;chr&gt; ...
+## $ age_range                                &lt;chr&gt; ...
+## $ self_defined_ethnicity                   &lt;chr&gt; ...
+## $ officer_defined_ethnicity                &lt;chr&gt; ...
+## $ legislation                              &lt;chr&gt; ...
+## $ object_of_search                         &lt;chr&gt; ...
+## $ outcome                                  &lt;chr&gt; ...
+## $ outcome_linked_to_object_of_search       &lt;lgl&gt; ...
+## $ removal_of_more_than_just_outer_clothing &lt;lgl&gt; ...
+## $ month                                    &lt;dbl&gt; ...
+## $ month_name                               &lt;ord&gt; ...
+## $ year                                     &lt;dbl&gt; ...
+## $ month_year                               &lt;chr&gt; ...</code></pre>
+</div>
+<div id="initial-overview-of-the-data" class="section level1">
+<h1>Initial overview of the data</h1>
+<pre class="r"><code># some quick counts...
+
+table1 &lt;- stop_search_all %&gt;% 
+  count(gender, sort=TRUE)
+kbl(table1,col.names=c(&quot;Gender&quot;,&quot;Count&quot;)) %&gt;%
+  kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Gender
+</th>
+<th style="text-align:right;">
+Count
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Male
+</td>
+<td style="text-align:right;">
+636838
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Female
+</td>
+<td style="text-align:right;">
+45848
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+9160
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Other
+</td>
+<td style="text-align:right;">
+385
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>table2 &lt;- stop_search_all %&gt;% 
+  count(object_of_search, sort=TRUE)
+kbl(table2,col.names=c(&quot;Object of search&quot;,&quot;Count&quot;)) %&gt;%
+  kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Object of search
+</th>
+<th style="text-align:right;">
+Count
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Controlled drugs
+</td>
+<td style="text-align:right;">
+418103
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Offensive weapons
+</td>
+<td style="text-align:right;">
+119754
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Stolen goods
+</td>
+<td style="text-align:right;">
+74515
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Evidence of offences under the Act
+</td>
+<td style="text-align:right;">
+32438
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Anything to threaten or harm anyone
+</td>
+<td style="text-align:right;">
+24843
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Articles for use in criminal damage
+</td>
+<td style="text-align:right;">
+14474
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Firearms
+</td>
+<td style="text-align:right;">
+4583
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+1800
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Fireworks
+</td>
+<td style="text-align:right;">
+1721
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>table3 &lt;- stop_search_all %&gt;% 
+  count(officer_defined_ethnicity, sort=TRUE)
+kbl(table3,col.names=c(&quot;Ethnicity&quot;,&quot;Count&quot;)) %&gt;%
+  kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Ethnicity
+</th>
+<th style="text-align:right;">
+Count
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Black
+</td>
+<td style="text-align:right;">
+274058
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+White
+</td>
+<td style="text-align:right;">
+257779
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Asian
+</td>
+<td style="text-align:right;">
+118568
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Other
+</td>
+<td style="text-align:right;">
+28232
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+13594
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>table4 &lt;- stop_search_all %&gt;% 
+  count(age_range)
+kbl(table4,col.names=c(&quot;Age&quot;,&quot;Count&quot;)) %&gt;%
+  kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Age
+</th>
+<th style="text-align:right;">
+Count
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+10-17
+</td>
+<td style="text-align:right;">
+116893
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18-24
+</td>
+<td style="text-align:right;">
+235540
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+25-34
+</td>
+<td style="text-align:right;">
+144190
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+over 34
+</td>
+<td style="text-align:right;">
+104597
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+under 10
+</td>
+<td style="text-align:right;">
+126
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+90885
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>#use sf::read_sf() to read in London Wards shapefile
+london_wards_sf &lt;- read_sf(here(&quot;data/London-wards-2018_ESRI/London_Ward.shp&quot;))
+
+# what type of geometry does our shapefile have?
+st_geometry(london_wards_sf)#Geometry is Polygon</code></pre>
+<pre><code>## Geometry set for 657 features 
+## geometry type:  POLYGON
+## dimension:      XY
+## bbox:           xmin: 504000 ymin: 156000 xmax: 562000 ymax: 201000
+## projected CRS:  OSGB 1936 / British National Grid
+## First 5 geometries:</code></pre>
+<pre class="r"><code># transfrom CRS to 4326, or pairs of latitude/longitude numbers
+london_wgs84 &lt;-  london_wards_sf %&gt;% 
+  st_transform(4326) # transfrom CRS to WGS84, latitude/longitude
+
+london_wgs84$geometry</code></pre>
+<pre><code>## Geometry set for 657 features 
+## geometry type:  POLYGON
+## dimension:      XY
+## bbox:           xmin: -0.51 ymin: 51.3 xmax: 0.334 ymax: 51.7
+## geographic CRS: WGS 84
+## First 5 geometries:</code></pre>
+</div>
+<div id="filter-data" class="section level1">
+<h1>Filter data</h1>
+<pre class="r"><code># concentrate in top three searches, age_ranges, and officer defined ethnicities
+which_searches &lt;- c(&quot;Controlled drugs&quot;, &quot;Offensive weapons&quot;,&quot;Stolen goods&quot; )
+which_ages &lt;- c(&quot;10-17&quot;, &quot;18-24&quot;,&quot;25-34&quot;, &quot;over 34&quot;)
+which_ethnicity &lt;- c(&quot;White&quot;, &quot;Black&quot;, &quot;Asian&quot;)
+
+stop_search_top &lt;- stop_search_all %&gt;% 
+  
+  #filter out  rows with no latitude/longitude
+  filter(!is.na(lng)) %&gt;% 
+  filter(!is.na(lat)) %&gt;% 
+  
+  # concentrate in top searches, age_ranges, and officer defined ethnicities
+  filter(object_of_search %in% which_searches) %&gt;% 
+  filter(age_range %in% which_ages) %&gt;% 
+  filter(officer_defined_ethnicity %in% which_ethnicity) %&gt;% 
+  
+  # relevel factors so everything appears in correct order
+  mutate(
+    object_of_search = fct_relevel(object_of_search, 
+                                   c(&quot;Controlled drugs&quot;, &quot;Offensive weapons&quot;,&quot;Stolen goods&quot;)), 
+    age_range = fct_relevel(age_range, 
+                            c( &quot;10-17&quot;,&quot;18-24&quot;, &quot;25-34&quot;, &quot;over 34&quot;)), 
+    officer_defined_ethnicity = fct_relevel(officer_defined_ethnicity, 
+                                            c(&quot;White&quot;, &quot;Black&quot;, &quot;Asian&quot;)),
+    offense= case_when(outcome %in% c(&quot;Nothing found - no further action&quot;, &quot;A no further action disposal&quot;)~ &quot;no&quot;, 
+    TRUE ~ &quot;yes&quot;
+  ))</code></pre>
+</div>
+<div id="development-over-time" class="section level1">
+<h1>Development over time</h1>
+<pre class="r"><code>p1 &lt;- stop_search_top %&gt;% 
+  filter(month %in% c(1,2,3,4,5,6,7,8,9)) %&gt;% 
+  filter(year != 2017) %&gt;% 
+  group_by(year, object_of_search) %&gt;%
+  summarise(count=n()) %&gt;%
+  mutate(percentage=((count/sum(count)))) %&gt;%
+  ggplot(aes(y=count, x=year, fill=object_of_search))+
+  geom_col()+
+  labs(y=&quot;&quot;, x=&quot;&quot;, title= &quot;Number of Stop &amp; Search operations by object of search&quot;, fill= &quot;Object of search&quot;)+
+  geom_text(aes(label=percent(round(percentage,4))),geom =&#39;text&#39;, col = &#39;white&#39;, vjust=1.5, position= position_stack())+
+  theme_classic()+
+  scale_y_continuous(label=comma)+
+  scale_fill_manual(values=c(&quot;#12364E&quot;, &quot;#750833&quot;, &quot;#7D0263&quot;))+
+  theme(legend.position=&#39;top&#39;, 
+        legend.justification=&#39;left&#39;,
+        legend.direction=&#39;horizontal&#39;)+
+  NULL
+
+p2 &lt;- stop_search_top %&gt;% 
+  filter(month %in% c(1,2,3,4,5,6,7,8,9)) %&gt;% 
+  filter(year != 2017) %&gt;% 
+  group_by(year, officer_defined_ethnicity) %&gt;%
+  summarise(count=n()) %&gt;%
+  mutate(sum = sum(count), percentage=((count/sum))) %&gt;%
+  ggplot(aes(y=count, x=year, fill=officer_defined_ethnicity))+
+  geom_col()+
+  labs(y=&quot;&quot;, x=&quot;&quot;, title= &quot;Number of Stop &amp; Search operations by ethnicity&quot;, fill= &quot;Ethnicity&quot;)+
+  geom_text(aes(label=percent(round(percentage,3))),geom =&#39;text&#39;, col = &#39;white&#39;,vjust=1.5, position= position_stack() )+
+  theme_classic()+
+  scale_y_continuous(label=comma)+
+  scale_fill_manual(values=c(&quot;#D27302&quot;, &quot;#A43407&quot;, &quot;#0C4C47&quot;))+
+  theme(legend.position=&#39;top&#39;, 
+        legend.justification=&#39;left&#39;,
+        legend.direction=&#39;horizontal&#39;)+
+  NULL
+  
+  
+p3 &lt;- stop_search_top %&gt;% 
+  filter(month %in% c(1,2,3,4,5,6,7,8,9)) %&gt;% 
+  filter(year != 2017) %&gt;% 
+
+  group_by(year, offense) %&gt;%
+  summarise(count=n()) %&gt;%
+  mutate(percentage=((count/sum(count)))) %&gt;%
+  ggplot(aes(y=count, x=year, fill=offense))+
+  geom_col()+
+  labs(y=&quot;Number of Stop &amp; Search operations&quot;, x=&quot;&quot;, title= &quot;Number of Stop &amp; Search operations by outcome&quot;, fill= &quot;Offense&quot;)+
+  geom_text(aes(label=percent(round(percentage,4))),geom =&#39;text&#39;, col = &#39;white&#39;,vjust=1.5, position= position_stack() )+
+  theme_classic()+
+  scale_y_continuous(label=comma)+
+  geom_text(
+    aes(label = stat(y), group = year), 
+    stat = &#39;summary&#39;, fun = sum, vjust = -0.5, col= &quot;black&quot;)+
+  scale_fill_manual(values=c(&quot;#37803C&quot;, &quot;#9B211D&quot;))+
+  theme(legend.position=&#39;top&#39;, 
+        legend.justification=&#39;left&#39;,
+        legend.direction=&#39;horizontal&#39;)+
+  NULL
+
+(p3 +p1 +p2) + plot_annotation(
+  title = &#39;Since 2018 the number of stop &amp; search operations has increased significantly&#39;,
+  subtitle = &#39;Evolvement of the number of stop &amp; search operations grouped by outcome, object of search and ethnicity from 2018 until 2020 (Jan-Sep*)&#39;,
+  caption = &#39;Source: data.police.uk, Note: * only data from January to September to ensure comparability&#39;, theme = theme(plot.title = element_text(size = 18, face= &quot;bold&quot;))
+)</code></pre>
+<p><img src="/blogs/blog1_files/figure-html/compare_time-1.png" width="1728" style="display: block; margin: auto auto auto 0;" /></p>
+</div>
+<div id="maps-geographical-distributions" class="section level1">
+<h1>Maps: Geographical distributions</h1>
+<pre class="r"><code># Here we retrieve and apply the CRS of london_wgs84 
+stop_search_sf &lt;-  st_as_sf(stop_search_top, 
+                              coords=c(&#39;lng&#39;, &#39;lat&#39;), 
+                              crs=st_crs(london_wgs84))
+
+#glimpse(stop_search_sf) #now geometry added</code></pre>
+<pre class="r"><code># Count how many S&amp;S happened inside each ward
+london_all &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                stop_search_sf)))
+
+
+p1 &lt;- ggplot(data = london_all, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#37803C&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Stop &amp; Search Operations in London&quot;) +
+  theme(axis.text = element_blank()) +
+  theme(strip.text = element_text(color = &quot;white&quot;))+
+  NULL
+
+# filter out stop-and-search where no further action was taken
+  offense_sf &lt;- stop_search_sf %&gt;% 
+  filter(offense == &quot;yes&quot;)
+
+  # Count how many offenses happened inside each ward
+  london_offense &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                offense_sf)))
+
+p2 &lt;- ggplot(data = london_offense, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#9B211D&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Offense detected through Stop &amp; Search Operation in London&quot;) +
+  theme(axis.text = element_blank(),
+        strip.text = element_text(color = &quot;white&quot;)
+        )+
+  NULL
+  
+(p1 + p2) + plot_annotation(
+  title = &#39;Wards with more stop &amp; search operations detect more offenses&#39;,
+  subtitle = &#39;Geographical distribution of search &amp; stop operations and detected offenses from October 2017 until September 2020&#39;,
+  caption = &#39;Source: data.police.uk&#39;, theme = theme(plot.title = element_text(size = 18, face= &quot;bold&quot;), plot.subtitle = element_text(size = 15)))</code></pre>
+<p><img src="/blogs/blog1_files/figure-html/plot1-1.png" width="1440" style="display: block; margin: auto auto auto 0;" /></p>
+<pre class="r"><code># filter out object of search 1
+vis1a_sf &lt;- offense_sf %&gt;% 
+  filter(object_of_search== &quot;Controlled drugs&quot;)
+
+# Count how many S&amp;S happened inside each ward
+  london_vis1a &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                vis1a_sf)))
+
+p1 &lt;- ggplot(data = london_vis1a, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#12364E&quot;, na.value = &quot;transparent&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Detected offenses when searched for Controlled drugs&quot;) +
+  theme(axis.text = element_blank(),
+        strip.text = element_text(color = &quot;white&quot;)
+        )+
+  NULL
+
+# filter out object of search 2
+  vis1b_sf &lt;- offense_sf %&gt;% 
+  filter(object_of_search== &quot;Offensive weapons&quot;)
+
+# Count how many S&amp;S happened inside each ward
+  london_vis1b &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                vis1b_sf)))
+
+p2 &lt;- ggplot(data = london_vis1b, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#750833&quot;, na.value = &quot;transparent&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Detected offenses when searched for Offensive weapons&quot;) +
+  theme(axis.text = element_blank(),
+        strip.text = element_text(color = &quot;white&quot;)
+        )+
+  NULL
+  
+# filter out object of search 3
+  vis1c_sf &lt;- offense_sf %&gt;% 
+  filter(object_of_search== &quot;Stolen goods&quot;)
+
+# Count how many S&amp;S happened inside each ward
+  london_vis1c &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                vis1c_sf)))
+
+p3 &lt;- ggplot(data = london_vis1c, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#7D0263&quot;, na.value = &quot;transparent&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Detected offenses when searched for Stolen goods&quot;) +
+  theme(axis.text = element_blank(),
+        strip.text = element_text(color = &quot;white&quot;)
+        )+
+  NULL
+
+
+(p1 + p2 +p3) + plot_annotation(
+  title = &#39;Offensive weapons is a more geographically dispersed crime than controlled drugs and stolen goods&#39;,
+  subtitle = &#39;Geographical distribution of detected crimes by object of search in London from October 2017 until September 2020&#39;,
+  caption = &#39;Source: data.police.uk&#39;, theme = theme(plot.title = element_text(size = 18, face= &quot;bold&quot;), plot.subtitle = element_text(size = 15)))</code></pre>
+<p><img src="/blogs/blog1_files/figure-html/compare%20-1.png" width="1440" style="display: block; margin: auto auto auto 0;" /></p>
+<pre class="r"><code># filter out ethnicity 1
+vis2a_sf &lt;- offense_sf %&gt;% 
+    filter(officer_defined_ethnicity== &quot;White&quot;)
+
+# Count how many S&amp;S happened inside each ward
+  london_vis2a &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                vis2a_sf)))
+
+p1 &lt;- ggplot(data = london_vis2a, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#B56200&quot;, na.value = &quot;transparent&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Detected offenses commited by White&quot;) +
+  theme(axis.text = element_blank(),
+        strip.text = element_text(color = &quot;white&quot;)
+        )+
+  NULL
+
+# filter out ethnicity 2
+  vis2b_sf &lt;- offense_sf %&gt;% 
+    filter(officer_defined_ethnicity== &quot;Black&quot;)
+
+# Count how many S&amp;S happened inside each ward
+  london_vis2b &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                vis2b_sf)))
+
+p2 &lt;- ggplot(data = london_vis2b, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#A43407&quot;, na.value = &quot;transparent&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Detected offenses commited by Black&quot;) +
+  theme(axis.text = element_blank(),
+        strip.text = element_text(color = &quot;white&quot;)
+        )+
+  NULL
+  
+# filter out ethnicity 3
+  vis2c_sf &lt;- offense_sf %&gt;% 
+    filter(officer_defined_ethnicity== &quot;Asian&quot;)
+
+# Count how many S&amp;S happened inside each ward
+  london_vis2c &lt;- london_wgs84 %&gt;%
+  mutate(count = lengths(
+    st_contains(london_wgs84, 
+                vis2c_sf)))
+
+p3 &lt;- ggplot(data = london_vis2c, aes(fill = count)) +
+   geom_sf() +
+   scale_fill_gradient(low = &quot;white&quot;, high = &quot;#0C4C47&quot;, na.value = &quot;transparent&quot;)+
+  theme_minimal()+
+  coord_sf(datum = NA) + #remove coordinates
+  labs(title = &quot;Detected offenses commited by Asian&quot;) +
+  theme(axis.text = element_blank(),
+        strip.text = element_text(color = &quot;white&quot;)
+        )+
+  NULL
+
+
+(p1 + p2 +p3) + plot_annotation(
+  title = &#39;Detected offences commited by white people are more concentraded in the centre of London compared to Black and Asians&#39;,
+  subtitle = &#39;Geographical distribution of detected crimes by ethnicity in London from October 2017 until September 2020&#39;,
+  caption = &#39;Source: data.police.uk&#39;, theme = theme(plot.title = element_text(size = 18, face= &quot;bold&quot;), plot.subtitle = element_text(size = 15)))</code></pre>
+<p><img src="/blogs/blog1_files/figure-html/compare2%20-1.png" width="1440" style="display: block; margin: auto auto auto 0;" /></p>
+</div>
