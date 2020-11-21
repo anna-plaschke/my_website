@@ -97,7 +97,7 @@ disqusShortname = ""
       url = "post/post1"
 
    [[params.tiles.showcase]]
-      title = "Where in London are Stop & Search Operations more Effective?"
+      title = "Where in London does the Police Stop & Search most People?"
       subtitle = "Stop & Search"
       image = "london.jpg"
       url = "blogs/blog1"
