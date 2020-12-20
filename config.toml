@@ -100,7 +100,7 @@ disqusShortname = ""
       title = "Smart Investment Decisions: Which house should I buy in London"
       subtitle = "London House Prices"
       image = "london.jpg"
-      url = "blogs/LondonHousePrices"
+      url = "blogs/londonHousePrices"
 
    [[params.tiles.showcase]]
       title = "Where in London does the Police Stop & Search most People?"
