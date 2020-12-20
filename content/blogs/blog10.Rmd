@@ -16,10 +16,6 @@ subtitle: Various analyses
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-<style>
-div.navy1 { background-color:#686868; border-radius: 5px; padding: 20px; border-style: groove; color: #ffffff;}
-
-</style>
 
 # Abstract
 This report is about estimating housing prices in London with estimation engines to guide investment decisions. Transaction data from houses sold in London in 2019 as well as various information on these houses are used to create seven different estimation engines using linear regression, LASSO regression, knn, tree, random forest, gradient boosting, and stacking. The best model is used to select the most promising 200 houses out of 2,000 houses that are currently on sale. This will be done by calculating the deviation of the predicted price and asked price. 
