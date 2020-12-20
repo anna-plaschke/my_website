@@ -57,9 +57,7 @@ To analyse the geographical distribution of stop & search operations as well as 
 Finally, I plot the data on the map of London grouped by ethnicity and by object searched to detect patterns in the geographical distribution. From the created maps it is evident, that the detection of crimes related to offensive weapons is more geographically dispersed than related to drugs or stolen goods. Moreover, detected offences committed by white people are more concentrated in the centre of London compared to Black and Asians
 
 
-# Load Data, Clean Data, Initial Skim of Data
-
-```{r read_manyCSV, messages=FALSE, warnings=FALSE}
+```{r read_manyCSV, messages=FALSE, warnings=FALSE, include = FALSE}
 
 # read many CSV files
 data_dir <- "data/stop-search"
@@ -88,36 +86,38 @@ glimpse(stop_search_all,2)
 ```
 # Initial overview of the data
 ```{r initial_counts, messages=FALSE, warnings=FALSE}
-# some quick counts...
-
+# Number of Stop & Search operations by gender
 table1 <- stop_search_all %>% 
   count(gender, sort=TRUE)
 kbl(table1,col.names=c("Gender","Count")) %>%
   kable_styling()
 
+# Number of Stop & Search operations by object of search
 table2 <- stop_search_all %>% 
   count(object_of_search, sort=TRUE)
 kbl(table2,col.names=c("Object of search","Count")) %>%
   kable_styling()
 
+# Number of Stop & Search operations by ethnicity
 table3 <- stop_search_all %>% 
   count(officer_defined_ethnicity, sort=TRUE)
 kbl(table3,col.names=c("Ethnicity","Count")) %>%
   kable_styling()
 
+# Number of Stop & Search operations by age
 table4 <- stop_search_all %>% 
   count(age_range)
 kbl(table4,col.names=c("Age","Count")) %>%
   kable_styling()
 ```
-```{r load_map}
-#use sf::read_sf() to read in London Wards shapefile
+```{r load_map, messages = FALSE, warnings=FALSE}
+#I read London Wards shapefile
 london_wards_sf <- read_sf(here("data/London-wards-2018_ESRI/London_Ward.shp"))
 
-# what type of geometry does our shapefile have?
+# I control the type of geometry that the shapefile has
 st_geometry(london_wards_sf)#Geometry is Polygon
 
-# transfrom CRS to 4326, or pairs of latitude/longitude numbers
+# I transfrom CRS to 4326
 london_wgs84 <-  london_wards_sf %>% 
   st_transform(4326) # transfrom CRS to WGS84, latitude/longitude
 
@@ -132,7 +132,7 @@ which_ethnicity <- c("White", "Black", "Asian")
 
 stop_search_top <- stop_search_all %>% 
   
-  #filter out  rows with no latitude/longitude
+  #filter out rows with no latitude/longitude
   filter(!is.na(lng)) %>% 
   filter(!is.na(lat)) %>% 
   
@@ -141,7 +141,7 @@ stop_search_top <- stop_search_all %>%
   filter(age_range %in% which_ages) %>% 
   filter(officer_defined_ethnicity %in% which_ethnicity) %>% 
   
-  # relevel factors so everything appears in correct order
+  # I relevel factors so everything appears in correct order
   mutate(
     object_of_search = fct_relevel(object_of_search, 
                                    c("Controlled drugs", "Offensive weapons","Stolen goods")), 

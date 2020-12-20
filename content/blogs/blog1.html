@@ -23,59 +23,9 @@ Furthermore, the distribution of objects of search and of ethnicity of the searc
 To analyse the geographical distribution of stop &amp; search operations as well as of the detected offenses, I map the respective numbers for each ward. The distribution of searches and crimes is not homogeneous, but they preliminary happen in the centre of London. But, no significant difference between the distribution of stop &amp; search operations and detected offenses can be seen. Therefore, in my further analysis I will focus solely on the geographical distribution of number of detected offenses.
 Finally, I plot the data on the map of London grouped by ethnicity and by object searched to detect patterns in the geographical distribution. From the created maps it is evident, that the detection of crimes related to offensive weapons is more geographically dispersed than related to drugs or stolen goods. Moreover, detected offences committed by white people are more concentrated in the centre of London compared to Black and Asians</p>
 </div>
-<div id="load-data-clean-data-initial-skim-of-data" class="section level1">
-<h1>Load Data, Clean Data, Initial Skim of Data</h1>
-<pre class="r"><code># read many CSV files
-data_dir &lt;- &quot;data/stop-search&quot;
-
-files &lt;- fs::dir_ls(path = data_dir, regexp = &quot;\\.csv$&quot;, recurse = TRUE) 
-#recurse=TRUE will recursively look for files further down into any folders
-
-#read them all in using vroom::vroom()
-stop_search_data &lt;- vroom(files, id = &quot;source&quot;)
-
-# I use janitor to clean names, and add more variables
-stop_search_all &lt;- stop_search_data %&gt;%
-  janitor::clean_names() %&gt;% 
-  mutate(month = month(date),
-         month_name = month(date, label=TRUE, abbr = TRUE),
-         year= year(date),
-         month_year = paste0(year, &quot;-&quot;,month_name)
-  ) %&gt;% 
-
-# rename longitude/latitude to lng/lat
-rename(lng = longitude,
-       lat = latitude)
-  
-# glimpse() to inspect and get a feel for the data         
-glimpse(stop_search_all,2)</code></pre>
-<pre><code>## Rows: 692,231
-## Columns: 20
-## $ source                                   &lt;chr&gt; ...
-## $ type                                     &lt;chr&gt; ...
-## $ date                                     &lt;dttm&gt; ...
-## $ part_of_a_policing_operation             &lt;lgl&gt; ...
-## $ policing_operation                       &lt;lgl&gt; ...
-## $ lat                                      &lt;dbl&gt; ...
-## $ lng                                      &lt;dbl&gt; ...
-## $ gender                                   &lt;chr&gt; ...
-## $ age_range                                &lt;chr&gt; ...
-## $ self_defined_ethnicity                   &lt;chr&gt; ...
-## $ officer_defined_ethnicity                &lt;chr&gt; ...
-## $ legislation                              &lt;chr&gt; ...
-## $ object_of_search                         &lt;chr&gt; ...
-## $ outcome                                  &lt;chr&gt; ...
-## $ outcome_linked_to_object_of_search       &lt;lgl&gt; ...
-## $ removal_of_more_than_just_outer_clothing &lt;lgl&gt; ...
-## $ month                                    &lt;dbl&gt; ...
-## $ month_name                               &lt;ord&gt; ...
-## $ year                                     &lt;dbl&gt; ...
-## $ month_year                               &lt;chr&gt; ...</code></pre>
-</div>
 <div id="initial-overview-of-the-data" class="section level1">
 <h1>Initial overview of the data</h1>
-<pre class="r"><code># some quick counts...
-
+<pre class="r"><code># Number of Stop &amp; Search operations by gender
 table1 &lt;- stop_search_all %&gt;% 
   count(gender, sort=TRUE)
 kbl(table1,col.names=c(&quot;Gender&quot;,&quot;Count&quot;)) %&gt;%
@@ -126,7 +76,8 @@ Other
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>table2 &lt;- stop_search_all %&gt;% 
+<pre class="r"><code># Number of Stop &amp; Search operations by object of search
+table2 &lt;- stop_search_all %&gt;% 
   count(object_of_search, sort=TRUE)
 kbl(table2,col.names=c(&quot;Object of search&quot;,&quot;Count&quot;)) %&gt;%
   kable_styling()</code></pre>
@@ -216,7 +167,8 @@ Fireworks
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>table3 &lt;- stop_search_all %&gt;% 
+<pre class="r"><code># Number of Stop &amp; Search operations by ethnicity
+table3 &lt;- stop_search_all %&gt;% 
   count(officer_defined_ethnicity, sort=TRUE)
 kbl(table3,col.names=c(&quot;Ethnicity&quot;,&quot;Count&quot;)) %&gt;%
   kable_styling()</code></pre>
@@ -274,7 +226,8 @@ NA
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>table4 &lt;- stop_search_all %&gt;% 
+<pre class="r"><code># Number of Stop &amp; Search operations by age
+table4 &lt;- stop_search_all %&gt;% 
   count(age_range)
 kbl(table4,col.names=c(&quot;Age&quot;,&quot;Count&quot;)) %&gt;%
   kable_styling()</code></pre>
@@ -340,10 +293,10 @@ NA
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>#use sf::read_sf() to read in London Wards shapefile
+<pre class="r"><code>#I read London Wards shapefile
 london_wards_sf &lt;- read_sf(here(&quot;data/London-wards-2018_ESRI/London_Ward.shp&quot;))
 
-# what type of geometry does our shapefile have?
+# I control the type of geometry that the shapefile has
 st_geometry(london_wards_sf)#Geometry is Polygon</code></pre>
 <pre><code>## Geometry set for 657 features 
 ## geometry type:  POLYGON
@@ -351,7 +304,7 @@ st_geometry(london_wards_sf)#Geometry is Polygon</code></pre>
 ## bbox:           xmin: 504000 ymin: 156000 xmax: 562000 ymax: 201000
 ## projected CRS:  OSGB 1936 / British National Grid
 ## First 5 geometries:</code></pre>
-<pre class="r"><code># transfrom CRS to 4326, or pairs of latitude/longitude numbers
+<pre class="r"><code># I transfrom CRS to 4326
 london_wgs84 &lt;-  london_wards_sf %&gt;% 
   st_transform(4326) # transfrom CRS to WGS84, latitude/longitude
 
@@ -372,7 +325,7 @@ which_ethnicity &lt;- c(&quot;White&quot;, &quot;Black&quot;, &quot;Asian&quot;)
 
 stop_search_top &lt;- stop_search_all %&gt;% 
   
-  #filter out  rows with no latitude/longitude
+  #filter out rows with no latitude/longitude
   filter(!is.na(lng)) %&gt;% 
   filter(!is.na(lat)) %&gt;% 
   
@@ -381,7 +334,7 @@ stop_search_top &lt;- stop_search_all %&gt;%
   filter(age_range %in% which_ages) %&gt;% 
   filter(officer_defined_ethnicity %in% which_ethnicity) %&gt;% 
   
-  # relevel factors so everything appears in correct order
+  # I relevel factors so everything appears in correct order
   mutate(
     object_of_search = fct_relevel(object_of_search, 
                                    c(&quot;Controlled drugs&quot;, &quot;Offensive weapons&quot;,&quot;Stolen goods&quot;)), 
