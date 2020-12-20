@@ -7,7 +7,7 @@ description: Does school enrollment and GDP per capita affect the fertility rate
 draft: false
 image: pic12.jpg
 keywords: ""
-slug: blog8
+slug: LondonHousePrices
 title: Does School Enrollment and GDP per Capita Affect the Fertility Rate?
 subtitle: Various analyses
 ---
