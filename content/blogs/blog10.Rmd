@@ -1,11 +1,11 @@
 ---
-title: "Smart Investment Decisions: Which house should I buy in London"
-date: '2020-09-14T22:42:51-05:00'
-description: "London House Prices"
+title: 'Smart Investment Decisions: Which house should I buy in London'
+date: '2020-12-20T22:42:51-05:00'
+description: London House Prices
 draft: no
 image: pic12.jpg
 keywords: ''
-slug: londonHousePrices
+slug: blog10
 categories:
 - ''
 - ''
@@ -76,8 +76,8 @@ library(skimr)
 ```{r read-investigate, message=FALSE, warning=FALSE}
 #read in the data
 library(data.table)
-london_house_prices_2019_training<-read.csv("training_data_assignment_with_prices.csv")
-london_house_prices_2019_out_of_sample<-read.csv("test_data_assignment.csv")
+london_house_prices_2019_training<-read.csv("data/training_data_assignment_with_prices.csv")
+london_house_prices_2019_out_of_sample<-read.csv("data/test_data_assignment.csv")
 
 #fix dates
 london_house_prices_2019_training <- london_house_prices_2019_training %>% mutate(date=as.Date(date))
