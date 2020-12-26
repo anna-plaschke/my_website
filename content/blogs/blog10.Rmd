@@ -3,7 +3,7 @@ title: 'Smart Investment Decisions: Which house should I buy in London'
 date: '2020-12-20T22:42:51-05:00'
 description: London House Prices
 draft: no
-image: pic12.jpg
+image: houses.jpg
 keywords: ''
 slug: blog10
 categories:
@@ -89,7 +89,6 @@ london_house_prices_2019_out_of_sample<-read.csv("data/test_data_assignment.csv"
 
 #fix dates
 london_house_prices_2019_training <- london_house_prices_2019_training %>% mutate(date=as.Date(date))
-london_house_prices_2019_out_of_sample<-london_house_prices_2019_out_of_sample %>% mutate(date=as.Date(date))
 #change characters to factors
 london_house_prices_2019_training <- london_house_prices_2019_training %>% mutate_if(is.character,as.factor)
 london_house_prices_2019_out_of_sample<-london_house_prices_2019_out_of_sample %>% mutate_if(is.character,as.factor)
@@ -285,10 +284,9 @@ model_lm_0<-train(
     +whether_old_or_new
     +freehold_or_leasehold
   
-    
-  #  +district
+
    +london_zone
-   #+postcode_short
+   #+postcode_short #too many variables
     #+local_aut #not in out of sample data
     +average_income
   # +nearest_station #problems in out of sample
@@ -313,7 +311,7 @@ model_lm_0<-train(
    )
 
 # summary of the results
-summary(model_lm_0)
+model_lm_0$result
 ```
 
 After excluding all insignificant variables, I create interaction variables between variables that are very important (e.g., total floor area, number of habitable rooms, and London zone), as well as non-linear terms (e.g., (total floor area) ² ) . 
@@ -345,7 +343,7 @@ model_lm<-train(
    )
 
 # summary of the results
-summary(model_lm)
+model_lm$result
 ```
 
 Then, I plot the results of the final model as well as the importance of each variable:
@@ -427,14 +425,12 @@ lasso_fit <- train(price ~
 
 )
 
-print(lasso_fit)
-
 coef(lasso_fit$finalModel, lasso_fit$bestTune$lambda)
 ```
 
 ### Predict lasso
 ```{r lasso_predict}
-lasso_fit$results
+#lasso_fit$results
 plot(lasso_fit)
 
 predictions_lasso <- predict(lasso_fit, test_data)
@@ -457,7 +453,7 @@ To do so, I first use 10 random values for k with tuneLength, and then optimize 
 
 
 ### KNN: 10 random values for k 
-```{r knn_model_1,  warning=FALSE, message=FALSE, eval = FALSE }
+```{r knn_model_1,  warning=FALSE, message=FALSE }
 #knn
 # selecting the best k with the highest R²
 set.seed(1) #because I use cross-validation and want to be able to replicate the model
@@ -487,7 +483,7 @@ knn_fit_1 <- train(
                    
                 method = "knn", 
                  trControl = control, #use the same as I used in linear regression
-                 tuneLength = 20, #number of parameter values train function will try ##WHAT DIFFERENCE TO TUNEGRID??
+                 tuneLength = 10, #number of parameter values train function will try
                  preProcess = c("center", "scale"), #center and scale the data in k-nn this is pretty important
                  metric="RMSE" #default metric is accuracy, I change it to R²
 
@@ -536,7 +532,6 @@ knn_fit_2 <- train(
      preProcess = c("center", "scale"), #center and scale the data in k-nn this is pretty important
      metric="RMSE") #default metric is accuracy is binary, otherwise RMSE, I change it to R²
 
-knn_fit_2$results   
 print(knn_fit_2)
 plot(knn_fit_2)
 ```
@@ -616,6 +611,8 @@ plot(importance)
 ```
 
 ### Tree 2
+
+The best cp seems to be between 0.000 and 0.0001, therefore I use tuneGrid to get the best cp.
 ```{r tree_model_hypertune2 , warning=FALSE, message=FALSE}
 #no need to scale the data
 
@@ -689,7 +686,7 @@ To optimize RMSE and R² for the random trees, I tuned the number of variables t
 
 
 ### RF 1
-```{r random_forest, warning=FALSE, message=FALSE,eval=FALSE}
+```{r random_forest, warning=FALSE, message=FALSE}
 #random forest is an assembled method 
 
 set.seed(1)
@@ -723,12 +720,16 @@ rf_fit <- train(
   tuneLength= 10,
   importance = 'permutation')
 
-rf_fit$results
+print(rf_fit)
 plot(rf_fit)
 ```
 
+After selecting 
+
 ### RF 2
-```{r , warning=FALSE, message=FALSE, eval = FALSE}
+The best .mtry seems to be between 25 and 29, therefore I use tune grid to find the best value.
+
+```{r , warning=FALSE, message=FALSE}
 #random forest is an assembled method 
 gridRF <- data.frame(.mtry = c(25:29), .splitrule="variance", .min.node.size = 5)
 
@@ -765,49 +766,12 @@ rf_fit_2 <- train(price~
     importance = 'permutation',
     verbose = TRUE)
 
-rf_fit_2
+print(rf_fit_2)
 plot(rf_fit_2)
 ```
-```{r rf_finall, warning=FALSE, message=FALSE}
-#random forest is an assembled method 
-gridRF <- data.frame(.mtry = 27, .splitrule="variance", .min.node.size = 5)
 
+The best .mtry is 27.
 
-set.seed(1)
-rf_fit_2 <- train(price~
-  
-   distance_to_station
-   +latitude
-   +longitude
-    
-   #+num_tube_lines #not significant
-    
-   # +whether_old_or_new #not significant
-   +freehold_or_leasehold
-  
-   +district
-   +property_type
-   +london_zone
-   +total_floor_area
-   +number_habitable_rooms 
-   
-   +energy_consumption_potential 
-   +windows_energy_eff
-   +co2_emissions_potential
-   +water_company,
-  
-    train_data, 
-                                  
-    method = "ranger",
-    metric="RMSE", #?? rmse or R²
-    trControl = control, #same as lm
-    tuneGrid = gridRF, # The tuneGrid parameter lets us decide which values the main parameter will take While tuneLength only limit the number of default parameters to use.
-    importance = 'permutation',
-    verbose = TRUE)
-
-rf_fit_2
-
-```
 ### Prediction RF
 
 ```{r rf_prediction,  warning=FALSE, message=FALSE}
@@ -826,7 +790,7 @@ rf_results
 Also gradient boosting is an ensembled learning method based on trees. Gradient boosting method combines the current model with the next best possible model as long as the combined model presents a lower overall error (RMSE) than the individual model.
 To optimize RMSE and R², I tune the maximum nodes per tree and the number of trees. An increasing number of trees reduces the error but could lead to over-fitting and needs much computational power. In addition, the learning rate (shrinkage) and the minimum number of observations in tree’s terminal nodes could potentially be tuned. I used a slow learn rate of 0.05 as recommended when growing trees and due to the size of my training data, 10 as minimum number of observations.
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
+```{r, warning=FALSE, message=FALSE, eval = FALSE}
 modelLookup("gbm")
 
 #Usual trainControl - take the same
@@ -845,9 +809,6 @@ gbmFit1 <- train(price~
     +latitude
     +longitude
     
-    #+num_tube_lines #not significant
-    
-   # +whether_old_or_new #not significant
     +freehold_or_leasehold
   
     +district
@@ -874,7 +835,7 @@ gbmFit1 <- train(price~
 print(gbmFit1)
 ```
 
-```{r gbm, warning=FALSE, message=FALSE, eval = FALSE}
+```{r gbm, warning=FALSE, message=FALSE}
 modelLookup("gbm")
 
 #Usual trainControl - take the same
@@ -893,9 +854,7 @@ gbmFit1 <- train(price~
     +latitude
     +longitude
     
-    #+num_tube_lines #not significant
-    
-   # +whether_old_or_new #not significant
+
     +freehold_or_leasehold
   
     +district
@@ -1143,14 +1102,11 @@ class(multimodel) <- "caretList"
 The figures below compare the 6 models used for stacking visually in terms of RMSE  and R².
 ```{r visualize results, warning=FALSE, message=FALSE}
 #we can visualize the differences in performance of each algorithm for each fold 
-  modelCor(resamples(multimodel))
   dotplot(resamples(multimodel), metric = "Rsquared") #you can set metric=MAE, RMSE, or Rsquared 
-   xyplot(resamples(multimodel), metric = "Rsquared")
     splom(resamples(multimodel), metric = "Rsquared")
   
 
   dotplot(resamples(multimodel), metric = "RMSE") #you can set metric=MAE, RMSE, or Rsquared 
-   xyplot(resamples(multimodel), metric = "RMSE")
     splom(resamples(multimodel), metric = "RMSE")
 ```
 

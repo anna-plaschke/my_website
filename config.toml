@@ -99,7 +99,7 @@ disqusShortname = ""
    [[params.tiles.showcase]]
       title = "Smart Investment Decisions: Which house should I buy in London"
       subtitle = "London House Prices"
-      image = "london.jpg"
+      image = "houses.jpg"
       url = "blogs/blog10"
 
    [[params.tiles.showcase]]
