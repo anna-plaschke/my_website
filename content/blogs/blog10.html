@@ -1,10 +1,20 @@
-<script src="bog10_files/header-attrs/header-attrs.js"></script>
+---
+title: 'Smart Investment Decisions: Which house should I buy in London'
+date: '2020-12-20T22:42:51-05:00'
+description: London House Prices
+draft: no
+image: pic12.jpg
+keywords: ''
+slug: blog10
+categories:
+- ''
+- ''
+subtitle: Various analyses
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
-<style>
-div.navy1 { background-color:#686868; border-radius: 5px; padding: 20px; border-style: groove; color: #ffffff;}
-
-</style>
 <div id="abstract" class="section level1">
 <h1>Abstract</h1>
 <p>This report is about estimating housing prices in London with estimation engines to guide investment decisions. Transaction data from houses sold in London in 2019 as well as various information on these houses are used to create seven different estimation engines using linear regression, LASSO regression, knn, tree, random forest, gradient boosting, and stacking. The best model is used to select the most promising 200 houses out of 2,000 houses that are currently on sale. This will be done by calculating the deviation of the predicted price and asked price.</p>
@@ -27,8 +37,8 @@ Finally, I add public transport information such as nearest station, walking dis
 I clean the dataset, making sure that the correct data type is assigned to each variable and remove the variables with too many missing datapoints.</p>
 <pre class="r"><code>#read in the data
 library(data.table)
-london_house_prices_2019_training&lt;-read.csv(&quot;training_data_assignment_with_prices.csv&quot;)
-london_house_prices_2019_out_of_sample&lt;-read.csv(&quot;test_data_assignment.csv&quot;)
+london_house_prices_2019_training&lt;-read.csv(&quot;data/training_data_assignment_with_prices.csv&quot;)
+london_house_prices_2019_out_of_sample&lt;-read.csv(&quot;data/test_data_assignment.csv&quot;)
 
 #fix dates
 london_house_prices_2019_training &lt;- london_house_prices_2019_training %&gt;% mutate(date=as.Date(date))
@@ -50,7 +60,7 @@ london_house_prices_2019_training$postcode_short &lt;- factor(london_house_price
 <p>Before visualizing the data I calculate the average price total and average price per Sqrmtr</p>
 <pre class="r"><code>london_house_prices_2019_training %&gt;% summarise(average_price =mean(price), average_price_sqmtr =mean(price/total_floor_area))</code></pre>
 <pre><code>##   average_price average_price_sqmtr
-## 1      593790.9            6343.062</code></pre>
+## 1        593791                6343</code></pre>
 <p>To get a good initial understanding on the structure of the data and the relationship between housing prices and the explanatory variables, I create a few visualizations:</p>
 <p>First, I plot the distribution of the prices and detect that they are right skewed, with a medium price of 595,000 pounds.</p>
 <pre class="r"><code>library(patchwork)
@@ -78,7 +88,7 @@ scale_fill_manual(values=c(&quot;dark grey&quot;, &quot;#5691B0&quot; ))+
   NULL
 
   p1+p2</code></pre>
-<p><img src="bog10_files/figure-html/visualize-1.png" width="960" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize-1.png" width="960" style="display: block; margin: auto;" /></p>
 <p>Second, I plot the average price per property type as well as the frequency of each property type. While detached houses, the least frequent sold property type, are on average more expensive, Flats, the most frequent sold property type, are on average the cheapest properties to buy.</p>
 <pre class="r"><code>p1 &lt;- london_house_prices_2019_training %&gt;% 
   group_by(property_type) %&gt;% 
@@ -109,7 +119,7 @@ p2&lt;- london_house_prices_2019_training %&gt;%
   NULL
 
 p1+p2</code></pre>
-<p><img src="bog10_files/figure-html/visualize3-1.png" width="1152" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize3-1.png" width="1152" style="display: block; margin: auto;" /></p>
 <p>To understand the influence of a property’s size and zone I plot these variables and detect strong relationship between size and price, as well as london zones and prices.</p>
 <pre class="r"><code>london_house_prices_2019_training %&gt;%
   mutate(london_zone2=as.factor(london_zone)) %&gt;% 
@@ -122,7 +132,7 @@ p1+p2</code></pre>
   scale_y_continuous(labels=scales::dollar_format())+
 
   NULL</code></pre>
-<p><img src="bog10_files/figure-html/visualize_londonzone-1.png" width="960" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize_londonzone-1.png" width="960" style="display: block; margin: auto;" /></p>
 <p>Then, I visualized the positive relationship between average income and price.</p>
 <pre class="r"><code>london_house_prices_2019_training %&gt;% 
   ggplot(aes(y=price, x=average_income))+ 
@@ -133,7 +143,7 @@ p1+p2</code></pre>
   scale_y_continuous(labels=scales::dollar_format(), limits=c(0, 3000000))+
   scale_x_continuous(label=comma)+
   NULL</code></pre>
-<p><img src="bog10_files/figure-html/visualizeaverageincome-1.png" width="960" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualizeaverageincome-1.png" width="960" style="display: block; margin: auto;" /></p>
 <p>I look at the price/floor area by district.</p>
 <pre class="r"><code>london_house_prices_2019_training %&gt;% 
   mutate(price_floor =price/total_floor_area) %&gt;%
@@ -144,7 +154,7 @@ p1+p2</code></pre>
   labs(x=&quot;Average Price per squaremetre&quot;, y=&quot;&quot;, title=&quot;Average Price per District&quot;)+
   theme_classic()+ #add theme
   NULL</code></pre>
-<p><img src="bog10_files/figure-html/visualizedistrict-1.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualizedistrict-1.png" width="768" style="display: block; margin: auto;" /></p>
 <p>Finally, I check if there are strong correlations between the variables. Some variables such as total floor area, number of habitable rooms, and current CO2 emissions are correlating strongly. Whilst it is important to keep such correlations in mind, they do not constitute a problem when creating models for prediction.</p>
 <pre class="r"><code># produce a correlation table using GGally::ggcor()
 
@@ -152,7 +162,7 @@ library(&quot;GGally&quot;)
 london_house_prices_2019_training %&gt;% 
   select(-ID) %&gt;% #keep Y variable last
   ggcorr(method = c(&quot;pairwise&quot;, &quot;pearson&quot;), layout.exp = 2,label_round=2, label = TRUE,label_size = 2,hjust = 1,nbreaks = 5,size = 2,angle = -20)</code></pre>
-<p><img src="bog10_files/figure-html/correlation table-1.png" width="672" />
+<p><img src="/blogs/blog10_files/figure-html/correlation%20table-1.png" width="768" style="display: block; margin: auto;" />
 ## Tuning Model</p>
 <p>Before creating models, I split the data into training and testing data. I use the training dataset to build my models and test them subsequently on the testing data. Having an outcome variable for the testing data, I can detect if my model overfits before using it for predictions on unlabeled data (houses with no transaction price).</p>
 <pre class="r"><code>#let&#39;s do the initial split
@@ -278,529 +288,529 @@ summary(model_lm)</code></pre>
 ## -2145508   -68247      723    64376  5066860 
 ## 
 ## Coefficients: (10 not defined because of singularities)
-##                                                                   Estimate
-## (Intercept)                                                      1.324e+06
-## num_tube_lines                                                   2.110e+04
-## london_zone                                                     -1.274e+05
-## `poly(total_floor_area, 2)1`                                     1.122e+08
-## `poly(total_floor_area, 2)2`                                     3.854e+07
-## number_habitable_rooms                                          -4.142e+04
-## average_income                                                   7.177e+00
-## energy_consumption_potential                                    -4.116e+02
-## energy_consumption_current                                      -4.112e+01
-## current_energy_ratingC                                           1.982e+04
-## current_energy_ratingD                                           2.617e+04
-## current_energy_ratingE                                           9.992e+03
-## current_energy_ratingF                                          -3.697e+04
-## current_energy_ratingG                                          -8.180e+04
-## windows_energy_effGood                                           1.731e+04
-## windows_energy_effPoor                                           4.369e+04
-## `windows_energy_effVery Good`                                    2.538e+05
-## `windows_energy_effVery Poor`                                    4.724e+04
-## co2_emissions_potential                                          3.664e+04
-## co2_emissions_current                                            8.201e+03
-## `water_companyEssex &amp; Suffolk Water`                             1.151e+04
-## `water_companyLeep Utilities`                                    4.372e+04
-## `water_companySES Water`                                         7.619e+04
-## `water_companyThames Water`                                      4.819e+04
-## `districtBarking and Dagenham:property_typeD`                   -6.885e+05
-## `districtBarnet:property_typeD`                                 -6.170e+05
-## `districtBexley:property_typeD`                                 -6.435e+05
-## `districtBrent:property_typeD`                                  -7.614e+05
-## `districtBromley:property_typeD`                                -7.134e+05
-## `districtCamden:property_typeD`                                 -6.085e+03
-## `districtCity of London:property_typeD`                                 NA
-## `districtCroydon:property_typeD`                                -7.685e+05
-## `districtEaling:property_typeD`                                 -8.462e+05
-## `districtEnfield:property_typeD`                                -7.231e+05
-## `districtGreenwich:property_typeD`                              -8.099e+05
-## `districtHackney:property_typeD`                                        NA
-## `districtHammersmith and Fulham:property_typeD`                         NA
-## `districtHaringey:property_typeD`                                       NA
-## `districtHarrow:property_typeD`                                 -5.046e+05
-## `districtHavering:property_typeD`                               -6.389e+05
-## `districtHillingdon:property_typeD`                             -5.753e+05
-## `districtHounslow:property_typeD`                               -8.615e+05
-## `districtIslington:property_typeD`                              -5.375e+05
-## `districtKensington and Chelsea:property_typeD`                  1.208e+06
-## `districtKingston upon Thames:property_typeD`                   -4.983e+05
-## `districtLambeth:property_typeD`                                -7.487e+05
-## `districtLewisham:property_typeD`                               -8.949e+05
-## `districtMerton:property_typeD`                                 -5.640e+05
-## `districtNewham:property_typeD`                                 -8.172e+05
-## `districtRedbridge:property_typeD`                              -7.804e+05
-## `districtRichmond upon Thames:property_typeD`                   -3.381e+05
-## `districtSouthwark:property_typeD`                              -6.511e+05
-## `districtSutton:property_typeD`                                 -8.085e+05
-## `districtTower Hamlets:property_typeD`                                  NA
-## `districtWaltham Forest:property_typeD`                         -1.025e+06
-## `districtWandsworth:property_typeD`                             -6.596e+05
-## `districtWestminster:property_typeD`                                    NA
-## `districtBarking and Dagenham:property_typeF`                   -8.351e+05
-## `districtBarnet:property_typeF`                                 -8.249e+05
-## `districtBexley:property_typeF`                                 -8.863e+05
-## `districtBrent:property_typeF`                                  -7.782e+05
-## `districtBromley:property_typeF`                                -8.802e+05
-## `districtCamden:property_typeF`                                 -6.610e+05
-## `districtCity of London:property_typeF`                         -5.059e+05
-## `districtCroydon:property_typeF`                                -8.814e+05
-## `districtEaling:property_typeF`                                 -8.294e+05
-## `districtEnfield:property_typeF`                                -8.296e+05
-## `districtGreenwich:property_typeF`                              -8.437e+05
-## `districtHackney:property_typeF`                                -7.498e+05
-## `districtHammersmith and Fulham:property_typeF`                 -7.191e+05
-## `districtHaringey:property_typeF`                               -7.634e+05
-## `districtHarrow:property_typeF`                                 -8.454e+05
-## `districtHavering:property_typeF`                               -8.248e+05
-## `districtHillingdon:property_typeF`                             -8.335e+05
-## `districtHounslow:property_typeF`                               -8.405e+05
-## `districtIslington:property_typeF`                              -7.294e+05
-## `districtKensington and Chelsea:property_typeF`                 -3.109e+05
-## `districtKingston upon Thames:property_typeF`                   -8.578e+05
-## `districtLambeth:property_typeF`                                -7.950e+05
-## `districtLewisham:property_typeF`                               -8.681e+05
-## `districtMerton:property_typeF`                                 -8.475e+05
-## `districtNewham:property_typeF`                                 -8.255e+05
-## `districtRedbridge:property_typeF`                              -8.641e+05
-## `districtRichmond upon Thames:property_typeF`                   -8.123e+05
-## `districtSouthwark:property_typeF`                              -7.746e+05
-## `districtSutton:property_typeF`                                 -9.310e+05
-## `districtTower Hamlets:property_typeF`                          -8.444e+05
-## `districtWaltham Forest:property_typeF`                         -8.018e+05
-## `districtWandsworth:property_typeF`                             -7.947e+05
-## `districtWestminster:property_typeF`                            -3.785e+05
-## `districtBarking and Dagenham:property_typeS`                   -8.278e+05
-## `districtBarnet:property_typeS`                                 -6.818e+05
-## `districtBexley:property_typeS`                                 -8.358e+05
-## `districtBrent:property_typeS`                                  -7.538e+05
-## `districtBromley:property_typeS`                                -8.022e+05
-## `districtCamden:property_typeS`                                 -6.209e+05
-## `districtCity of London:property_typeS`                                 NA
-## `districtCroydon:property_typeS`                                -8.876e+05
-## `districtEaling:property_typeS`                                 -7.591e+05
-## `districtEnfield:property_typeS`                                -7.634e+05
-## `districtGreenwich:property_typeS`                              -8.700e+05
-## `districtHackney:property_typeS`                                -5.807e+05
-## `districtHammersmith and Fulham:property_typeS`                 -5.870e+05
-## `districtHaringey:property_typeS`                               -7.846e+05
-## `districtHarrow:property_typeS`                                 -7.162e+05
-## `districtHavering:property_typeS`                               -7.192e+05
-## `districtHillingdon:property_typeS`                             -7.167e+05
-## `districtHounslow:property_typeS`                               -7.595e+05
-## `districtIslington:property_typeS`                              -2.290e+05
-## `districtKensington and Chelsea:property_typeS`                  1.979e+05
-## `districtKingston upon Thames:property_typeS`                   -7.000e+05
-## `districtLambeth:property_typeS`                                -8.788e+05
-## `districtLewisham:property_typeS`                               -9.089e+05
-## `districtMerton:property_typeS`                                 -8.136e+05
-## `districtNewham:property_typeS`                                 -8.327e+05
-## `districtRedbridge:property_typeS`                              -8.606e+05
-## `districtRichmond upon Thames:property_typeS`                   -5.346e+05
-## `districtSouthwark:property_typeS`                              -6.641e+05
-## `districtSutton:property_typeS`                                 -8.509e+05
-## `districtTower Hamlets:property_typeS`                                  NA
-## `districtWaltham Forest:property_typeS`                         -7.240e+05
-## `districtWandsworth:property_typeS`                             -7.696e+05
-## `districtWestminster:property_typeS`                             2.996e+06
-## `districtBarking and Dagenham:property_typeT`                   -8.005e+05
-## `districtBarnet:property_typeT`                                 -7.441e+05
-## `districtBexley:property_typeT`                                 -8.464e+05
-## `districtBrent:property_typeT`                                  -6.992e+05
-## `districtBromley:property_typeT`                                -8.377e+05
-## `districtCamden:property_typeT`                                 -4.953e+05
-## `districtCity of London:property_typeT`                                 NA
-## `districtCroydon:property_typeT`                                -8.959e+05
-## `districtEaling:property_typeT`                                 -7.562e+05
-## `districtEnfield:property_typeT`                                -7.747e+05
-## `districtGreenwich:property_typeT`                              -8.342e+05
-## `districtHackney:property_typeT`                                -6.982e+05
-## `districtHammersmith and Fulham:property_typeT`                 -5.416e+05
-## `districtHaringey:property_typeT`                               -7.351e+05
-## `districtHarrow:property_typeT`                                 -7.502e+05
-## `districtHavering:property_typeT`                               -7.463e+05
-## `districtHillingdon:property_typeT`                             -7.668e+05
-## `districtHounslow:property_typeT`                               -7.269e+05
-## `districtIslington:property_typeT`                              -5.871e+05
-## `districtKensington and Chelsea:property_typeT`                  6.668e+05
-## `districtKingston upon Thames:property_typeT`                   -7.473e+05
-## `districtLambeth:property_typeT`                                -8.437e+05
-## `districtLewisham:property_typeT`                               -8.744e+05
-## `districtMerton:property_typeT`                                 -8.300e+05
-## `districtNewham:property_typeT`                                 -8.893e+05
-## `districtRedbridge:property_typeT`                              -8.345e+05
-## `districtRichmond upon Thames:property_typeT`                   -6.301e+05
-## `districtSouthwark:property_typeT`                              -7.676e+05
-## `districtSutton:property_typeT`                                 -8.708e+05
-## `districtTower Hamlets:property_typeT`                          -7.787e+05
-## `districtWaltham Forest:property_typeT`                         -7.647e+05
-## `districtWandsworth:property_typeT`                             -7.645e+05
-## `districtWestminster:property_typeT`                                    NA
-## `london_zone:poly(total_floor_area, 2)1`                        -2.368e+07
-## `london_zone:poly(total_floor_area, 2)2`                        -8.897e+06
-## `london_zone:number_habitable_rooms`                             9.784e+03
-## `poly(total_floor_area, 2)1:number_habitable_rooms`             -7.230e+06
-## `poly(total_floor_area, 2)2:number_habitable_rooms`             -1.185e+06
-## `london_zone:poly(total_floor_area, 2)1:number_habitable_rooms`  1.858e+06
-## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms`  2.695e+05
+##                                                                  Estimate
+## (Intercept)                                                      1.32e+06
+## num_tube_lines                                                   2.11e+04
+## london_zone                                                     -1.27e+05
+## `poly(total_floor_area, 2)1`                                     1.12e+08
+## `poly(total_floor_area, 2)2`                                     3.85e+07
+## number_habitable_rooms                                          -4.14e+04
+## average_income                                                   7.18e+00
+## energy_consumption_potential                                    -4.12e+02
+## energy_consumption_current                                      -4.11e+01
+## current_energy_ratingC                                           1.98e+04
+## current_energy_ratingD                                           2.62e+04
+## current_energy_ratingE                                           9.99e+03
+## current_energy_ratingF                                          -3.70e+04
+## current_energy_ratingG                                          -8.18e+04
+## windows_energy_effGood                                           1.73e+04
+## windows_energy_effPoor                                           4.37e+04
+## `windows_energy_effVery Good`                                    2.54e+05
+## `windows_energy_effVery Poor`                                    4.72e+04
+## co2_emissions_potential                                          3.66e+04
+## co2_emissions_current                                            8.20e+03
+## `water_companyEssex &amp; Suffolk Water`                             1.15e+04
+## `water_companyLeep Utilities`                                    4.37e+04
+## `water_companySES Water`                                         7.62e+04
+## `water_companyThames Water`                                      4.82e+04
+## `districtBarking and Dagenham:property_typeD`                   -6.89e+05
+## `districtBarnet:property_typeD`                                 -6.17e+05
+## `districtBexley:property_typeD`                                 -6.44e+05
+## `districtBrent:property_typeD`                                  -7.61e+05
+## `districtBromley:property_typeD`                                -7.13e+05
+## `districtCamden:property_typeD`                                 -6.08e+03
+## `districtCity of London:property_typeD`                                NA
+## `districtCroydon:property_typeD`                                -7.68e+05
+## `districtEaling:property_typeD`                                 -8.46e+05
+## `districtEnfield:property_typeD`                                -7.23e+05
+## `districtGreenwich:property_typeD`                              -8.10e+05
+## `districtHackney:property_typeD`                                       NA
+## `districtHammersmith and Fulham:property_typeD`                        NA
+## `districtHaringey:property_typeD`                                      NA
+## `districtHarrow:property_typeD`                                 -5.05e+05
+## `districtHavering:property_typeD`                               -6.39e+05
+## `districtHillingdon:property_typeD`                             -5.75e+05
+## `districtHounslow:property_typeD`                               -8.61e+05
+## `districtIslington:property_typeD`                              -5.38e+05
+## `districtKensington and Chelsea:property_typeD`                  1.21e+06
+## `districtKingston upon Thames:property_typeD`                   -4.98e+05
+## `districtLambeth:property_typeD`                                -7.49e+05
+## `districtLewisham:property_typeD`                               -8.95e+05
+## `districtMerton:property_typeD`                                 -5.64e+05
+## `districtNewham:property_typeD`                                 -8.17e+05
+## `districtRedbridge:property_typeD`                              -7.80e+05
+## `districtRichmond upon Thames:property_typeD`                   -3.38e+05
+## `districtSouthwark:property_typeD`                              -6.51e+05
+## `districtSutton:property_typeD`                                 -8.09e+05
+## `districtTower Hamlets:property_typeD`                                 NA
+## `districtWaltham Forest:property_typeD`                         -1.03e+06
+## `districtWandsworth:property_typeD`                             -6.60e+05
+## `districtWestminster:property_typeD`                                   NA
+## `districtBarking and Dagenham:property_typeF`                   -8.35e+05
+## `districtBarnet:property_typeF`                                 -8.25e+05
+## `districtBexley:property_typeF`                                 -8.86e+05
+## `districtBrent:property_typeF`                                  -7.78e+05
+## `districtBromley:property_typeF`                                -8.80e+05
+## `districtCamden:property_typeF`                                 -6.61e+05
+## `districtCity of London:property_typeF`                         -5.06e+05
+## `districtCroydon:property_typeF`                                -8.81e+05
+## `districtEaling:property_typeF`                                 -8.29e+05
+## `districtEnfield:property_typeF`                                -8.30e+05
+## `districtGreenwich:property_typeF`                              -8.44e+05
+## `districtHackney:property_typeF`                                -7.50e+05
+## `districtHammersmith and Fulham:property_typeF`                 -7.19e+05
+## `districtHaringey:property_typeF`                               -7.63e+05
+## `districtHarrow:property_typeF`                                 -8.45e+05
+## `districtHavering:property_typeF`                               -8.25e+05
+## `districtHillingdon:property_typeF`                             -8.33e+05
+## `districtHounslow:property_typeF`                               -8.41e+05
+## `districtIslington:property_typeF`                              -7.29e+05
+## `districtKensington and Chelsea:property_typeF`                 -3.11e+05
+## `districtKingston upon Thames:property_typeF`                   -8.58e+05
+## `districtLambeth:property_typeF`                                -7.95e+05
+## `districtLewisham:property_typeF`                               -8.68e+05
+## `districtMerton:property_typeF`                                 -8.48e+05
+## `districtNewham:property_typeF`                                 -8.25e+05
+## `districtRedbridge:property_typeF`                              -8.64e+05
+## `districtRichmond upon Thames:property_typeF`                   -8.12e+05
+## `districtSouthwark:property_typeF`                              -7.75e+05
+## `districtSutton:property_typeF`                                 -9.31e+05
+## `districtTower Hamlets:property_typeF`                          -8.44e+05
+## `districtWaltham Forest:property_typeF`                         -8.02e+05
+## `districtWandsworth:property_typeF`                             -7.95e+05
+## `districtWestminster:property_typeF`                            -3.79e+05
+## `districtBarking and Dagenham:property_typeS`                   -8.28e+05
+## `districtBarnet:property_typeS`                                 -6.82e+05
+## `districtBexley:property_typeS`                                 -8.36e+05
+## `districtBrent:property_typeS`                                  -7.54e+05
+## `districtBromley:property_typeS`                                -8.02e+05
+## `districtCamden:property_typeS`                                 -6.21e+05
+## `districtCity of London:property_typeS`                                NA
+## `districtCroydon:property_typeS`                                -8.88e+05
+## `districtEaling:property_typeS`                                 -7.59e+05
+## `districtEnfield:property_typeS`                                -7.63e+05
+## `districtGreenwich:property_typeS`                              -8.70e+05
+## `districtHackney:property_typeS`                                -5.81e+05
+## `districtHammersmith and Fulham:property_typeS`                 -5.87e+05
+## `districtHaringey:property_typeS`                               -7.85e+05
+## `districtHarrow:property_typeS`                                 -7.16e+05
+## `districtHavering:property_typeS`                               -7.19e+05
+## `districtHillingdon:property_typeS`                             -7.17e+05
+## `districtHounslow:property_typeS`                               -7.60e+05
+## `districtIslington:property_typeS`                              -2.29e+05
+## `districtKensington and Chelsea:property_typeS`                  1.98e+05
+## `districtKingston upon Thames:property_typeS`                   -7.00e+05
+## `districtLambeth:property_typeS`                                -8.79e+05
+## `districtLewisham:property_typeS`                               -9.09e+05
+## `districtMerton:property_typeS`                                 -8.14e+05
+## `districtNewham:property_typeS`                                 -8.33e+05
+## `districtRedbridge:property_typeS`                              -8.61e+05
+## `districtRichmond upon Thames:property_typeS`                   -5.35e+05
+## `districtSouthwark:property_typeS`                              -6.64e+05
+## `districtSutton:property_typeS`                                 -8.51e+05
+## `districtTower Hamlets:property_typeS`                                 NA
+## `districtWaltham Forest:property_typeS`                         -7.24e+05
+## `districtWandsworth:property_typeS`                             -7.70e+05
+## `districtWestminster:property_typeS`                             3.00e+06
+## `districtBarking and Dagenham:property_typeT`                   -8.01e+05
+## `districtBarnet:property_typeT`                                 -7.44e+05
+## `districtBexley:property_typeT`                                 -8.46e+05
+## `districtBrent:property_typeT`                                  -6.99e+05
+## `districtBromley:property_typeT`                                -8.38e+05
+## `districtCamden:property_typeT`                                 -4.95e+05
+## `districtCity of London:property_typeT`                                NA
+## `districtCroydon:property_typeT`                                -8.96e+05
+## `districtEaling:property_typeT`                                 -7.56e+05
+## `districtEnfield:property_typeT`                                -7.75e+05
+## `districtGreenwich:property_typeT`                              -8.34e+05
+## `districtHackney:property_typeT`                                -6.98e+05
+## `districtHammersmith and Fulham:property_typeT`                 -5.42e+05
+## `districtHaringey:property_typeT`                               -7.35e+05
+## `districtHarrow:property_typeT`                                 -7.50e+05
+## `districtHavering:property_typeT`                               -7.46e+05
+## `districtHillingdon:property_typeT`                             -7.67e+05
+## `districtHounslow:property_typeT`                               -7.27e+05
+## `districtIslington:property_typeT`                              -5.87e+05
+## `districtKensington and Chelsea:property_typeT`                  6.67e+05
+## `districtKingston upon Thames:property_typeT`                   -7.47e+05
+## `districtLambeth:property_typeT`                                -8.44e+05
+## `districtLewisham:property_typeT`                               -8.74e+05
+## `districtMerton:property_typeT`                                 -8.30e+05
+## `districtNewham:property_typeT`                                 -8.89e+05
+## `districtRedbridge:property_typeT`                              -8.35e+05
+## `districtRichmond upon Thames:property_typeT`                   -6.30e+05
+## `districtSouthwark:property_typeT`                              -7.68e+05
+## `districtSutton:property_typeT`                                 -8.71e+05
+## `districtTower Hamlets:property_typeT`                          -7.79e+05
+## `districtWaltham Forest:property_typeT`                         -7.65e+05
+## `districtWandsworth:property_typeT`                             -7.65e+05
+## `districtWestminster:property_typeT`                                   NA
+## `london_zone:poly(total_floor_area, 2)1`                        -2.37e+07
+## `london_zone:poly(total_floor_area, 2)2`                        -8.90e+06
+## `london_zone:number_habitable_rooms`                             9.78e+03
+## `poly(total_floor_area, 2)1:number_habitable_rooms`             -7.23e+06
+## `poly(total_floor_area, 2)2:number_habitable_rooms`             -1.19e+06
+## `london_zone:poly(total_floor_area, 2)1:number_habitable_rooms`  1.86e+06
+## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms`  2.69e+05
 ##                                                                 Std. Error
-## (Intercept)                                                      6.678e+04
-## num_tube_lines                                                   3.995e+03
-## london_zone                                                      9.057e+03
-## `poly(total_floor_area, 2)1`                                     2.805e+06
-## `poly(total_floor_area, 2)2`                                     2.164e+06
-## number_habitable_rooms                                           8.377e+03
-## average_income                                                   3.414e-01
-## energy_consumption_potential                                     8.387e+01
-## energy_consumption_current                                       7.109e+01
-## current_energy_ratingC                                           1.537e+04
-## current_energy_ratingD                                           1.671e+04
-## current_energy_ratingE                                           2.000e+04
-## current_energy_ratingF                                           2.803e+04
-## current_energy_ratingG                                           4.310e+04
-## windows_energy_effGood                                           5.740e+03
-## windows_energy_effPoor                                           8.581e+03
-## `windows_energy_effVery Good`                                    1.024e+05
-## `windows_energy_effVery Poor`                                    7.791e+03
-## co2_emissions_potential                                          5.204e+03
-## co2_emissions_current                                            3.594e+03
-## `water_companyEssex &amp; Suffolk Water`                             2.788e+04
-## `water_companyLeep Utilities`                                    1.622e+05
-## `water_companySES Water`                                         2.231e+04
-## `water_companyThames Water`                                      1.479e+04
-## `districtBarking and Dagenham:property_typeD`                    2.342e+05
-## `districtBarnet:property_typeD`                                  6.246e+04
-## `districtBexley:property_typeD`                                  6.569e+04
-## `districtBrent:property_typeD`                                   8.862e+04
-## `districtBromley:property_typeD`                                 5.690e+04
-## `districtCamden:property_typeD`                                  9.565e+04
+## (Intercept)                                                       6.68e+04
+## num_tube_lines                                                    4.00e+03
+## london_zone                                                       9.06e+03
+## `poly(total_floor_area, 2)1`                                      2.80e+06
+## `poly(total_floor_area, 2)2`                                      2.16e+06
+## number_habitable_rooms                                            8.38e+03
+## average_income                                                    3.41e-01
+## energy_consumption_potential                                      8.39e+01
+## energy_consumption_current                                        7.11e+01
+## current_energy_ratingC                                            1.54e+04
+## current_energy_ratingD                                            1.67e+04
+## current_energy_ratingE                                            2.00e+04
+## current_energy_ratingF                                            2.80e+04
+## current_energy_ratingG                                            4.31e+04
+## windows_energy_effGood                                            5.74e+03
+## windows_energy_effPoor                                            8.58e+03
+## `windows_energy_effVery Good`                                     1.02e+05
+## `windows_energy_effVery Poor`                                     7.79e+03
+## co2_emissions_potential                                           5.20e+03
+## co2_emissions_current                                             3.59e+03
+## `water_companyEssex &amp; Suffolk Water`                              2.79e+04
+## `water_companyLeep Utilities`                                     1.62e+05
+## `water_companySES Water`                                          2.23e+04
+## `water_companyThames Water`                                       1.48e+04
+## `districtBarking and Dagenham:property_typeD`                     2.34e+05
+## `districtBarnet:property_typeD`                                   6.25e+04
+## `districtBexley:property_typeD`                                   6.57e+04
+## `districtBrent:property_typeD`                                    8.86e+04
+## `districtBromley:property_typeD`                                  5.69e+04
+## `districtCamden:property_typeD`                                   9.57e+04
 ## `districtCity of London:property_typeD`                                 NA
-## `districtCroydon:property_typeD`                                 5.816e+04
-## `districtEaling:property_typeD`                                  1.004e+05
-## `districtEnfield:property_typeD`                                 7.426e+04
-## `districtGreenwich:property_typeD`                               6.739e+04
+## `districtCroydon:property_typeD`                                  5.82e+04
+## `districtEaling:property_typeD`                                   1.00e+05
+## `districtEnfield:property_typeD`                                  7.43e+04
+## `districtGreenwich:property_typeD`                                6.74e+04
 ## `districtHackney:property_typeD`                                        NA
 ## `districtHammersmith and Fulham:property_typeD`                         NA
 ## `districtHaringey:property_typeD`                                       NA
-## `districtHarrow:property_typeD`                                  6.497e+04
-## `districtHavering:property_typeD`                                6.628e+04
-## `districtHillingdon:property_typeD`                              6.450e+04
-## `districtHounslow:property_typeD`                                1.139e+05
-## `districtIslington:property_typeD`                               1.405e+05
-## `districtKensington and Chelsea:property_typeD`                  1.859e+05
-## `districtKingston upon Thames:property_typeD`                    6.249e+04
-## `districtLambeth:property_typeD`                                 1.686e+05
-## `districtLewisham:property_typeD`                                9.465e+04
-## `districtMerton:property_typeD`                                  8.077e+04
-## `districtNewham:property_typeD`                                  1.406e+05
-## `districtRedbridge:property_typeD`                               7.615e+04
-## `districtRichmond upon Thames:property_typeD`                    6.812e+04
-## `districtSouthwark:property_typeD`                               1.407e+05
-## `districtSutton:property_typeD`                                  6.708e+04
+## `districtHarrow:property_typeD`                                   6.50e+04
+## `districtHavering:property_typeD`                                 6.63e+04
+## `districtHillingdon:property_typeD`                               6.45e+04
+## `districtHounslow:property_typeD`                                 1.14e+05
+## `districtIslington:property_typeD`                                1.40e+05
+## `districtKensington and Chelsea:property_typeD`                   1.86e+05
+## `districtKingston upon Thames:property_typeD`                     6.25e+04
+## `districtLambeth:property_typeD`                                  1.69e+05
+## `districtLewisham:property_typeD`                                 9.47e+04
+## `districtMerton:property_typeD`                                   8.08e+04
+## `districtNewham:property_typeD`                                   1.41e+05
+## `districtRedbridge:property_typeD`                                7.62e+04
+## `districtRichmond upon Thames:property_typeD`                     6.81e+04
+## `districtSouthwark:property_typeD`                                1.41e+05
+## `districtSutton:property_typeD`                                   6.71e+04
 ## `districtTower Hamlets:property_typeD`                                  NA
-## `districtWaltham Forest:property_typeD`                          2.330e+05
-## `districtWandsworth:property_typeD`                              1.683e+05
+## `districtWaltham Forest:property_typeD`                           2.33e+05
+## `districtWandsworth:property_typeD`                               1.68e+05
 ## `districtWestminster:property_typeD`                                    NA
-## `districtBarking and Dagenham:property_typeF`                    6.730e+04
-## `districtBarnet:property_typeF`                                  5.458e+04
-## `districtBexley:property_typeF`                                  5.858e+04
-## `districtBrent:property_typeF`                                   5.425e+04
-## `districtBromley:property_typeF`                                 5.397e+04
-## `districtCamden:property_typeF`                                  5.262e+04
-## `districtCity of London:property_typeF`                          1.065e+05
-## `districtCroydon:property_typeF`                                 5.322e+04
-## `districtEaling:property_typeF`                                  5.437e+04
-## `districtEnfield:property_typeF`                                 5.617e+04
-## `districtGreenwich:property_typeF`                               5.530e+04
-## `districtHackney:property_typeF`                                 5.348e+04
-## `districtHammersmith and Fulham:property_typeF`                  5.599e+04
-## `districtHaringey:property_typeF`                                5.692e+04
-## `districtHarrow:property_typeF`                                  6.175e+04
-## `districtHavering:property_typeF`                                6.366e+04
-## `districtHillingdon:property_typeF`                              5.872e+04
-## `districtHounslow:property_typeF`                                5.566e+04
-## `districtIslington:property_typeF`                               5.377e+04
-## `districtKensington and Chelsea:property_typeF`                  5.286e+04
-## `districtKingston upon Thames:property_typeF`                    5.461e+04
-## `districtLambeth:property_typeF`                                 5.303e+04
-## `districtLewisham:property_typeF`                                5.341e+04
-## `districtMerton:property_typeF`                                  5.433e+04
-## `districtNewham:property_typeF`                                  5.949e+04
-## `districtRedbridge:property_typeF`                               5.549e+04
-## `districtRichmond upon Thames:property_typeF`                    5.554e+04
-## `districtSouthwark:property_typeF`                               5.246e+04
-## `districtSutton:property_typeF`                                  5.735e+04
-## `districtTower Hamlets:property_typeF`                           5.354e+04
-## `districtWaltham Forest:property_typeF`                          5.502e+04
-## `districtWandsworth:property_typeF`                              5.304e+04
-## `districtWestminster:property_typeF`                             5.275e+04
-## `districtBarking and Dagenham:property_typeS`                    7.246e+04
-## `districtBarnet:property_typeS`                                  5.458e+04
-## `districtBexley:property_typeS`                                  5.390e+04
-## `districtBrent:property_typeS`                                   5.720e+04
-## `districtBromley:property_typeS`                                 5.434e+04
-## `districtCamden:property_typeS`                                  8.044e+04
+## `districtBarking and Dagenham:property_typeF`                     6.73e+04
+## `districtBarnet:property_typeF`                                   5.46e+04
+## `districtBexley:property_typeF`                                   5.86e+04
+## `districtBrent:property_typeF`                                    5.42e+04
+## `districtBromley:property_typeF`                                  5.40e+04
+## `districtCamden:property_typeF`                                   5.26e+04
+## `districtCity of London:property_typeF`                           1.07e+05
+## `districtCroydon:property_typeF`                                  5.32e+04
+## `districtEaling:property_typeF`                                   5.44e+04
+## `districtEnfield:property_typeF`                                  5.62e+04
+## `districtGreenwich:property_typeF`                                5.53e+04
+## `districtHackney:property_typeF`                                  5.35e+04
+## `districtHammersmith and Fulham:property_typeF`                   5.60e+04
+## `districtHaringey:property_typeF`                                 5.69e+04
+## `districtHarrow:property_typeF`                                   6.18e+04
+## `districtHavering:property_typeF`                                 6.37e+04
+## `districtHillingdon:property_typeF`                               5.87e+04
+## `districtHounslow:property_typeF`                                 5.57e+04
+## `districtIslington:property_typeF`                                5.38e+04
+## `districtKensington and Chelsea:property_typeF`                   5.29e+04
+## `districtKingston upon Thames:property_typeF`                     5.46e+04
+## `districtLambeth:property_typeF`                                  5.30e+04
+## `districtLewisham:property_typeF`                                 5.34e+04
+## `districtMerton:property_typeF`                                   5.43e+04
+## `districtNewham:property_typeF`                                   5.95e+04
+## `districtRedbridge:property_typeF`                                5.55e+04
+## `districtRichmond upon Thames:property_typeF`                     5.55e+04
+## `districtSouthwark:property_typeF`                                5.25e+04
+## `districtSutton:property_typeF`                                   5.73e+04
+## `districtTower Hamlets:property_typeF`                            5.35e+04
+## `districtWaltham Forest:property_typeF`                           5.50e+04
+## `districtWandsworth:property_typeF`                               5.30e+04
+## `districtWestminster:property_typeF`                              5.27e+04
+## `districtBarking and Dagenham:property_typeS`                     7.25e+04
+## `districtBarnet:property_typeS`                                   5.46e+04
+## `districtBexley:property_typeS`                                   5.39e+04
+## `districtBrent:property_typeS`                                    5.72e+04
+## `districtBromley:property_typeS`                                  5.43e+04
+## `districtCamden:property_typeS`                                   8.04e+04
 ## `districtCity of London:property_typeS`                                 NA
-## `districtCroydon:property_typeS`                                 5.446e+04
-## `districtEaling:property_typeS`                                  5.648e+04
-## `districtEnfield:property_typeS`                                 5.598e+04
-## `districtGreenwich:property_typeS`                               5.773e+04
-## `districtHackney:property_typeS`                                 9.922e+04
-## `districtHammersmith and Fulham:property_typeS`                  1.053e+05
-## `districtHaringey:property_typeS`                                7.868e+04
-## `districtHarrow:property_typeS`                                  5.917e+04
-## `districtHavering:property_typeS`                                5.903e+04
-## `districtHillingdon:property_typeS`                              5.582e+04
-## `districtHounslow:property_typeS`                                5.713e+04
-## `districtIslington:property_typeS`                               1.241e+05
-## `districtKensington and Chelsea:property_typeS`                  1.137e+05
-## `districtKingston upon Thames:property_typeS`                    5.725e+04
-## `districtLambeth:property_typeS`                                 6.582e+04
-## `districtLewisham:property_typeS`                                6.091e+04
-## `districtMerton:property_typeS`                                  5.902e+04
-## `districtNewham:property_typeS`                                  9.955e+04
-## `districtRedbridge:property_typeS`                               5.634e+04
-## `districtRichmond upon Thames:property_typeS`                    5.834e+04
-## `districtSouthwark:property_typeS`                               7.330e+04
-## `districtSutton:property_typeS`                                  5.859e+04
+## `districtCroydon:property_typeS`                                  5.45e+04
+## `districtEaling:property_typeS`                                   5.65e+04
+## `districtEnfield:property_typeS`                                  5.60e+04
+## `districtGreenwich:property_typeS`                                5.77e+04
+## `districtHackney:property_typeS`                                  9.92e+04
+## `districtHammersmith and Fulham:property_typeS`                   1.05e+05
+## `districtHaringey:property_typeS`                                 7.87e+04
+## `districtHarrow:property_typeS`                                   5.92e+04
+## `districtHavering:property_typeS`                                 5.90e+04
+## `districtHillingdon:property_typeS`                               5.58e+04
+## `districtHounslow:property_typeS`                                 5.71e+04
+## `districtIslington:property_typeS`                                1.24e+05
+## `districtKensington and Chelsea:property_typeS`                   1.14e+05
+## `districtKingston upon Thames:property_typeS`                     5.72e+04
+## `districtLambeth:property_typeS`                                  6.58e+04
+## `districtLewisham:property_typeS`                                 6.09e+04
+## `districtMerton:property_typeS`                                   5.90e+04
+## `districtNewham:property_typeS`                                   9.95e+04
+## `districtRedbridge:property_typeS`                                5.63e+04
+## `districtRichmond upon Thames:property_typeS`                     5.83e+04
+## `districtSouthwark:property_typeS`                                7.33e+04
+## `districtSutton:property_typeS`                                   5.86e+04
 ## `districtTower Hamlets:property_typeS`                                  NA
-## `districtWaltham Forest:property_typeS`                          6.440e+04
-## `districtWandsworth:property_typeS`                              6.738e+04
-## `districtWestminster:property_typeS`                             2.351e+05
-## `districtBarking and Dagenham:property_typeT`                    5.874e+04
-## `districtBarnet:property_typeT`                                  5.564e+04
-## `districtBexley:property_typeT`                                  5.460e+04
-## `districtBrent:property_typeT`                                   5.595e+04
-## `districtBromley:property_typeT`                                 5.385e+04
-## `districtCamden:property_typeT`                                  6.024e+04
+## `districtWaltham Forest:property_typeS`                           6.44e+04
+## `districtWandsworth:property_typeS`                               6.74e+04
+## `districtWestminster:property_typeS`                              2.35e+05
+## `districtBarking and Dagenham:property_typeT`                     5.87e+04
+## `districtBarnet:property_typeT`                                   5.56e+04
+## `districtBexley:property_typeT`                                   5.46e+04
+## `districtBrent:property_typeT`                                    5.60e+04
+## `districtBromley:property_typeT`                                  5.39e+04
+## `districtCamden:property_typeT`                                   6.02e+04
 ## `districtCity of London:property_typeT`                                 NA
-## `districtCroydon:property_typeT`                                 5.271e+04
-## `districtEaling:property_typeT`                                  5.527e+04
-## `districtEnfield:property_typeT`                                 5.464e+04
-## `districtGreenwich:property_typeT`                               5.340e+04
-## `districtHackney:property_typeT`                                 5.646e+04
-## `districtHammersmith and Fulham:property_typeT`                  5.565e+04
-## `districtHaringey:property_typeT`                                5.465e+04
-## `districtHarrow:property_typeT`                                  6.233e+04
-## `districtHavering:property_typeT`                                5.915e+04
-## `districtHillingdon:property_typeT`                              5.778e+04
-## `districtHounslow:property_typeT`                                5.531e+04
-## `districtIslington:property_typeT`                               6.063e+04
-## `districtKensington and Chelsea:property_typeT`                  5.745e+04
-## `districtKingston upon Thames:property_typeT`                    5.635e+04
-## `districtLambeth:property_typeT`                                 5.593e+04
-## `districtLewisham:property_typeT`                                5.311e+04
-## `districtMerton:property_typeT`                                  5.382e+04
-## `districtNewham:property_typeT`                                  5.400e+04
-## `districtRedbridge:property_typeT`                               5.342e+04
-## `districtRichmond upon Thames:property_typeT`                    5.468e+04
-## `districtSouthwark:property_typeT`                               5.499e+04
-## `districtSutton:property_typeT`                                  5.683e+04
-## `districtTower Hamlets:property_typeT`                           6.562e+04
-## `districtWaltham Forest:property_typeT`                          5.361e+04
-## `districtWandsworth:property_typeT`                              5.268e+04
+## `districtCroydon:property_typeT`                                  5.27e+04
+## `districtEaling:property_typeT`                                   5.53e+04
+## `districtEnfield:property_typeT`                                  5.46e+04
+## `districtGreenwich:property_typeT`                                5.34e+04
+## `districtHackney:property_typeT`                                  5.65e+04
+## `districtHammersmith and Fulham:property_typeT`                   5.57e+04
+## `districtHaringey:property_typeT`                                 5.47e+04
+## `districtHarrow:property_typeT`                                   6.23e+04
+## `districtHavering:property_typeT`                                 5.91e+04
+## `districtHillingdon:property_typeT`                               5.78e+04
+## `districtHounslow:property_typeT`                                 5.53e+04
+## `districtIslington:property_typeT`                                6.06e+04
+## `districtKensington and Chelsea:property_typeT`                   5.74e+04
+## `districtKingston upon Thames:property_typeT`                     5.63e+04
+## `districtLambeth:property_typeT`                                  5.59e+04
+## `districtLewisham:property_typeT`                                 5.31e+04
+## `districtMerton:property_typeT`                                   5.38e+04
+## `districtNewham:property_typeT`                                   5.40e+04
+## `districtRedbridge:property_typeT`                                5.34e+04
+## `districtRichmond upon Thames:property_typeT`                     5.47e+04
+## `districtSouthwark:property_typeT`                                5.50e+04
+## `districtSutton:property_typeT`                                   5.68e+04
+## `districtTower Hamlets:property_typeT`                            6.56e+04
+## `districtWaltham Forest:property_typeT`                           5.36e+04
+## `districtWandsworth:property_typeT`                               5.27e+04
 ## `districtWestminster:property_typeT`                                    NA
-## `london_zone:poly(total_floor_area, 2)1`                         7.492e+05
-## `london_zone:poly(total_floor_area, 2)2`                         5.656e+05
-## `london_zone:number_habitable_rooms`                             2.054e+03
-## `poly(total_floor_area, 2)1:number_habitable_rooms`              4.620e+05
-## `poly(total_floor_area, 2)2:number_habitable_rooms`              2.206e+05
-## `london_zone:poly(total_floor_area, 2)1:number_habitable_rooms`  1.190e+05
-## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms`  5.718e+04
+## `london_zone:poly(total_floor_area, 2)1`                          7.49e+05
+## `london_zone:poly(total_floor_area, 2)2`                          5.66e+05
+## `london_zone:number_habitable_rooms`                              2.05e+03
+## `poly(total_floor_area, 2)1:number_habitable_rooms`               4.62e+05
+## `poly(total_floor_area, 2)2:number_habitable_rooms`               2.21e+05
+## `london_zone:poly(total_floor_area, 2)1:number_habitable_rooms`   1.19e+05
+## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms`   5.72e+04
 ##                                                                 t value
-## (Intercept)                                                      19.835
-## num_tube_lines                                                    5.281
-## london_zone                                                     -14.067
-## `poly(total_floor_area, 2)1`                                     40.000
-## `poly(total_floor_area, 2)2`                                     17.812
-## number_habitable_rooms                                           -4.945
-## average_income                                                   21.020
-## energy_consumption_potential                                     -4.908
-## energy_consumption_current                                       -0.578
-## current_energy_ratingC                                            1.290
-## current_energy_ratingD                                            1.566
-## current_energy_ratingE                                            0.499
-## current_energy_ratingF                                           -1.319
-## current_energy_ratingG                                           -1.898
-## windows_energy_effGood                                            3.015
-## windows_energy_effPoor                                            5.092
-## `windows_energy_effVery Good`                                     2.478
-## `windows_energy_effVery Poor`                                     6.063
-## co2_emissions_potential                                           7.041
-## co2_emissions_current                                             2.282
-## `water_companyEssex &amp; Suffolk Water`                              0.413
-## `water_companyLeep Utilities`                                     0.269
-## `water_companySES Water`                                          3.415
-## `water_companyThames Water`                                       3.258
-## `districtBarking and Dagenham:property_typeD`                    -2.940
-## `districtBarnet:property_typeD`                                  -9.878
-## `districtBexley:property_typeD`                                  -9.796
-## `districtBrent:property_typeD`                                   -8.592
-## `districtBromley:property_typeD`                                -12.537
-## `districtCamden:property_typeD`                                  -0.064
+## (Intercept)                                                       19.83
+## num_tube_lines                                                     5.28
+## london_zone                                                      -14.07
+## `poly(total_floor_area, 2)1`                                      40.00
+## `poly(total_floor_area, 2)2`                                      17.81
+## number_habitable_rooms                                            -4.95
+## average_income                                                    21.02
+## energy_consumption_potential                                      -4.91
+## energy_consumption_current                                        -0.58
+## current_energy_ratingC                                             1.29
+## current_energy_ratingD                                             1.57
+## current_energy_ratingE                                             0.50
+## current_energy_ratingF                                            -1.32
+## current_energy_ratingG                                            -1.90
+## windows_energy_effGood                                             3.01
+## windows_energy_effPoor                                             5.09
+## `windows_energy_effVery Good`                                      2.48
+## `windows_energy_effVery Poor`                                      6.06
+## co2_emissions_potential                                            7.04
+## co2_emissions_current                                              2.28
+## `water_companyEssex &amp; Suffolk Water`                               0.41
+## `water_companyLeep Utilities`                                      0.27
+## `water_companySES Water`                                           3.41
+## `water_companyThames Water`                                        3.26
+## `districtBarking and Dagenham:property_typeD`                     -2.94
+## `districtBarnet:property_typeD`                                   -9.88
+## `districtBexley:property_typeD`                                   -9.80
+## `districtBrent:property_typeD`                                    -8.59
+## `districtBromley:property_typeD`                                 -12.54
+## `districtCamden:property_typeD`                                   -0.06
 ## `districtCity of London:property_typeD`                              NA
-## `districtCroydon:property_typeD`                                -13.213
-## `districtEaling:property_typeD`                                  -8.430
-## `districtEnfield:property_typeD`                                 -9.737
-## `districtGreenwich:property_typeD`                              -12.017
+## `districtCroydon:property_typeD`                                 -13.21
+## `districtEaling:property_typeD`                                   -8.43
+## `districtEnfield:property_typeD`                                  -9.74
+## `districtGreenwich:property_typeD`                               -12.02
 ## `districtHackney:property_typeD`                                     NA
 ## `districtHammersmith and Fulham:property_typeD`                      NA
 ## `districtHaringey:property_typeD`                                    NA
-## `districtHarrow:property_typeD`                                  -7.766
-## `districtHavering:property_typeD`                                -9.639
-## `districtHillingdon:property_typeD`                              -8.920
-## `districtHounslow:property_typeD`                                -7.565
-## `districtIslington:property_typeD`                               -3.827
-## `districtKensington and Chelsea:property_typeD`                   6.496
-## `districtKingston upon Thames:property_typeD`                    -7.973
-## `districtLambeth:property_typeD`                                 -4.440
-## `districtLewisham:property_typeD`                                -9.454
-## `districtMerton:property_typeD`                                  -6.983
-## `districtNewham:property_typeD`                                  -5.811
-## `districtRedbridge:property_typeD`                              -10.247
-## `districtRichmond upon Thames:property_typeD`                    -4.964
-## `districtSouthwark:property_typeD`                               -4.629
-## `districtSutton:property_typeD`                                 -12.053
+## `districtHarrow:property_typeD`                                   -7.77
+## `districtHavering:property_typeD`                                 -9.64
+## `districtHillingdon:property_typeD`                               -8.92
+## `districtHounslow:property_typeD`                                 -7.57
+## `districtIslington:property_typeD`                                -3.83
+## `districtKensington and Chelsea:property_typeD`                    6.50
+## `districtKingston upon Thames:property_typeD`                     -7.97
+## `districtLambeth:property_typeD`                                  -4.44
+## `districtLewisham:property_typeD`                                 -9.45
+## `districtMerton:property_typeD`                                   -6.98
+## `districtNewham:property_typeD`                                   -5.81
+## `districtRedbridge:property_typeD`                               -10.25
+## `districtRichmond upon Thames:property_typeD`                     -4.96
+## `districtSouthwark:property_typeD`                                -4.63
+## `districtSutton:property_typeD`                                  -12.05
 ## `districtTower Hamlets:property_typeD`                               NA
-## `districtWaltham Forest:property_typeD`                          -4.401
-## `districtWandsworth:property_typeD`                              -3.919
+## `districtWaltham Forest:property_typeD`                           -4.40
+## `districtWandsworth:property_typeD`                               -3.92
 ## `districtWestminster:property_typeD`                                 NA
-## `districtBarking and Dagenham:property_typeF`                   -12.408
-## `districtBarnet:property_typeF`                                 -15.115
-## `districtBexley:property_typeF`                                 -15.128
-## `districtBrent:property_typeF`                                  -14.345
-## `districtBromley:property_typeF`                                -16.311
-## `districtCamden:property_typeF`                                 -12.560
-## `districtCity of London:property_typeF`                          -4.749
-## `districtCroydon:property_typeF`                                -16.561
-## `districtEaling:property_typeF`                                 -15.254
-## `districtEnfield:property_typeF`                                -14.769
-## `districtGreenwich:property_typeF`                              -15.258
-## `districtHackney:property_typeF`                                -14.021
-## `districtHammersmith and Fulham:property_typeF`                 -12.842
-## `districtHaringey:property_typeF`                               -13.412
-## `districtHarrow:property_typeF`                                 -13.691
-## `districtHavering:property_typeF`                               -12.957
-## `districtHillingdon:property_typeF`                             -14.193
-## `districtHounslow:property_typeF`                               -15.101
-## `districtIslington:property_typeF`                              -13.565
-## `districtKensington and Chelsea:property_typeF`                  -5.881
-## `districtKingston upon Thames:property_typeF`                   -15.708
-## `districtLambeth:property_typeF`                                -14.991
-## `districtLewisham:property_typeF`                               -16.253
-## `districtMerton:property_typeF`                                 -15.599
-## `districtNewham:property_typeF`                                 -13.875
-## `districtRedbridge:property_typeF`                              -15.571
-## `districtRichmond upon Thames:property_typeF`                   -14.624
-## `districtSouthwark:property_typeF`                              -14.765
-## `districtSutton:property_typeF`                                 -16.234
-## `districtTower Hamlets:property_typeF`                          -15.772
-## `districtWaltham Forest:property_typeF`                         -14.574
-## `districtWandsworth:property_typeF`                             -14.983
-## `districtWestminster:property_typeF`                             -7.177
-## `districtBarking and Dagenham:property_typeS`                   -11.423
-## `districtBarnet:property_typeS`                                 -12.491
-## `districtBexley:property_typeS`                                 -15.506
-## `districtBrent:property_typeS`                                  -13.177
-## `districtBromley:property_typeS`                                -14.762
-## `districtCamden:property_typeS`                                  -7.718
+## `districtBarking and Dagenham:property_typeF`                    -12.41
+## `districtBarnet:property_typeF`                                  -15.11
+## `districtBexley:property_typeF`                                  -15.13
+## `districtBrent:property_typeF`                                   -14.35
+## `districtBromley:property_typeF`                                 -16.31
+## `districtCamden:property_typeF`                                  -12.56
+## `districtCity of London:property_typeF`                           -4.75
+## `districtCroydon:property_typeF`                                 -16.56
+## `districtEaling:property_typeF`                                  -15.25
+## `districtEnfield:property_typeF`                                 -14.77
+## `districtGreenwich:property_typeF`                               -15.26
+## `districtHackney:property_typeF`                                 -14.02
+## `districtHammersmith and Fulham:property_typeF`                  -12.84
+## `districtHaringey:property_typeF`                                -13.41
+## `districtHarrow:property_typeF`                                  -13.69
+## `districtHavering:property_typeF`                                -12.96
+## `districtHillingdon:property_typeF`                              -14.19
+## `districtHounslow:property_typeF`                                -15.10
+## `districtIslington:property_typeF`                               -13.57
+## `districtKensington and Chelsea:property_typeF`                   -5.88
+## `districtKingston upon Thames:property_typeF`                    -15.71
+## `districtLambeth:property_typeF`                                 -14.99
+## `districtLewisham:property_typeF`                                -16.25
+## `districtMerton:property_typeF`                                  -15.60
+## `districtNewham:property_typeF`                                  -13.88
+## `districtRedbridge:property_typeF`                               -15.57
+## `districtRichmond upon Thames:property_typeF`                    -14.62
+## `districtSouthwark:property_typeF`                               -14.77
+## `districtSutton:property_typeF`                                  -16.23
+## `districtTower Hamlets:property_typeF`                           -15.77
+## `districtWaltham Forest:property_typeF`                          -14.57
+## `districtWandsworth:property_typeF`                              -14.98
+## `districtWestminster:property_typeF`                              -7.18
+## `districtBarking and Dagenham:property_typeS`                    -11.42
+## `districtBarnet:property_typeS`                                  -12.49
+## `districtBexley:property_typeS`                                  -15.51
+## `districtBrent:property_typeS`                                   -13.18
+## `districtBromley:property_typeS`                                 -14.76
+## `districtCamden:property_typeS`                                   -7.72
 ## `districtCity of London:property_typeS`                              NA
-## `districtCroydon:property_typeS`                                -16.300
-## `districtEaling:property_typeS`                                 -13.440
-## `districtEnfield:property_typeS`                                -13.637
-## `districtGreenwich:property_typeS`                              -15.072
-## `districtHackney:property_typeS`                                 -5.852
-## `districtHammersmith and Fulham:property_typeS`                  -5.575
-## `districtHaringey:property_typeS`                                -9.972
-## `districtHarrow:property_typeS`                                 -12.104
-## `districtHavering:property_typeS`                               -12.185
-## `districtHillingdon:property_typeS`                             -12.841
-## `districtHounslow:property_typeS`                               -13.295
-## `districtIslington:property_typeS`                               -1.846
-## `districtKensington and Chelsea:property_typeS`                   1.741
-## `districtKingston upon Thames:property_typeS`                   -12.228
-## `districtLambeth:property_typeS`                                -13.351
-## `districtLewisham:property_typeS`                               -14.922
-## `districtMerton:property_typeS`                                 -13.785
-## `districtNewham:property_typeS`                                  -8.365
-## `districtRedbridge:property_typeS`                              -15.276
-## `districtRichmond upon Thames:property_typeS`                    -9.164
-## `districtSouthwark:property_typeS`                               -9.060
-## `districtSutton:property_typeS`                                 -14.523
+## `districtCroydon:property_typeS`                                 -16.30
+## `districtEaling:property_typeS`                                  -13.44
+## `districtEnfield:property_typeS`                                 -13.64
+## `districtGreenwich:property_typeS`                               -15.07
+## `districtHackney:property_typeS`                                  -5.85
+## `districtHammersmith and Fulham:property_typeS`                   -5.57
+## `districtHaringey:property_typeS`                                 -9.97
+## `districtHarrow:property_typeS`                                  -12.10
+## `districtHavering:property_typeS`                                -12.18
+## `districtHillingdon:property_typeS`                              -12.84
+## `districtHounslow:property_typeS`                                -13.30
+## `districtIslington:property_typeS`                                -1.85
+## `districtKensington and Chelsea:property_typeS`                    1.74
+## `districtKingston upon Thames:property_typeS`                    -12.23
+## `districtLambeth:property_typeS`                                 -13.35
+## `districtLewisham:property_typeS`                                -14.92
+## `districtMerton:property_typeS`                                  -13.78
+## `districtNewham:property_typeS`                                   -8.36
+## `districtRedbridge:property_typeS`                               -15.28
+## `districtRichmond upon Thames:property_typeS`                     -9.16
+## `districtSouthwark:property_typeS`                                -9.06
+## `districtSutton:property_typeS`                                  -14.52
 ## `districtTower Hamlets:property_typeS`                               NA
-## `districtWaltham Forest:property_typeS`                         -11.242
-## `districtWandsworth:property_typeS`                             -11.422
-## `districtWestminster:property_typeS`                             12.744
-## `districtBarking and Dagenham:property_typeT`                   -13.630
-## `districtBarnet:property_typeT`                                 -13.373
-## `districtBexley:property_typeT`                                 -15.501
-## `districtBrent:property_typeT`                                  -12.496
-## `districtBromley:property_typeT`                                -15.556
-## `districtCamden:property_typeT`                                  -8.223
+## `districtWaltham Forest:property_typeS`                          -11.24
+## `districtWandsworth:property_typeS`                              -11.42
+## `districtWestminster:property_typeS`                              12.74
+## `districtBarking and Dagenham:property_typeT`                    -13.63
+## `districtBarnet:property_typeT`                                  -13.37
+## `districtBexley:property_typeT`                                  -15.50
+## `districtBrent:property_typeT`                                   -12.50
+## `districtBromley:property_typeT`                                 -15.56
+## `districtCamden:property_typeT`                                   -8.22
 ## `districtCity of London:property_typeT`                              NA
-## `districtCroydon:property_typeT`                                -16.999
-## `districtEaling:property_typeT`                                 -13.683
-## `districtEnfield:property_typeT`                                -14.179
-## `districtGreenwich:property_typeT`                              -15.621
-## `districtHackney:property_typeT`                                -12.366
-## `districtHammersmith and Fulham:property_typeT`                  -9.731
-## `districtHaringey:property_typeT`                               -13.451
-## `districtHarrow:property_typeT`                                 -12.035
-## `districtHavering:property_typeT`                               -12.618
-## `districtHillingdon:property_typeT`                             -13.271
-## `districtHounslow:property_typeT`                               -13.144
-## `districtIslington:property_typeT`                               -9.684
-## `districtKensington and Chelsea:property_typeT`                  11.607
-## `districtKingston upon Thames:property_typeT`                   -13.261
-## `districtLambeth:property_typeT`                                -15.085
-## `districtLewisham:property_typeT`                               -16.465
-## `districtMerton:property_typeT`                                 -15.421
-## `districtNewham:property_typeT`                                 -16.469
-## `districtRedbridge:property_typeT`                              -15.623
-## `districtRichmond upon Thames:property_typeT`                   -11.524
-## `districtSouthwark:property_typeT`                              -13.958
-## `districtSutton:property_typeT`                                 -15.322
-## `districtTower Hamlets:property_typeT`                          -11.867
-## `districtWaltham Forest:property_typeT`                         -14.265
-## `districtWandsworth:property_typeT`                             -14.513
+## `districtCroydon:property_typeT`                                 -17.00
+## `districtEaling:property_typeT`                                  -13.68
+## `districtEnfield:property_typeT`                                 -14.18
+## `districtGreenwich:property_typeT`                               -15.62
+## `districtHackney:property_typeT`                                 -12.37
+## `districtHammersmith and Fulham:property_typeT`                   -9.73
+## `districtHaringey:property_typeT`                                -13.45
+## `districtHarrow:property_typeT`                                  -12.04
+## `districtHavering:property_typeT`                                -12.62
+## `districtHillingdon:property_typeT`                              -13.27
+## `districtHounslow:property_typeT`                                -13.14
+## `districtIslington:property_typeT`                                -9.68
+## `districtKensington and Chelsea:property_typeT`                   11.61
+## `districtKingston upon Thames:property_typeT`                    -13.26
+## `districtLambeth:property_typeT`                                 -15.09
+## `districtLewisham:property_typeT`                                -16.47
+## `districtMerton:property_typeT`                                  -15.42
+## `districtNewham:property_typeT`                                  -16.47
+## `districtRedbridge:property_typeT`                               -15.62
+## `districtRichmond upon Thames:property_typeT`                    -11.52
+## `districtSouthwark:property_typeT`                               -13.96
+## `districtSutton:property_typeT`                                  -15.32
+## `districtTower Hamlets:property_typeT`                           -11.87
+## `districtWaltham Forest:property_typeT`                          -14.26
+## `districtWandsworth:property_typeT`                              -14.51
 ## `districtWestminster:property_typeT`                                 NA
-## `london_zone:poly(total_floor_area, 2)1`                        -31.606
-## `london_zone:poly(total_floor_area, 2)2`                        -15.732
-## `london_zone:number_habitable_rooms`                              4.763
-## `poly(total_floor_area, 2)1:number_habitable_rooms`             -15.650
-## `poly(total_floor_area, 2)2:number_habitable_rooms`              -5.371
-## `london_zone:poly(total_floor_area, 2)1:number_habitable_rooms`  15.614
-## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms`   4.713
+## `london_zone:poly(total_floor_area, 2)1`                         -31.61
+## `london_zone:poly(total_floor_area, 2)2`                         -15.73
+## `london_zone:number_habitable_rooms`                               4.76
+## `poly(total_floor_area, 2)1:number_habitable_rooms`              -15.65
+## `poly(total_floor_area, 2)2:number_habitable_rooms`               -5.37
+## `london_zone:poly(total_floor_area, 2)1:number_habitable_rooms`   15.61
+## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms`    4.71
 ##                                                                 Pr(&gt;|t|)    
 ## (Intercept)                                                      &lt; 2e-16 ***
-## num_tube_lines                                                  1.31e-07 ***
+## num_tube_lines                                                   1.3e-07 ***
 ## london_zone                                                      &lt; 2e-16 ***
 ## `poly(total_floor_area, 2)1`                                     &lt; 2e-16 ***
 ## `poly(total_floor_area, 2)2`                                     &lt; 2e-16 ***
-## number_habitable_rooms                                          7.73e-07 ***
+## number_habitable_rooms                                           7.7e-07 ***
 ## average_income                                                   &lt; 2e-16 ***
-## energy_consumption_potential                                    9.35e-07 ***
-## energy_consumption_current                                      0.563020    
-## current_energy_ratingC                                          0.197072    
-## current_energy_ratingD                                          0.117484    
-## current_energy_ratingE                                          0.617449    
-## current_energy_ratingF                                          0.187294    
-## current_energy_ratingG                                          0.057741 .  
-## windows_energy_effGood                                          0.002577 ** 
-## windows_energy_effPoor                                          3.60e-07 ***
-## `windows_energy_effVery Good`                                   0.013245 *  
-## `windows_energy_effVery Poor`                                   1.38e-09 ***
-## co2_emissions_potential                                         2.02e-12 ***
-## co2_emissions_current                                           0.022536 *  
-## `water_companyEssex &amp; Suffolk Water`                            0.679664    
-## `water_companyLeep Utilities`                                   0.787570    
-## `water_companySES Water`                                        0.000641 ***
-## `water_companyThames Water`                                     0.001125 ** 
-## `districtBarking and Dagenham:property_typeD`                   0.003292 ** 
+## energy_consumption_potential                                     9.4e-07 ***
+## energy_consumption_current                                       0.56302    
+## current_energy_ratingC                                           0.19707    
+## current_energy_ratingD                                           0.11748    
+## current_energy_ratingE                                           0.61745    
+## current_energy_ratingF                                           0.18729    
+## current_energy_ratingG                                           0.05774 .  
+## windows_energy_effGood                                           0.00258 ** 
+## windows_energy_effPoor                                           3.6e-07 ***
+## `windows_energy_effVery Good`                                    0.01325 *  
+## `windows_energy_effVery Poor`                                    1.4e-09 ***
+## co2_emissions_potential                                          2.0e-12 ***
+## co2_emissions_current                                            0.02254 *  
+## `water_companyEssex &amp; Suffolk Water`                             0.67966    
+## `water_companyLeep Utilities`                                    0.78757    
+## `water_companySES Water`                                         0.00064 ***
+## `water_companyThames Water`                                      0.00113 ** 
+## `districtBarking and Dagenham:property_typeD`                    0.00329 ** 
 ## `districtBarnet:property_typeD`                                  &lt; 2e-16 ***
 ## `districtBexley:property_typeD`                                  &lt; 2e-16 ***
 ## `districtBrent:property_typeD`                                   &lt; 2e-16 ***
 ## `districtBromley:property_typeD`                                 &lt; 2e-16 ***
-## `districtCamden:property_typeD`                                 0.949282    
+## `districtCamden:property_typeD`                                  0.94928    
 ## `districtCity of London:property_typeD`                               NA    
 ## `districtCroydon:property_typeD`                                 &lt; 2e-16 ***
 ## `districtEaling:property_typeD`                                  &lt; 2e-16 ***
@@ -809,24 +819,24 @@ summary(model_lm)</code></pre>
 ## `districtHackney:property_typeD`                                      NA    
 ## `districtHammersmith and Fulham:property_typeD`                       NA    
 ## `districtHaringey:property_typeD`                                     NA    
-## `districtHarrow:property_typeD`                                 8.85e-15 ***
+## `districtHarrow:property_typeD`                                  8.8e-15 ***
 ## `districtHavering:property_typeD`                                &lt; 2e-16 ***
 ## `districtHillingdon:property_typeD`                              &lt; 2e-16 ***
-## `districtHounslow:property_typeD`                               4.21e-14 ***
-## `districtIslington:property_typeD`                              0.000131 ***
-## `districtKensington and Chelsea:property_typeD`                 8.61e-11 ***
-## `districtKingston upon Thames:property_typeD`                   1.71e-15 ***
-## `districtLambeth:property_typeD`                                9.09e-06 ***
+## `districtHounslow:property_typeD`                                4.2e-14 ***
+## `districtIslington:property_typeD`                               0.00013 ***
+## `districtKensington and Chelsea:property_typeD`                  8.6e-11 ***
+## `districtKingston upon Thames:property_typeD`                    1.7e-15 ***
+## `districtLambeth:property_typeD`                                 9.1e-06 ***
 ## `districtLewisham:property_typeD`                                &lt; 2e-16 ***
-## `districtMerton:property_typeD`                                 3.06e-12 ***
-## `districtNewham:property_typeD`                                 6.40e-09 ***
+## `districtMerton:property_typeD`                                  3.1e-12 ***
+## `districtNewham:property_typeD`                                  6.4e-09 ***
 ## `districtRedbridge:property_typeD`                               &lt; 2e-16 ***
-## `districtRichmond upon Thames:property_typeD`                   7.00e-07 ***
-## `districtSouthwark:property_typeD`                              3.71e-06 ***
+## `districtRichmond upon Thames:property_typeD`                    7.0e-07 ***
+## `districtSouthwark:property_typeD`                               3.7e-06 ***
 ## `districtSutton:property_typeD`                                  &lt; 2e-16 ***
 ## `districtTower Hamlets:property_typeD`                                NA    
-## `districtWaltham Forest:property_typeD`                         1.09e-05 ***
-## `districtWandsworth:property_typeD`                             8.97e-05 ***
+## `districtWaltham Forest:property_typeD`                          1.1e-05 ***
+## `districtWandsworth:property_typeD`                              9.0e-05 ***
 ## `districtWestminster:property_typeD`                                  NA    
 ## `districtBarking and Dagenham:property_typeF`                    &lt; 2e-16 ***
 ## `districtBarnet:property_typeF`                                  &lt; 2e-16 ***
@@ -834,7 +844,7 @@ summary(model_lm)</code></pre>
 ## `districtBrent:property_typeF`                                   &lt; 2e-16 ***
 ## `districtBromley:property_typeF`                                 &lt; 2e-16 ***
 ## `districtCamden:property_typeF`                                  &lt; 2e-16 ***
-## `districtCity of London:property_typeF`                         2.07e-06 ***
+## `districtCity of London:property_typeF`                          2.1e-06 ***
 ## `districtCroydon:property_typeF`                                 &lt; 2e-16 ***
 ## `districtEaling:property_typeF`                                  &lt; 2e-16 ***
 ## `districtEnfield:property_typeF`                                 &lt; 2e-16 ***
@@ -847,7 +857,7 @@ summary(model_lm)</code></pre>
 ## `districtHillingdon:property_typeF`                              &lt; 2e-16 ***
 ## `districtHounslow:property_typeF`                                &lt; 2e-16 ***
 ## `districtIslington:property_typeF`                               &lt; 2e-16 ***
-## `districtKensington and Chelsea:property_typeF`                 4.19e-09 ***
+## `districtKensington and Chelsea:property_typeF`                  4.2e-09 ***
 ## `districtKingston upon Thames:property_typeF`                    &lt; 2e-16 ***
 ## `districtLambeth:property_typeF`                                 &lt; 2e-16 ***
 ## `districtLewisham:property_typeF`                                &lt; 2e-16 ***
@@ -860,27 +870,27 @@ summary(model_lm)</code></pre>
 ## `districtTower Hamlets:property_typeF`                           &lt; 2e-16 ***
 ## `districtWaltham Forest:property_typeF`                          &lt; 2e-16 ***
 ## `districtWandsworth:property_typeF`                              &lt; 2e-16 ***
-## `districtWestminster:property_typeF`                            7.63e-13 ***
+## `districtWestminster:property_typeF`                             7.6e-13 ***
 ## `districtBarking and Dagenham:property_typeS`                    &lt; 2e-16 ***
 ## `districtBarnet:property_typeS`                                  &lt; 2e-16 ***
 ## `districtBexley:property_typeS`                                  &lt; 2e-16 ***
 ## `districtBrent:property_typeS`                                   &lt; 2e-16 ***
 ## `districtBromley:property_typeS`                                 &lt; 2e-16 ***
-## `districtCamden:property_typeS`                                 1.29e-14 ***
+## `districtCamden:property_typeS`                                  1.3e-14 ***
 ## `districtCity of London:property_typeS`                               NA    
 ## `districtCroydon:property_typeS`                                 &lt; 2e-16 ***
 ## `districtEaling:property_typeS`                                  &lt; 2e-16 ***
 ## `districtEnfield:property_typeS`                                 &lt; 2e-16 ***
 ## `districtGreenwich:property_typeS`                               &lt; 2e-16 ***
-## `districtHackney:property_typeS`                                4.99e-09 ***
-## `districtHammersmith and Fulham:property_typeS`                 2.54e-08 ***
+## `districtHackney:property_typeS`                                 5.0e-09 ***
+## `districtHammersmith and Fulham:property_typeS`                  2.5e-08 ***
 ## `districtHaringey:property_typeS`                                &lt; 2e-16 ***
 ## `districtHarrow:property_typeS`                                  &lt; 2e-16 ***
 ## `districtHavering:property_typeS`                                &lt; 2e-16 ***
 ## `districtHillingdon:property_typeS`                              &lt; 2e-16 ***
 ## `districtHounslow:property_typeS`                                &lt; 2e-16 ***
-## `districtIslington:property_typeS`                              0.064969 .  
-## `districtKensington and Chelsea:property_typeS`                 0.081780 .  
+## `districtIslington:property_typeS`                               0.06497 .  
+## `districtKensington and Chelsea:property_typeS`                  0.08178 .  
 ## `districtKingston upon Thames:property_typeS`                    &lt; 2e-16 ***
 ## `districtLambeth:property_typeS`                                 &lt; 2e-16 ***
 ## `districtLewisham:property_typeS`                                &lt; 2e-16 ***
@@ -899,7 +909,7 @@ summary(model_lm)</code></pre>
 ## `districtBexley:property_typeT`                                  &lt; 2e-16 ***
 ## `districtBrent:property_typeT`                                   &lt; 2e-16 ***
 ## `districtBromley:property_typeT`                                 &lt; 2e-16 ***
-## `districtCamden:property_typeT`                                 2.22e-16 ***
+## `districtCamden:property_typeT`                                  2.2e-16 ***
 ## `districtCity of London:property_typeT`                               NA    
 ## `districtCroydon:property_typeT`                                 &lt; 2e-16 ***
 ## `districtEaling:property_typeT`                                  &lt; 2e-16 ***
@@ -929,25 +939,25 @@ summary(model_lm)</code></pre>
 ## `districtWestminster:property_typeT`                                  NA    
 ## `london_zone:poly(total_floor_area, 2)1`                         &lt; 2e-16 ***
 ## `london_zone:poly(total_floor_area, 2)2`                         &lt; 2e-16 ***
-## `london_zone:number_habitable_rooms`                            1.93e-06 ***
+## `london_zone:number_habitable_rooms`                             1.9e-06 ***
 ## `poly(total_floor_area, 2)1:number_habitable_rooms`              &lt; 2e-16 ***
-## `poly(total_floor_area, 2)2:number_habitable_rooms`             8.01e-08 ***
+## `poly(total_floor_area, 2)2:number_habitable_rooms`              8.0e-08 ***
 ## `london_zone:poly(total_floor_area, 2)1:number_habitable_rooms`  &lt; 2e-16 ***
-## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms` 2.48e-06 ***
+## `london_zone:poly(total_floor_area, 2)2:number_habitable_rooms`  2.5e-06 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 227300 on 10346 degrees of freedom
-## Multiple R-squared:  0.8133, Adjusted R-squared:  0.8106 
-## F-statistic: 296.6 on 152 and 10346 DF,  p-value: &lt; 2.2e-16</code></pre>
+## Residual standard error: 227000 on 10346 degrees of freedom
+## Multiple R-squared:  0.813,  Adjusted R-squared:  0.811 
+## F-statistic:  297 on 152 and 10346 DF,  p-value: &lt;2e-16</code></pre>
 <p>Then, I plot the results of the final model as well as the importance of each variable:</p>
 <pre class="r"><code>model_lm$results</code></pre>
-<pre><code>##   intercept     RMSE  Rsquared      MAE  RMSESD RsquaredSD    MAESD
-## 1      TRUE 233127.9 0.8043104 117777.8 40438.9  0.0284022 7436.169</code></pre>
+<pre><code>##   intercept   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1      TRUE 233128    0.804 117778  40439     0.0284  7436</code></pre>
 <pre class="r"><code># we can check variable importance as well
 importance &lt;- varImp(model_lm, scale=TRUE)
 plot(importance)</code></pre>
-<p><img src="bog10_files/figure-html/varimportance-1.png" width="960" /></p>
+<p><img src="/blogs/blog10_files/figure-html/varimportance-1.png" width="960" style="display: block; margin: auto;" /></p>
 </div>
 <div id="prediction-lm" class="section level3">
 <h3>Prediction lm</h3>
@@ -959,8 +969,8 @@ predictions_lm &lt;- predict(model_lm,test_data)
 lm_results&lt;-data.frame(RMSE = RMSE(predictions_lm, test_data$price), #how much did qe predict wrong
                             Rsquare = R2(predictions_lm, test_data$price)) #how much does the model cover
 lm_results                         </code></pre>
-<pre><code>##       RMSE   Rsquare
-## 1 208391.7 0.8350376</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 208392   0.835</code></pre>
 <p>The performance of the model (in R²):
 - Training 0.8102
 - Testing 0.8358638</p>
@@ -1011,85 +1021,9 @@ lasso_fit &lt;- train(price ~
    trControl = control,
   tuneGrid = expand.grid(alpha = 1, lambda = lambda_seq) #alpha=1 specifies to run a LASSO regression. If alpha=0 the model would run ridge regression.
 
-)</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity of
-## London:property_typeS, districtTower Hamlets:property_typeS, districtCity of
-## London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity of
-## London:property_typeS, districtTower Hamlets:property_typeS, districtCity of
-## London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity of
-## London:property_typeS, districtTower Hamlets:property_typeS, districtCity of
-## London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtBarking
-## and Dagenham:property_typeD, districtCity of London:property_typeD,
-## districtHackney:property_typeD, districtHammersmith and Fulham:property_typeD,
-## districtHaringey:property_typeD, districtTower Hamlets:property_typeD,
-## districtWestminster:property_typeD, districtCity of London:property_typeS,
-## districtTower Hamlets:property_typeS, districtCity of London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity
-## of London:property_typeS, districtTower Hamlets:property_typeS,
-## districtWestminster:property_typeS, districtCity of London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWaltham Forest:property_typeD,
-## districtWestminster:property_typeD, districtCity of London:property_typeS,
-## districtTower Hamlets:property_typeS, districtCity of London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtKensington
-## and Chelsea:property_typeD, districtTower Hamlets:property_typeD,
-## districtWestminster:property_typeD, districtCity of London:property_typeS,
-## districtTower Hamlets:property_typeS, districtCity of London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity of
-## London:property_typeS, districtTower Hamlets:property_typeS, districtCity of
-## London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity of
-## London:property_typeS, districtTower Hamlets:property_typeS, districtCity of
-## London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity of
-## London:property_typeS, districtTower Hamlets:property_typeS, districtCity of
-## London:property_typeT</code></pre>
-<pre><code>## Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19,
-## uniqueCut = 10, : These variables have zero variances: districtCity of
-## London:property_typeD, districtHackney:property_typeD, districtHammersmith
-## and Fulham:property_typeD, districtHaringey:property_typeD, districtTower
-## Hamlets:property_typeD, districtWestminster:property_typeD, districtCity of
-## London:property_typeS, districtTower Hamlets:property_typeS, districtCity of
-## London:property_typeT</code></pre>
-<pre class="r"><code>print(lasso_fit)</code></pre>
+)
+
+print(lasso_fit)</code></pre>
 <pre><code>## glmnet 
 ## 
 ## 10499 samples
@@ -1100,393 +1034,393 @@ lasso_fit &lt;- train(price ~
 ## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
 ## Resampling results across tuning parameters:
 ## 
-##   lambda      RMSE      Rsquared   MAE     
-##      0.00000  234253.5  0.8026135  117588.2
-##     10.10101  234253.5  0.8026135  117588.2
-##     20.20202  234253.5  0.8026135  117588.2
-##     30.30303  234253.5  0.8026135  117588.2
-##     40.40404  234250.8  0.8026139  117582.6
-##     50.50505  234252.9  0.8026046  117571.4
-##     60.60606  234258.8  0.8025896  117560.6
-##     70.70707  234264.9  0.8025729  117549.9
-##     80.80808  234275.6  0.8025496  117540.0
-##     90.90909  234288.5  0.8025225  117530.7
-##    101.01010  234303.7  0.8024914  117521.6
-##    111.11111  234320.2  0.8024580  117513.0
-##    121.21212  234340.1  0.8024190  117504.8
-##    131.31313  234361.5  0.8023773  117496.9
-##    141.41414  234384.6  0.8023326  117489.3
-##    151.51515  234407.9  0.8022875  117482.3
-##    161.61616  234430.8  0.8022424  117475.9
-##    171.71717  234452.9  0.8021981  117469.8
-##    181.81818  234476.0  0.8021522  117463.2
-##    191.91919  234501.0  0.8021031  117457.4
-##    202.02020  234530.0  0.8020478  117452.0
-##    212.12121  234560.3  0.8019901  117447.0
-##    222.22222  234589.0  0.8019347  117441.5
-##    232.32323  234619.8  0.8018761  117436.1
-##    242.42424  234653.6  0.8018128  117431.4
-##    252.52525  234689.2  0.8017469  117427.4
-##    262.62626  234725.9  0.8016790  117423.5
-##    272.72727  234765.0  0.8016077  117420.4
-##    282.82828  234805.1  0.8015352  117417.1
-##    292.92929  234846.4  0.8014611  117413.6
-##    303.03030  234891.8  0.8013807  117412.2
-##    313.13131  234940.8  0.8012957  117411.1
-##    323.23232  234992.0  0.8012070  117410.3
-##    333.33333  235045.2  0.8011146  117409.9
-##    343.43434  235099.5  0.8010207  117410.5
-##    353.53535  235155.9  0.8009232  117411.9
-##    363.63636  235213.8  0.8008228  117414.0
-##    373.73737  235265.5  0.8007319  117415.8
-##    383.83838  235314.6  0.8006450  117417.3
-##    393.93939  235365.4  0.8005550  117420.2
-##    404.04040  235416.2  0.8004648  117423.3
-##    414.14141  235459.8  0.8003856  117426.2
-##    424.24242  235505.0  0.8003036  117429.7
-##    434.34343  235552.5  0.8002176  117433.7
-##    444.44444  235599.7  0.8001322  117439.3
-##    454.54545  235642.5  0.8000544  117446.5
-##    464.64646  235687.1  0.7999737  117454.7
-##    474.74747  235731.9  0.7998926  117463.8
-##    484.84848  235777.4  0.7998105  117474.4
-##    494.94949  235825.5  0.7997252  117486.8
-##    505.05051  235875.2  0.7996372  117500.2
-##    515.15152  235926.6  0.7995462  117515.0
-##    525.25253  235974.1  0.7994621  117529.5
-##    535.35354  236019.9  0.7993810  117543.8
-##    545.45455  236060.4  0.7993088  117554.7
-##    555.55556  236102.4  0.7992338  117566.3
-##    565.65657  236145.9  0.7991563  117578.8
-##    575.75758  236187.0  0.7990832  117590.6
-##    585.85859  236226.5  0.7990124  117602.7
-##    595.95960  236253.4  0.7989652  117609.4
-##    606.06061  236281.0  0.7989167  117616.8
-##    616.16162  236309.5  0.7988665  117624.8
-##    626.26263  236339.1  0.7988146  117633.2
-##    636.36364  236366.1  0.7987668  117641.1
-##    646.46465  236389.8  0.7987244  117647.3
-##    656.56566  236408.2  0.7986915  117649.7
-##    666.66667  236427.0  0.7986584  117652.6
-##    676.76768  236446.3  0.7986245  117655.9
-##    686.86869  236465.9  0.7985898  117659.8
-##    696.96970  236485.0  0.7985568  117663.2
-##    707.07071  236503.7  0.7985248  117666.5
-##    717.17172  236521.9  0.7984932  117669.3
-##    727.27273  236539.9  0.7984617  117671.7
-##    737.37374  236558.3  0.7984296  117674.5
-##    747.47475  236577.0  0.7983969  117677.8
-##    757.57576  236596.7  0.7983625  117681.7
-##    767.67677  236617.5  0.7983266  117686.0
-##    777.77778  236639.1  0.7982897  117690.9
-##    787.87879  236661.5  0.7982514  117696.2
-##    797.97980  236684.2  0.7982121  117701.9
-##    808.08081  236707.4  0.7981722  117708.0
-##    818.18182  236730.9  0.7981315  117714.7
-##    828.28283  236753.3  0.7980930  117721.7
-##    838.38384  236774.4  0.7980565  117728.5
-##    848.48485  236795.8  0.7980193  117735.8
-##    858.58586  236817.3  0.7979816  117743.4
-##    868.68687  236839.2  0.7979433  117751.6
-##    878.78788  236861.5  0.7979043  117760.3
-##    888.88889  236884.1  0.7978646  117769.5
-##    898.98990  236907.1  0.7978243  117779.5
-##    909.09091  236930.0  0.7977842  117789.7
-##    919.19192  236953.1  0.7977440  117800.0
-##    929.29293  236976.6  0.7977032  117810.6
-##    939.39394  237000.0  0.7976629  117820.4
-##    949.49495  237023.6  0.7976222  117830.5
-##    959.59596  237047.4  0.7975811  117841.1
-##    969.69697  237071.6  0.7975394  117852.3
-##    979.79798  237096.2  0.7974971  117864.0
-##    989.89899  237121.2  0.7974540  117876.3
-##   1000.00000  237146.5  0.7974105  117889.0
+##   lambda  RMSE    Rsquared  MAE   
+##      0.0  234253  0.803     117588
+##     10.1  234253  0.803     117588
+##     20.2  234253  0.803     117588
+##     30.3  234253  0.803     117588
+##     40.4  234251  0.803     117583
+##     50.5  234253  0.803     117571
+##     60.6  234259  0.803     117561
+##     70.7  234265  0.803     117550
+##     80.8  234276  0.803     117540
+##     90.9  234289  0.803     117531
+##    101.0  234304  0.802     117522
+##    111.1  234320  0.802     117513
+##    121.2  234340  0.802     117505
+##    131.3  234362  0.802     117497
+##    141.4  234385  0.802     117489
+##    151.5  234408  0.802     117482
+##    161.6  234431  0.802     117476
+##    171.7  234453  0.802     117470
+##    181.8  234476  0.802     117463
+##    191.9  234501  0.802     117457
+##    202.0  234530  0.802     117452
+##    212.1  234560  0.802     117447
+##    222.2  234589  0.802     117442
+##    232.3  234620  0.802     117436
+##    242.4  234654  0.802     117431
+##    252.5  234689  0.802     117427
+##    262.6  234726  0.802     117423
+##    272.7  234765  0.802     117420
+##    282.8  234805  0.802     117417
+##    292.9  234846  0.801     117414
+##    303.0  234892  0.801     117412
+##    313.1  234941  0.801     117411
+##    323.2  234992  0.801     117410
+##    333.3  235045  0.801     117410
+##    343.4  235100  0.801     117411
+##    353.5  235156  0.801     117412
+##    363.6  235214  0.801     117414
+##    373.7  235265  0.801     117416
+##    383.8  235315  0.801     117417
+##    393.9  235365  0.801     117420
+##    404.0  235416  0.800     117423
+##    414.1  235460  0.800     117426
+##    424.2  235505  0.800     117430
+##    434.3  235552  0.800     117434
+##    444.4  235600  0.800     117439
+##    454.5  235643  0.800     117446
+##    464.6  235687  0.800     117455
+##    474.7  235732  0.800     117464
+##    484.8  235777  0.800     117474
+##    494.9  235825  0.800     117487
+##    505.1  235875  0.800     117500
+##    515.2  235927  0.800     117515
+##    525.3  235974  0.799     117529
+##    535.4  236020  0.799     117544
+##    545.5  236060  0.799     117555
+##    555.6  236102  0.799     117566
+##    565.7  236146  0.799     117579
+##    575.8  236187  0.799     117591
+##    585.9  236227  0.799     117603
+##    596.0  236253  0.799     117609
+##    606.1  236281  0.799     117617
+##    616.2  236310  0.799     117625
+##    626.3  236339  0.799     117633
+##    636.4  236366  0.799     117641
+##    646.5  236390  0.799     117647
+##    656.6  236408  0.799     117650
+##    666.7  236427  0.799     117653
+##    676.8  236446  0.799     117656
+##    686.9  236466  0.799     117660
+##    697.0  236485  0.799     117663
+##    707.1  236504  0.799     117666
+##    717.2  236522  0.798     117669
+##    727.3  236540  0.798     117672
+##    737.4  236558  0.798     117674
+##    747.5  236577  0.798     117678
+##    757.6  236597  0.798     117682
+##    767.7  236618  0.798     117686
+##    777.8  236639  0.798     117691
+##    787.9  236661  0.798     117696
+##    798.0  236684  0.798     117702
+##    808.1  236707  0.798     117708
+##    818.2  236731  0.798     117715
+##    828.3  236753  0.798     117722
+##    838.4  236774  0.798     117729
+##    848.5  236796  0.798     117736
+##    858.6  236817  0.798     117743
+##    868.7  236839  0.798     117752
+##    878.8  236861  0.798     117760
+##    888.9  236884  0.798     117770
+##    899.0  236907  0.798     117780
+##    909.1  236930  0.798     117790
+##    919.2  236953  0.798     117800
+##    929.3  236977  0.798     117811
+##    939.4  237000  0.798     117820
+##    949.5  237024  0.798     117831
+##    959.6  237047  0.798     117841
+##    969.7  237072  0.798     117852
+##    979.8  237096  0.797     117864
+##    989.9  237121  0.797     117876
+##   1000.0  237147  0.797     117889
 ## 
 ## Tuning parameter &#39;alpha&#39; was held constant at a value of 1
 ## RMSE was used to select the optimal model using the smallest value.
-## The final values used for the model were alpha = 1 and lambda = 40.40404.</code></pre>
+## The final values used for the model were alpha = 1 and lambda = 40.4.</code></pre>
 <pre class="r"><code>coef(lasso_fit$finalModel, lasso_fit$bestTune$lambda)</code></pre>
 <pre><code>## 166 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
-##                                                                           1
-## (Intercept)                                                    594480.39909
-## num_tube_lines                                                  15627.66777
-## whether_old_or_newY                                               224.47741
-## freehold_or_leaseholdL                                         -16424.36743
-## distance_to_station                                             -2672.35479
-## london_zone                                                   -183471.96562
-## poly(total_floor_area, 2)1                                    1014162.79324
-## poly(total_floor_area, 2)2                                     321756.67431
-## number_habitable_rooms                                         -77332.96659
-## average_income                                                  60282.27584
-## energy_consumption_potential                                   -31968.41256
-## energy_consumption_current                                      -3455.65788
-## current_energy_ratingC                                           7340.93416
-## current_energy_ratingD                                          11157.29418
-## current_energy_ratingE                                           1872.53397
-## current_energy_ratingF                                          -6706.45645
-## current_energy_ratingG                                          -6338.34280
-## windows_energy_effGood                                           6860.06633
-## windows_energy_effPoor                                          12230.86205
-## windows_energy_effVery Good                                      5449.18591
-## windows_energy_effVery Poor                                     15294.04264
-## co2_emissions_potential                                         52468.58814
-## co2_emissions_current                                           19618.91892
-## water_companyEssex &amp; Suffolk Water                               1951.05735
-## water_companyLeep Utilities                                       480.63343
-## water_companySES Water                                          16647.09591
-## water_companyThames Water                                       19487.17610
-## districtBarking and Dagenham:property_typeD                       741.23263
-## districtBarnet:property_typeD                                    8899.49834
-## districtBexley:property_typeD                                    6705.49006
-## districtBrent:property_typeD                                       17.90865
-## districtBromley:property_typeD                                   4916.52283
-## districtCamden:property_typeD                                   20854.72745
-## districtCity of London:property_typeD                               .      
-## districtCroydon:property_typeD                                      .      
-## districtEaling:property_typeD                                   -2317.38931
-## districtEnfield:property_typeD                                   1697.46910
-## districtGreenwich:property_typeD                                -2059.98819
-## districtHackney:property_typeD                                      .      
-## districtHammersmith and Fulham:property_typeD                       .      
-## districtHaringey:property_typeD                                     .      
-## districtHarrow:property_typeD                                   15067.89146
-## districtHavering:property_typeD                                  8804.10382
-## districtHillingdon:property_typeD                               11477.04994
-## districtHounslow:property_typeD                                 -1948.59240
-## districtIslington:property_typeD                                 3586.62488
-## districtKensington and Chelsea:property_typeD                   26187.86203
-## districtKingston upon Thames:property_typeD                     17165.42628
-## districtLambeth:property_typeD                                      .      
-## districtLewisham:property_typeD                                 -3538.12419
-## districtMerton:property_typeD                                    7032.90193
-## districtNewham:property_typeD                                    -830.35984
-## districtRedbridge:property_typeD                                 -505.61740
-## districtRichmond upon Thames:property_typeD                     21716.20842
-## districtSouthwark:property_typeD                                 1695.93903
-## districtSutton:property_typeD                                   -2205.33132
-## districtTower Hamlets:property_typeD                                .      
-## districtWaltham Forest:property_typeD                           -2466.10269
-## districtWandsworth:property_typeD                                1418.77371
-## districtWestminster:property_typeD                                  .      
-## districtBarking and Dagenham:property_typeF                     -2026.09111
-## districtBarnet:property_typeF                                   -3295.14279
-## districtBexley:property_typeF                                   -6900.19801
-## districtBrent:property_typeF                                     1751.79318
-## districtBromley:property_typeF                                 -10417.29345
-## districtCamden:property_typeF                                   17719.72526
-## districtCity of London:property_typeF                            6747.43235
-## districtCroydon:property_typeF                                 -11591.29755
-## districtEaling:property_typeF                                   -3341.77754
-## districtEnfield:property_typeF                                  -3003.84486
-## districtGreenwich:property_typeF                                -4605.32744
-## districtHackney:property_typeF                                   5717.00909
-## districtHammersmith and Fulham:property_typeF                    6835.54622
-## districtHaringey:property_typeF                                  2921.23240
-## districtHarrow:property_typeF                                   -3248.18965
-## districtHavering:property_typeF                                 -1685.58211
-## districtHillingdon:property_typeF                               -2903.04794
-## districtHounslow:property_typeF                                 -4087.09090
-## districtIslington:property_typeF                                 7575.66903
-## districtKensington and Chelsea:property_typeF                   58576.89960
-## districtKingston upon Thames:property_typeF                     -6698.27136
-## districtLambeth:property_typeF                                    190.07479
-## districtLewisham:property_typeF                                 -9213.19321
-## districtMerton:property_typeF                                   -5475.44147
-## districtNewham:property_typeF                                   -2019.18438
-## districtRedbridge:property_typeF                                -6521.89260
-## districtRichmond upon Thames:property_typeF                     -1321.07661
-## districtSouthwark:property_typeF                                 3226.74575
-## districtSutton:property_typeF                                  -13613.78791
-## districtTower Hamlets:property_typeF                            -5952.01901
-## districtWaltham Forest:property_typeF                            -376.98902
-## districtWandsworth:property_typeF                                 432.13479
-## districtWestminster:property_typeF                              51586.50652
-## districtBarking and Dagenham:property_typeS                     -2821.86707
-## districtBarnet:property_typeS                                    9386.93346
-## districtBexley:property_typeS                                   -9391.01838
-## districtBrent:property_typeS                                      941.91709
-## districtBromley:property_typeS                                  -4363.98478
-## districtCamden:property_typeS                                    4957.41331
-## districtCity of London:property_typeS                               .      
-## districtCroydon:property_typeS                                 -14299.33688
-## districtEaling:property_typeS                                     545.11076
-## districtEnfield:property_typeS                                    228.96869
-## districtGreenwich:property_typeS                                -8143.36626
-## districtHackney:property_typeS                                   4730.38344
-## districtHammersmith and Fulham:property_typeS                    4410.17227
-## districtHaringey:property_typeS                                  -583.53642
-## districtHarrow:property_typeS                                    3694.23716
-## districtHavering:property_typeS                                  6868.75533
-## districtHillingdon:property_typeS                                5663.63974
-## districtHounslow:property_typeS                                   732.94253
-## districtIslington:property_typeS                                10416.90993
-## districtKensington and Chelsea:property_typeS                   21701.99803
-## districtKingston upon Thames:property_typeS                      6164.44506
-## districtLambeth:property_typeS                                  -5793.56249
-## districtLewisham:property_typeS                                 -9074.95974
-## districtMerton:property_typeS                                   -3421.50769
-## districtNewham:property_typeS                                   -1764.39426
-## districtRedbridge:property_typeS                                -8344.52079
-## districtRichmond upon Thames:property_typeS                     18367.39742
-## districtSouthwark:property_typeS                                 4246.38750
-## districtSutton:property_typeS                                   -7473.44307
-## districtTower Hamlets:property_typeS                                .      
-## districtWaltham Forest:property_typeS                            2508.38999
-## districtWandsworth:property_typeS                                   .      
-## districtWestminster:property_typeS                              36645.30363
-## districtBarking and Dagenham:property_typeT                     -3750.02990
-## districtBarnet:property_typeT                                    2038.42298
-## districtBexley:property_typeT                                   -9459.36215
-## districtBrent:property_typeT                                     5873.71764
-## districtBromley:property_typeT                                  -9290.49371
-## districtCamden:property_typeT                                   17439.57305
-## districtCity of London:property_typeT                               .      
-## districtCroydon:property_typeT                                 -19230.88850
-## districtEaling:property_typeT                                     925.40711
-## districtEnfield:property_typeT                                   -909.06371
-## districtGreenwich:property_typeT                                -8340.44602
-## districtHackney:property_typeT                                   5746.88912
-## districtHammersmith and Fulham:property_typeT                   19177.65756
-## districtHaringey:property_typeT                                  3044.96530
-## districtHarrow:property_typeT                                     944.98524
-## districtHavering:property_typeT                                  3049.03684
-## districtHillingdon:property_typeT                                 -95.01632
-## districtHounslow:property_typeT                                  3878.06747
-## districtIslington:property_typeT                                11445.39769
-## districtKensington and Chelsea:property_typeT                  104020.48059
-## districtKingston upon Thames:property_typeT                      1782.87757
-## districtLambeth:property_typeT                                  -6490.82498
-## districtLewisham:property_typeT                                -13920.02980
-## districtMerton:property_typeT                                   -7423.68039
-## districtNewham:property_typeT                                  -13263.40595
-## districtRedbridge:property_typeT                                -9798.15722
-## districtRichmond upon Thames:property_typeT                     15582.89140
-## districtSouthwark:property_typeT                                    .      
-## districtSutton:property_typeT                                  -11001.51359
-## districtTower Hamlets:property_typeT                             -551.65039
-## districtWaltham Forest:property_typeT                             398.71880
-## districtWandsworth:property_typeT                                 455.95390
-## districtWestminster:property_typeT                              35411.73996
-## london_zone:poly(total_floor_area, 2)1                        -791217.73989
-## london_zone:poly(total_floor_area, 2)2                        -272638.97786
-## london_zone:number_habitable_rooms                             103682.41060
-## poly(total_floor_area, 2)1:number_habitable_rooms             -401558.97594
-## poly(total_floor_area, 2)2:number_habitable_rooms              -68996.15809
-## london_zone:poly(total_floor_area, 2)1:number_habitable_rooms  399638.72994
-## london_zone:poly(total_floor_area, 2)2:number_habitable_rooms   57036.32652</code></pre>
+##                                                                       1
+## (Intercept)                                                    594480.4
+## num_tube_lines                                                  15627.7
+## whether_old_or_newY                                               224.5
+## freehold_or_leaseholdL                                         -16424.4
+## distance_to_station                                             -2672.4
+## london_zone                                                   -183472.0
+## poly(total_floor_area, 2)1                                    1014162.8
+## poly(total_floor_area, 2)2                                     321756.7
+## number_habitable_rooms                                         -77333.0
+## average_income                                                  60282.3
+## energy_consumption_potential                                   -31968.4
+## energy_consumption_current                                      -3455.7
+## current_energy_ratingC                                           7340.9
+## current_energy_ratingD                                          11157.3
+## current_energy_ratingE                                           1872.5
+## current_energy_ratingF                                          -6706.5
+## current_energy_ratingG                                          -6338.3
+## windows_energy_effGood                                           6860.1
+## windows_energy_effPoor                                          12230.9
+## windows_energy_effVery Good                                      5449.2
+## windows_energy_effVery Poor                                     15294.0
+## co2_emissions_potential                                         52468.6
+## co2_emissions_current                                           19618.9
+## water_companyEssex &amp; Suffolk Water                               1951.1
+## water_companyLeep Utilities                                       480.6
+## water_companySES Water                                          16647.1
+## water_companyThames Water                                       19487.2
+## districtBarking and Dagenham:property_typeD                       741.2
+## districtBarnet:property_typeD                                    8899.5
+## districtBexley:property_typeD                                    6705.5
+## districtBrent:property_typeD                                       17.9
+## districtBromley:property_typeD                                   4916.5
+## districtCamden:property_typeD                                   20854.7
+## districtCity of London:property_typeD                               .  
+## districtCroydon:property_typeD                                      .  
+## districtEaling:property_typeD                                   -2317.4
+## districtEnfield:property_typeD                                   1697.5
+## districtGreenwich:property_typeD                                -2060.0
+## districtHackney:property_typeD                                      .  
+## districtHammersmith and Fulham:property_typeD                       .  
+## districtHaringey:property_typeD                                     .  
+## districtHarrow:property_typeD                                   15067.9
+## districtHavering:property_typeD                                  8804.1
+## districtHillingdon:property_typeD                               11477.0
+## districtHounslow:property_typeD                                 -1948.6
+## districtIslington:property_typeD                                 3586.6
+## districtKensington and Chelsea:property_typeD                   26187.9
+## districtKingston upon Thames:property_typeD                     17165.4
+## districtLambeth:property_typeD                                      .  
+## districtLewisham:property_typeD                                 -3538.1
+## districtMerton:property_typeD                                    7032.9
+## districtNewham:property_typeD                                    -830.4
+## districtRedbridge:property_typeD                                 -505.6
+## districtRichmond upon Thames:property_typeD                     21716.2
+## districtSouthwark:property_typeD                                 1695.9
+## districtSutton:property_typeD                                   -2205.3
+## districtTower Hamlets:property_typeD                                .  
+## districtWaltham Forest:property_typeD                           -2466.1
+## districtWandsworth:property_typeD                                1418.8
+## districtWestminster:property_typeD                                  .  
+## districtBarking and Dagenham:property_typeF                     -2026.1
+## districtBarnet:property_typeF                                   -3295.1
+## districtBexley:property_typeF                                   -6900.2
+## districtBrent:property_typeF                                     1751.8
+## districtBromley:property_typeF                                 -10417.3
+## districtCamden:property_typeF                                   17719.7
+## districtCity of London:property_typeF                            6747.4
+## districtCroydon:property_typeF                                 -11591.3
+## districtEaling:property_typeF                                   -3341.8
+## districtEnfield:property_typeF                                  -3003.8
+## districtGreenwich:property_typeF                                -4605.3
+## districtHackney:property_typeF                                   5717.0
+## districtHammersmith and Fulham:property_typeF                    6835.5
+## districtHaringey:property_typeF                                  2921.2
+## districtHarrow:property_typeF                                   -3248.2
+## districtHavering:property_typeF                                 -1685.6
+## districtHillingdon:property_typeF                               -2903.0
+## districtHounslow:property_typeF                                 -4087.1
+## districtIslington:property_typeF                                 7575.7
+## districtKensington and Chelsea:property_typeF                   58576.9
+## districtKingston upon Thames:property_typeF                     -6698.3
+## districtLambeth:property_typeF                                    190.1
+## districtLewisham:property_typeF                                 -9213.2
+## districtMerton:property_typeF                                   -5475.4
+## districtNewham:property_typeF                                   -2019.2
+## districtRedbridge:property_typeF                                -6521.9
+## districtRichmond upon Thames:property_typeF                     -1321.1
+## districtSouthwark:property_typeF                                 3226.7
+## districtSutton:property_typeF                                  -13613.8
+## districtTower Hamlets:property_typeF                            -5952.0
+## districtWaltham Forest:property_typeF                            -377.0
+## districtWandsworth:property_typeF                                 432.1
+## districtWestminster:property_typeF                              51586.5
+## districtBarking and Dagenham:property_typeS                     -2821.9
+## districtBarnet:property_typeS                                    9386.9
+## districtBexley:property_typeS                                   -9391.0
+## districtBrent:property_typeS                                      941.9
+## districtBromley:property_typeS                                  -4364.0
+## districtCamden:property_typeS                                    4957.4
+## districtCity of London:property_typeS                               .  
+## districtCroydon:property_typeS                                 -14299.3
+## districtEaling:property_typeS                                     545.1
+## districtEnfield:property_typeS                                    229.0
+## districtGreenwich:property_typeS                                -8143.4
+## districtHackney:property_typeS                                   4730.4
+## districtHammersmith and Fulham:property_typeS                    4410.2
+## districtHaringey:property_typeS                                  -583.5
+## districtHarrow:property_typeS                                    3694.2
+## districtHavering:property_typeS                                  6868.8
+## districtHillingdon:property_typeS                                5663.6
+## districtHounslow:property_typeS                                   732.9
+## districtIslington:property_typeS                                10416.9
+## districtKensington and Chelsea:property_typeS                   21702.0
+## districtKingston upon Thames:property_typeS                      6164.4
+## districtLambeth:property_typeS                                  -5793.6
+## districtLewisham:property_typeS                                 -9075.0
+## districtMerton:property_typeS                                   -3421.5
+## districtNewham:property_typeS                                   -1764.4
+## districtRedbridge:property_typeS                                -8344.5
+## districtRichmond upon Thames:property_typeS                     18367.4
+## districtSouthwark:property_typeS                                 4246.4
+## districtSutton:property_typeS                                   -7473.4
+## districtTower Hamlets:property_typeS                                .  
+## districtWaltham Forest:property_typeS                            2508.4
+## districtWandsworth:property_typeS                                   .  
+## districtWestminster:property_typeS                              36645.3
+## districtBarking and Dagenham:property_typeT                     -3750.0
+## districtBarnet:property_typeT                                    2038.4
+## districtBexley:property_typeT                                   -9459.4
+## districtBrent:property_typeT                                     5873.7
+## districtBromley:property_typeT                                  -9290.5
+## districtCamden:property_typeT                                   17439.6
+## districtCity of London:property_typeT                               .  
+## districtCroydon:property_typeT                                 -19230.9
+## districtEaling:property_typeT                                     925.4
+## districtEnfield:property_typeT                                   -909.1
+## districtGreenwich:property_typeT                                -8340.4
+## districtHackney:property_typeT                                   5746.9
+## districtHammersmith and Fulham:property_typeT                   19177.7
+## districtHaringey:property_typeT                                  3045.0
+## districtHarrow:property_typeT                                     945.0
+## districtHavering:property_typeT                                  3049.0
+## districtHillingdon:property_typeT                                 -95.0
+## districtHounslow:property_typeT                                  3878.1
+## districtIslington:property_typeT                                11445.4
+## districtKensington and Chelsea:property_typeT                  104020.5
+## districtKingston upon Thames:property_typeT                      1782.9
+## districtLambeth:property_typeT                                  -6490.8
+## districtLewisham:property_typeT                                -13920.0
+## districtMerton:property_typeT                                   -7423.7
+## districtNewham:property_typeT                                  -13263.4
+## districtRedbridge:property_typeT                                -9798.2
+## districtRichmond upon Thames:property_typeT                     15582.9
+## districtSouthwark:property_typeT                                    .  
+## districtSutton:property_typeT                                  -11001.5
+## districtTower Hamlets:property_typeT                             -551.7
+## districtWaltham Forest:property_typeT                             398.7
+## districtWandsworth:property_typeT                                 456.0
+## districtWestminster:property_typeT                              35411.7
+## london_zone:poly(total_floor_area, 2)1                        -791217.7
+## london_zone:poly(total_floor_area, 2)2                        -272639.0
+## london_zone:number_habitable_rooms                             103682.4
+## poly(total_floor_area, 2)1:number_habitable_rooms             -401559.0
+## poly(total_floor_area, 2)2:number_habitable_rooms              -68996.2
+## london_zone:poly(total_floor_area, 2)1:number_habitable_rooms  399638.7
+## london_zone:poly(total_floor_area, 2)2:number_habitable_rooms   57036.3</code></pre>
 <div id="predict-lasso" class="section level3">
 <h3>Predict lasso</h3>
 <pre class="r"><code>lasso_fit$results</code></pre>
-<pre><code>##     alpha     lambda     RMSE  Rsquared      MAE   RMSESD RsquaredSD    MAESD
-## 1       1    0.00000 234253.5 0.8026135 117588.2 43023.51 0.02971343 7698.963
-## 2       1   10.10101 234253.5 0.8026135 117588.2 43023.51 0.02971343 7698.963
-## 3       1   20.20202 234253.5 0.8026135 117588.2 43023.51 0.02971343 7698.963
-## 4       1   30.30303 234253.5 0.8026135 117588.2 43023.51 0.02971343 7698.963
-## 5       1   40.40404 234250.8 0.8026139 117582.6 43022.18 0.02967402 7698.242
-## 6       1   50.50505 234252.9 0.8026046 117571.4 43016.13 0.02957151 7696.826
-## 7       1   60.60606 234258.8 0.8025896 117560.6 43011.79 0.02947112 7695.281
-## 8       1   70.70707 234264.9 0.8025729 117549.9 43010.79 0.02938005 7694.589
-## 9       1   80.80808 234275.6 0.8025496 117540.0 43008.89 0.02928497 7694.164
-## 10      1   90.90909 234288.5 0.8025225 117530.7 43008.60 0.02919141 7693.737
-## 11      1  101.01010 234303.7 0.8024914 117521.6 43009.53 0.02910024 7693.625
-## 12      1  111.11111 234320.2 0.8024580 117513.0 43011.04 0.02901116 7693.757
-## 13      1  121.21212 234340.1 0.8024190 117504.8 43011.97 0.02892089 7693.637
-## 14      1  131.31313 234361.5 0.8023773 117496.9 43014.63 0.02883510 7692.986
-## 15      1  141.41414 234384.6 0.8023326 117489.3 43017.51 0.02875004 7692.662
-## 16      1  151.51515 234407.9 0.8022875 117482.3 43024.16 0.02867411 7692.773
-## 17      1  161.61616 234430.8 0.8022424 117475.9 43032.56 0.02860639 7692.387
-## 18      1  171.71717 234452.9 0.8021981 117469.8 43042.80 0.02854681 7691.684
-## 19      1  181.81818 234476.0 0.8021522 117463.2 43051.54 0.02848639 7690.022
-## 20      1  191.91919 234501.0 0.8021031 117457.4 43059.60 0.02842618 7688.293
-## 21      1  202.02020 234530.0 0.8020478 117452.0 43064.55 0.02835938 7686.264
-## 22      1  212.12121 234560.3 0.8019901 117447.0 43070.82 0.02829692 7684.531
-## 23      1  222.22222 234589.0 0.8019347 117441.5 43080.17 0.02824474 7683.886
-## 24      1  232.32323 234619.8 0.8018761 117436.1 43089.92 0.02819281 7682.945
-## 25      1  242.42424 234653.6 0.8018128 117431.4 43099.60 0.02813997 7681.349
-## 26      1  252.52525 234689.2 0.8017469 117427.4 43109.76 0.02808777 7680.387
-## 27      1  262.62626 234725.9 0.8016790 117423.5 43119.93 0.02803629 7679.883
-## 28      1  272.72727 234765.0 0.8016077 117420.4 43131.29 0.02798634 7679.653
-## 29      1  282.82828 234805.1 0.8015352 117417.1 43144.52 0.02793888 7680.731
-## 30      1  292.92929 234846.4 0.8014611 117413.6 43158.47 0.02789391 7682.490
-## 31      1  303.03030 234891.8 0.8013807 117412.2 43178.15 0.02785735 7685.310
-## 32      1  313.13131 234940.8 0.8012957 117411.1 43199.52 0.02782400 7689.205
-## 33      1  323.23232 234992.0 0.8012070 117410.3 43220.82 0.02779160 7693.411
-## 34      1  333.33333 235045.2 0.8011146 117409.9 43242.54 0.02776100 7697.590
-## 35      1  343.43434 235099.5 0.8010207 117410.5 43264.78 0.02773539 7701.775
-## 36      1  353.53535 235155.9 0.8009232 117411.9 43286.94 0.02771092 7705.702
-## 37      1  363.63636 235213.8 0.8008228 117414.0 43308.86 0.02768721 7709.755
-## 38      1  373.73737 235265.5 0.8007319 117415.8 43333.96 0.02767949 7715.535
-## 39      1  383.83838 235314.6 0.8006450 117417.3 43361.80 0.02768059 7721.908
-## 40      1  393.93939 235365.4 0.8005550 117420.2 43389.75 0.02768253 7727.553
-## 41      1  404.04040 235416.2 0.8004648 117423.3 43418.38 0.02768814 7733.142
-## 42      1  414.14141 235459.8 0.8003856 117426.2 43451.41 0.02771150 7739.743
-## 43      1  424.24242 235505.0 0.8003036 117429.7 43484.56 0.02773544 7746.242
-## 44      1  434.34343 235552.5 0.8002176 117433.7 43519.17 0.02776268 7752.955
-## 45      1  444.44444 235599.7 0.8001322 117439.3 43556.04 0.02779789 7759.573
-## 46      1  454.54545 235642.5 0.8000544 117446.5 43595.75 0.02784745 7766.506
-## 47      1  464.64646 235687.1 0.7999737 117454.7 43635.45 0.02789750 7773.616
-## 48      1  474.74747 235731.9 0.7998926 117463.8 43671.82 0.02794183 7780.739
-## 49      1  484.84848 235777.4 0.7998105 117474.4 43703.49 0.02797664 7786.754
-## 50      1  494.94949 235825.5 0.7997252 117486.8 43734.80 0.02801129 7793.025
-## 51      1  505.05051 235875.2 0.7996372 117500.2 43766.05 0.02804622 7799.541
-## 52      1  515.15152 235926.6 0.7995462 117515.0 43797.19 0.02808133 7805.831
-## 53      1  525.25253 235974.1 0.7994621 117529.5 43815.47 0.02809264 7809.996
-## 54      1  535.35354 236019.9 0.7993810 117543.8 43830.50 0.02809923 7814.034
-## 55      1  545.45455 236060.4 0.7993088 117554.7 43849.48 0.02811118 7820.337
-## 56      1  555.55556 236102.4 0.7992338 117566.3 43868.15 0.02812298 7826.161
-## 57      1  565.65657 236145.9 0.7991563 117578.8 43886.56 0.02813465 7831.723
-## 58      1  575.75758 236187.0 0.7990832 117590.6 43895.83 0.02812973 7834.909
-## 59      1  585.85859 236226.5 0.7990124 117602.7 43900.79 0.02812015 7837.843
-## 60      1  595.95960 236253.4 0.7989652 117609.4 43914.20 0.02811669 7843.331
-## 61      1  606.06061 236281.0 0.7989167 117616.8 43927.34 0.02811310 7849.480
-## 62      1  616.16162 236309.5 0.7988665 117624.8 43940.35 0.02810939 7855.926
-## 63      1  626.26263 236339.1 0.7988146 117633.2 43953.37 0.02810590 7862.244
-## 64      1  636.36364 236366.1 0.7987668 117641.1 43962.15 0.02810010 7867.156
-## 65      1  646.46465 236389.8 0.7987244 117647.3 43970.57 0.02809491 7872.290
-## 66      1  656.56566 236408.2 0.7986915 117649.7 43982.37 0.02809470 7879.038
-## 67      1  666.66667 236427.0 0.7986584 117652.6 43994.25 0.02809474 7885.725
-## 68      1  676.76768 236446.3 0.7986245 117655.9 44006.07 0.02809475 7892.329
-## 69      1  686.86869 236465.9 0.7985898 117659.8 44017.85 0.02809476 7898.763
-## 70      1  696.96970 236485.0 0.7985568 117663.2 44029.11 0.02809366 7904.202
-## 71      1  707.07071 236503.7 0.7985248 117666.5 44040.40 0.02809231 7908.990
-## 72      1  717.17172 236521.9 0.7984932 117669.3 44052.00 0.02809271 7913.945
-## 73      1  727.27273 236539.9 0.7984617 117671.7 44064.17 0.02809358 7919.351
-## 74      1  737.37374 236558.3 0.7984296 117674.5 44076.29 0.02809442 7924.633
-## 75      1  747.47475 236577.0 0.7983969 117677.8 44088.36 0.02809523 7929.946
-## 76      1  757.57576 236596.7 0.7983625 117681.7 44101.78 0.02809856 7935.060
-## 77      1  767.67677 236617.5 0.7983266 117686.0 44116.10 0.02810302 7939.666
-## 78      1  777.77778 236639.1 0.7982897 117690.9 44130.25 0.02810743 7944.279
-## 79      1  787.87879 236661.5 0.7982514 117696.2 44144.15 0.02811174 7949.261
-## 80      1  797.97980 236684.2 0.7982121 117701.9 44158.06 0.02811595 7954.560
-## 81      1  808.08081 236707.4 0.7981722 117708.0 44171.96 0.02812018 7959.707
-## 82      1  818.18182 236730.9 0.7981315 117714.7 44185.84 0.02812443 7964.886
-## 83      1  828.28283 236753.3 0.7980930 117721.7 44196.05 0.02812164 7970.066
-## 84      1  838.38384 236774.4 0.7980565 117728.5 44202.47 0.02811155 7974.264
-## 85      1  848.48485 236795.8 0.7980193 117735.8 44208.84 0.02810141 7978.364
-## 86      1  858.58586 236817.3 0.7979816 117743.4 44215.32 0.02809183 7982.425
-## 87      1  868.68687 236839.2 0.7979433 117751.6 44221.77 0.02808226 7986.740
-## 88      1  878.78788 236861.5 0.7979043 117760.3 44228.17 0.02807265 7990.939
-## 89      1  888.88889 236884.1 0.7978646 117769.5 44234.53 0.02806297 7995.044
-## 90      1  898.98990 236907.1 0.7978243 117779.5 44240.84 0.02805322 7998.706
-## 91      1  909.09091 236930.0 0.7977842 117789.7 44246.07 0.02804137 8001.717
-## 92      1  919.19192 236953.1 0.7977440 117800.0 44250.49 0.02802773 8003.867
-## 93      1  929.29293 236976.6 0.7977032 117810.6 44254.90 0.02801398 8006.105
-## 94      1  939.39394 237000.0 0.7976629 117820.4 44259.23 0.02800119 8009.945
-## 95      1  949.49495 237023.6 0.7976222 117830.5 44263.61 0.02798849 8013.834
-## 96      1  959.59596 237047.4 0.7975811 117841.1 44268.11 0.02797589 8017.646
-## 97      1  969.69697 237071.6 0.7975394 117852.3 44272.53 0.02796317 8021.356
-## 98      1  979.79798 237096.2 0.7974971 117864.0 44276.88 0.02795034 8025.078
-## 99      1  989.89899 237121.2 0.7974540 117876.3 44281.15 0.02793739 8029.143
-## 100     1 1000.00000 237146.5 0.7974105 117889.0 44285.10 0.02792394 8033.086</code></pre>
+<pre><code>##     alpha lambda   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1       1    0.0 234253    0.803 117588  43024     0.0297  7699
+## 2       1   10.1 234253    0.803 117588  43024     0.0297  7699
+## 3       1   20.2 234253    0.803 117588  43024     0.0297  7699
+## 4       1   30.3 234253    0.803 117588  43024     0.0297  7699
+## 5       1   40.4 234251    0.803 117583  43022     0.0297  7698
+## 6       1   50.5 234253    0.803 117571  43016     0.0296  7697
+## 7       1   60.6 234259    0.803 117561  43012     0.0295  7695
+## 8       1   70.7 234265    0.803 117550  43011     0.0294  7695
+## 9       1   80.8 234276    0.803 117540  43009     0.0293  7694
+## 10      1   90.9 234289    0.803 117531  43009     0.0292  7694
+## 11      1  101.0 234304    0.802 117522  43010     0.0291  7694
+## 12      1  111.1 234320    0.802 117513  43011     0.0290  7694
+## 13      1  121.2 234340    0.802 117505  43012     0.0289  7694
+## 14      1  131.3 234362    0.802 117497  43015     0.0288  7693
+## 15      1  141.4 234385    0.802 117489  43018     0.0288  7693
+## 16      1  151.5 234408    0.802 117482  43024     0.0287  7693
+## 17      1  161.6 234431    0.802 117476  43033     0.0286  7692
+## 18      1  171.7 234453    0.802 117470  43043     0.0285  7692
+## 19      1  181.8 234476    0.802 117463  43052     0.0285  7690
+## 20      1  191.9 234501    0.802 117457  43060     0.0284  7688
+## 21      1  202.0 234530    0.802 117452  43065     0.0284  7686
+## 22      1  212.1 234560    0.802 117447  43071     0.0283  7685
+## 23      1  222.2 234589    0.802 117442  43080     0.0282  7684
+## 24      1  232.3 234620    0.802 117436  43090     0.0282  7683
+## 25      1  242.4 234654    0.802 117431  43100     0.0281  7681
+## 26      1  252.5 234689    0.802 117427  43110     0.0281  7680
+## 27      1  262.6 234726    0.802 117423  43120     0.0280  7680
+## 28      1  272.7 234765    0.802 117420  43131     0.0280  7680
+## 29      1  282.8 234805    0.802 117417  43145     0.0279  7681
+## 30      1  292.9 234846    0.801 117414  43158     0.0279  7682
+## 31      1  303.0 234892    0.801 117412  43178     0.0279  7685
+## 32      1  313.1 234941    0.801 117411  43200     0.0278  7689
+## 33      1  323.2 234992    0.801 117410  43221     0.0278  7693
+## 34      1  333.3 235045    0.801 117410  43243     0.0278  7698
+## 35      1  343.4 235100    0.801 117411  43265     0.0277  7702
+## 36      1  353.5 235156    0.801 117412  43287     0.0277  7706
+## 37      1  363.6 235214    0.801 117414  43309     0.0277  7710
+## 38      1  373.7 235265    0.801 117416  43334     0.0277  7716
+## 39      1  383.8 235315    0.801 117417  43362     0.0277  7722
+## 40      1  393.9 235365    0.801 117420  43390     0.0277  7728
+## 41      1  404.0 235416    0.800 117423  43418     0.0277  7733
+## 42      1  414.1 235460    0.800 117426  43451     0.0277  7740
+## 43      1  424.2 235505    0.800 117430  43485     0.0277  7746
+## 44      1  434.3 235552    0.800 117434  43519     0.0278  7753
+## 45      1  444.4 235600    0.800 117439  43556     0.0278  7760
+## 46      1  454.5 235643    0.800 117446  43596     0.0278  7767
+## 47      1  464.6 235687    0.800 117455  43635     0.0279  7774
+## 48      1  474.7 235732    0.800 117464  43672     0.0279  7781
+## 49      1  484.8 235777    0.800 117474  43703     0.0280  7787
+## 50      1  494.9 235825    0.800 117487  43735     0.0280  7793
+## 51      1  505.1 235875    0.800 117500  43766     0.0280  7800
+## 52      1  515.2 235927    0.800 117515  43797     0.0281  7806
+## 53      1  525.3 235974    0.799 117529  43815     0.0281  7810
+## 54      1  535.4 236020    0.799 117544  43830     0.0281  7814
+## 55      1  545.5 236060    0.799 117555  43849     0.0281  7820
+## 56      1  555.6 236102    0.799 117566  43868     0.0281  7826
+## 57      1  565.7 236146    0.799 117579  43887     0.0281  7832
+## 58      1  575.8 236187    0.799 117591  43896     0.0281  7835
+## 59      1  585.9 236227    0.799 117603  43901     0.0281  7838
+## 60      1  596.0 236253    0.799 117609  43914     0.0281  7843
+## 61      1  606.1 236281    0.799 117617  43927     0.0281  7849
+## 62      1  616.2 236310    0.799 117625  43940     0.0281  7856
+## 63      1  626.3 236339    0.799 117633  43953     0.0281  7862
+## 64      1  636.4 236366    0.799 117641  43962     0.0281  7867
+## 65      1  646.5 236390    0.799 117647  43971     0.0281  7872
+## 66      1  656.6 236408    0.799 117650  43982     0.0281  7879
+## 67      1  666.7 236427    0.799 117653  43994     0.0281  7886
+## 68      1  676.8 236446    0.799 117656  44006     0.0281  7892
+## 69      1  686.9 236466    0.799 117660  44018     0.0281  7899
+## 70      1  697.0 236485    0.799 117663  44029     0.0281  7904
+## 71      1  707.1 236504    0.799 117666  44040     0.0281  7909
+## 72      1  717.2 236522    0.798 117669  44052     0.0281  7914
+## 73      1  727.3 236540    0.798 117672  44064     0.0281  7919
+## 74      1  737.4 236558    0.798 117674  44076     0.0281  7925
+## 75      1  747.5 236577    0.798 117678  44088     0.0281  7930
+## 76      1  757.6 236597    0.798 117682  44102     0.0281  7935
+## 77      1  767.7 236618    0.798 117686  44116     0.0281  7940
+## 78      1  777.8 236639    0.798 117691  44130     0.0281  7944
+## 79      1  787.9 236661    0.798 117696  44144     0.0281  7949
+## 80      1  798.0 236684    0.798 117702  44158     0.0281  7955
+## 81      1  808.1 236707    0.798 117708  44172     0.0281  7960
+## 82      1  818.2 236731    0.798 117715  44186     0.0281  7965
+## 83      1  828.3 236753    0.798 117722  44196     0.0281  7970
+## 84      1  838.4 236774    0.798 117729  44202     0.0281  7974
+## 85      1  848.5 236796    0.798 117736  44209     0.0281  7978
+## 86      1  858.6 236817    0.798 117743  44215     0.0281  7982
+## 87      1  868.7 236839    0.798 117752  44222     0.0281  7987
+## 88      1  878.8 236861    0.798 117760  44228     0.0281  7991
+## 89      1  888.9 236884    0.798 117770  44235     0.0281  7995
+## 90      1  899.0 236907    0.798 117780  44241     0.0281  7999
+## 91      1  909.1 236930    0.798 117790  44246     0.0280  8002
+## 92      1  919.2 236953    0.798 117800  44250     0.0280  8004
+## 93      1  929.3 236977    0.798 117811  44255     0.0280  8006
+## 94      1  939.4 237000    0.798 117820  44259     0.0280  8010
+## 95      1  949.5 237024    0.798 117831  44264     0.0280  8014
+## 96      1  959.6 237047    0.798 117841  44268     0.0280  8018
+## 97      1  969.7 237072    0.798 117852  44273     0.0280  8021
+## 98      1  979.8 237096    0.797 117864  44277     0.0280  8025
+## 99      1  989.9 237121    0.797 117876  44281     0.0279  8029
+## 100     1 1000.0 237147    0.797 117889  44285     0.0279  8033</code></pre>
 <pre class="r"><code>plot(lasso_fit)</code></pre>
-<p><img src="bog10_files/figure-html/lasso_predict-1.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/lasso_predict-1.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>predictions_lasso &lt;- predict(lasso_fit, test_data)
 lasso_results &lt;- data.frame( RMSE =RMSE(predictions_lasso, test_data$price),
                              Rsquare =R2(predictions_lasso, test_data$price))
 
 lasso_results</code></pre>
-<pre><code>##       RMSE   Rsquare
-## 1 207500.7 0.8360793</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 207501   0.836</code></pre>
 <p>The performance of the model (in R²):
 - Training: 0.8026139
 - Testing: 0.8360793</p>
@@ -1576,14 +1510,14 @@ knn_fit_2 &lt;- train(
      metric=&quot;RMSE&quot;) #default metric is accuracy is binary, otherwise RMSE, I change it to R²
 
 knn_fit_2$results   </code></pre>
-<pre><code>##   k     RMSE  Rsquared      MAE   RMSESD RsquaredSD    MAESD
-## 1 1 313051.1 0.6583317 149997.6 37512.14 0.07153342 7308.573
-## 2 2 281924.1 0.7085479 134823.7 33693.18 0.05435207 6257.841
-## 3 3 275575.4 0.7253458 130290.5 37699.13 0.04657837 7629.497
-## 4 4 271761.7 0.7339595 127669.3 42203.15 0.05181251 7910.646
-## 5 5 267358.0 0.7460679 125678.5 45778.32 0.04771320 9295.794
-## 6 6 265788.2 0.7524809 124721.3 46597.25 0.04825900 8959.766
-## 7 7 268003.2 0.7500143 124951.1 46829.46 0.04946910 9124.063</code></pre>
+<pre><code>##   k   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1 1 313051    0.658 149998  37512     0.0715  7309
+## 2 2 281924    0.709 134824  33693     0.0544  6258
+## 3 3 275575    0.725 130291  37699     0.0466  7629
+## 4 4 271762    0.734 127669  42203     0.0518  7911
+## 5 5 267358    0.746 125679  45778     0.0477  9296
+## 6 6 265788    0.752 124721  46597     0.0483  8960
+## 7 7 268003    0.750 124951  46829     0.0495  9124</code></pre>
 <pre class="r"><code>print(knn_fit_2)</code></pre>
 <pre><code>## k-Nearest Neighbors 
 ## 
@@ -1595,19 +1529,19 @@ knn_fit_2$results   </code></pre>
 ## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
 ## Resampling results across tuning parameters:
 ## 
-##   k  RMSE      Rsquared   MAE     
-##   1  313051.1  0.6583317  149997.6
-##   2  281924.1  0.7085479  134823.7
-##   3  275575.4  0.7253458  130290.5
-##   4  271761.7  0.7339595  127669.3
-##   5  267358.0  0.7460679  125678.5
-##   6  265788.2  0.7524809  124721.3
-##   7  268003.2  0.7500143  124951.1
+##   k  RMSE    Rsquared  MAE   
+##   1  313051  0.658     149998
+##   2  281924  0.709     134824
+##   3  275575  0.725     130291
+##   4  271762  0.734     127669
+##   5  267358  0.746     125679
+##   6  265788  0.752     124721
+##   7  268003  0.750     124951
 ## 
 ## RMSE was used to select the optimal model using the smallest value.
 ## The final value used for the model was k = 6.</code></pre>
 <pre class="r"><code>plot(knn_fit_2)</code></pre>
-<p><img src="bog10_files/figure-html/knn_model_2-1.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/knn_model_2-1.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
 <div id="prediction-knn" class="section level3">
 <h3>Prediction KNN</h3>
@@ -1618,8 +1552,8 @@ knn_prediction &lt;- predict(knn_fit_2, newdata = test_data)
 knn_results&lt;-data.frame(RMSE = RMSE(knn_prediction, test_data$price), Rsquare = R2(knn_prediction, test_data$price))
 
 knn_results</code></pre>
-<pre><code>##     RMSE   Rsquare
-## 1 260115 0.7509709</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 260115   0.751</code></pre>
 <p>The number of neighbors that optimize RMSE are k=6.</p>
 <p>The performance of the model (in R²):
 - training:0.7524809
@@ -1668,46 +1602,46 @@ model_tree_1 &lt;- train(
 
 #You can view how the tree performs
 model_tree_1$results</code></pre>
-<pre><code>##             cp     RMSE  Rsquared      MAE   RMSESD RsquaredSD     MAESD
-## 1  0.001642401 264365.1 0.7424809 141510.7 38948.87 0.05536862  5740.145
-## 2  0.001855114 266556.3 0.7380907 142519.5 39247.57 0.05504183  5941.286
-## 3  0.001980059 267970.0 0.7352695 143592.1 39405.18 0.05564111  6321.944
-## 4  0.002017821 268253.9 0.7346754 143988.3 39547.87 0.05591404  6702.189
-## 5  0.002728186 272978.3 0.7264031 147145.5 38765.71 0.05256368  7032.080
-## 6  0.002830455 273552.9 0.7252032 147789.2 39075.68 0.05248538  7532.914
-## 7  0.002891538 273817.8 0.7246434 148295.2 38974.77 0.05212931  7398.075
-## 8  0.003175633 276656.1 0.7189574 150836.6 39662.47 0.05591945  7902.775
-## 9  0.004079350 278709.5 0.7144979 152583.9 38184.10 0.05304990  7413.692
-## 10 0.004426161 281790.5 0.7083368 153686.6 39278.94 0.05128339  7012.888
-## 11 0.004559899 282010.2 0.7079952 153931.7 39086.45 0.05177233  6707.788
-## 12 0.004619803 282636.3 0.7066995 154158.1 39312.62 0.05259204  6738.165
-## 13 0.005100832 285748.0 0.7005594 155335.1 40227.82 0.05530947  6965.440
-## 14 0.005705856 288519.8 0.6946959 156574.6 41559.66 0.05963441  7777.599
-## 15 0.006186894 293865.3 0.6818529 157678.4 41020.94 0.06720635  7851.111
-## 16 0.006317926 294349.9 0.6804471 158018.5 40737.80 0.06786129  7638.942
-## 17 0.007979557 297008.9 0.6748412 162522.2 42001.40 0.07359367  7525.098
-## 18 0.008573025 299525.0 0.6695763 164961.6 44730.36 0.07289905  8581.736
-## 19 0.008909181 300604.1 0.6669664 165094.6 44285.41 0.07470870  8355.521
-## 20 0.009660238 303418.6 0.6590154 168439.5 44941.67 0.07636003  9998.403
-## 21 0.012819591 315338.1 0.6324798 174684.3 44253.92 0.07965520 11046.470
-## 22 0.013518947 319583.0 0.6207995 177083.3 42236.69 0.08550294 10595.906
-## 23 0.013585466 319583.0 0.6207995 177083.3 42236.69 0.08550294 10595.906
-## 24 0.018322899 327989.0 0.6007613 183778.2 41517.59 0.08457475  8308.095
-## 25 0.023984853 332592.6 0.5890583 185846.0 41071.97 0.07726431  8995.826
-## 26 0.032236215 345497.9 0.5626656 188729.5 45581.89 0.05728992  9130.410
-## 27 0.043102616 358184.9 0.5271902 196768.4 42264.30 0.07822326  9801.769
-## 28 0.075897194 376072.9 0.4742201 215195.7 36290.10 0.09034554 13054.760
-## 29 0.161965860 422395.9 0.3454179 235650.8 66447.63 0.08738102 12999.888
-## 30 0.314160981 465806.9 0.2761926 254038.9 70395.02 0.03268064 26705.134</code></pre>
+<pre><code>##         cp   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1  0.00164 264365    0.742 141511  38949     0.0554  5740
+## 2  0.00186 266556    0.738 142519  39248     0.0550  5941
+## 3  0.00198 267970    0.735 143592  39405     0.0556  6322
+## 4  0.00202 268254    0.735 143988  39548     0.0559  6702
+## 5  0.00273 272978    0.726 147145  38766     0.0526  7032
+## 6  0.00283 273553    0.725 147789  39076     0.0525  7533
+## 7  0.00289 273818    0.725 148295  38975     0.0521  7398
+## 8  0.00318 276656    0.719 150837  39662     0.0559  7903
+## 9  0.00408 278710    0.714 152584  38184     0.0530  7414
+## 10 0.00443 281791    0.708 153687  39279     0.0513  7013
+## 11 0.00456 282010    0.708 153932  39086     0.0518  6708
+## 12 0.00462 282636    0.707 154158  39313     0.0526  6738
+## 13 0.00510 285748    0.701 155335  40228     0.0553  6965
+## 14 0.00571 288520    0.695 156575  41560     0.0596  7778
+## 15 0.00619 293865    0.682 157678  41021     0.0672  7851
+## 16 0.00632 294350    0.680 158019  40738     0.0679  7639
+## 17 0.00798 297009    0.675 162522  42001     0.0736  7525
+## 18 0.00857 299525    0.670 164962  44730     0.0729  8582
+## 19 0.00891 300604    0.667 165095  44285     0.0747  8356
+## 20 0.00966 303419    0.659 168440  44942     0.0764  9998
+## 21 0.01282 315338    0.632 174684  44254     0.0797 11046
+## 22 0.01352 319583    0.621 177083  42237     0.0855 10596
+## 23 0.01359 319583    0.621 177083  42237     0.0855 10596
+## 24 0.01832 327989    0.601 183778  41518     0.0846  8308
+## 25 0.02398 332593    0.589 185846  41072     0.0773  8996
+## 26 0.03224 345498    0.563 188729  45582     0.0573  9130
+## 27 0.04310 358185    0.527 196768  42264     0.0782  9802
+## 28 0.07590 376073    0.474 215196  36290     0.0903 13055
+## 29 0.16197 422396    0.345 235651  66448     0.0874 13000
+## 30 0.31416 465807    0.276 254039  70395     0.0327 26705</code></pre>
 <pre class="r"><code>#summary(model2_tree)
 
 #You can view the final tree
 rpart.plot(model_tree_1$finalModel)</code></pre>
-<p><img src="bog10_files/figure-html/tree_model -1.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/tree_model%20-1.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#you can also visualize the variable importance
 importance &lt;- varImp(model_tree_1, scale=TRUE)
 plot(importance)</code></pre>
-<p><img src="bog10_files/figure-html/tree_model -2.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/tree_model%20-2.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
 <div id="tree-2" class="section level3">
 <h3>Tree 2</h3>
@@ -1747,28 +1681,28 @@ model_tree_2 &lt;- train(
 
 #You can view how the tree performs
 model_tree_2$results</code></pre>
-<pre><code>##       cp     RMSE  Rsquared      MAE   RMSESD RsquaredSD    MAESD
-## 1  0e+00 243217.6 0.7862621 117367.6 38729.61 0.05019207 6176.337
-## 2  1e-05 242871.7 0.7867786 116591.2 38808.78 0.05000383 6334.173
-## 3  2e-05 242700.4 0.7869522 116503.8 38766.04 0.04974581 6219.951
-## 4  3e-05 242834.9 0.7865743 116555.0 38589.97 0.04977599 6031.134
-## 5  4e-05 243097.2 0.7859819 117376.1 38654.73 0.04998439 6022.918
-## 6  5e-05 243311.0 0.7854952 117656.4 38491.95 0.04989745 5799.135
-## 7  6e-05 243436.8 0.7851922 117936.7 38576.28 0.05002745 6003.083
-## 8  7e-05 243507.2 0.7848832 118145.4 38853.45 0.05073167 6220.632
-## 9  8e-05 243699.5 0.7843820 118314.5 38962.08 0.05166082 6125.456
-## 10 9e-05 243853.3 0.7839816 118550.7 38926.73 0.05229906 6048.760
-## 11 1e-04 243957.9 0.7836849 118950.5 38977.15 0.05262486 6112.401</code></pre>
+<pre><code>##       cp   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1  0e+00 243218    0.786 117368  38730     0.0502  6176
+## 2  1e-05 242872    0.787 116591  38809     0.0500  6334
+## 3  2e-05 242700    0.787 116504  38766     0.0497  6220
+## 4  3e-05 242835    0.787 116555  38590     0.0498  6031
+## 5  4e-05 243097    0.786 117376  38655     0.0500  6023
+## 6  5e-05 243311    0.785 117656  38492     0.0499  5799
+## 7  6e-05 243437    0.785 117937  38576     0.0500  6003
+## 8  7e-05 243507    0.785 118145  38853     0.0507  6221
+## 9  8e-05 243700    0.784 118314  38962     0.0517  6125
+## 10 9e-05 243853    0.784 118551  38927     0.0523  6049
+## 11 1e-04 243958    0.784 118951  38977     0.0526  6112</code></pre>
 <pre class="r"><code>#summary(model_tree_2)
 plot(model_tree_2)</code></pre>
-<p><img src="bog10_files/figure-html/tree_model_hypertune2 -1.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/tree_model_hypertune2%20-1.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#You can view the final tree
 rpart.plot(model_tree_2$finalModel)</code></pre>
-<p><img src="bog10_files/figure-html/tree_model_hypertune2 -2.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/tree_model_hypertune2%20-2.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#you can also visualize the variable importance
 importance &lt;- varImp(model_tree_2, scale=TRUE)
 plot(importance)</code></pre>
-<p><img src="bog10_files/figure-html/tree_model_hypertune2 -3.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/tree_model_hypertune2%20-3.png" width="768" style="display: block; margin: auto;" /></p>
 <p>RSquared is 0.7869522 for cp = 0.00002</p>
 </div>
 <div id="prediction" class="section level3">
@@ -1779,8 +1713,8 @@ predictions_tree &lt;- predict(model_tree_2,test_data)
 tree_results&lt;-data.frame(RMSE = RMSE(predictions_tree, test_data$price), #how much did qe predict wrong
                             Rsquare = R2(predictions_tree, test_data$price)) #how much does the model cover
 tree_results                         </code></pre>
-<pre><code>##       RMSE   Rsquare
-## 1 229721.2 0.8000181</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 229721     0.8</code></pre>
 <p>The performance of the model (in R²):
 - Training R² 0.7869522
 - Testing R² is 0.8000181.</p>
@@ -1916,8 +1850,8 @@ rf_fit_2</code></pre>
 ## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
 ## Resampling results:
 ## 
-##   RMSE      Rsquared   MAE     
-##   206459.7  0.8451496  98707.06
+##   RMSE    Rsquared  MAE  
+##   206460  0.845     98707
 ## 
 ## Tuning parameter &#39;mtry&#39; was held constant at a value of 27
 ## Tuning
@@ -1932,8 +1866,8 @@ rf_fit_2</code></pre>
 rf_results&lt;-data.frame(RMSE = RMSE(rf_prediction, test_data$price), Rsquare = R2(rf_prediction, test_data$price))
 
 rf_results</code></pre>
-<pre><code>##       RMSE   Rsquare
-## 1 195090.1 0.8538264</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 195090   0.854</code></pre>
 </div>
 </div>
 <div id="gradient-boosting-machine" class="section level2">
@@ -2757,34 +2691,34 @@ class(multimodel) &lt;- &quot;caretList&quot;</code></pre>
 <p>The figures below compare the 6 models used for stacking visually in terms of RMSE and R².</p>
 <pre class="r"><code>#we can visualize the differences in performance of each algorithm for each fold 
   modelCor(resamples(multimodel))</code></pre>
-<pre><code>##               lm       gbm       knn    glmnet     rpart    ramger
-## lm     1.0000000 0.9259779 0.7517732 0.9630220 0.7263609 0.8925212
-## gbm    0.9259779 1.0000000 0.7377618 0.7917453 0.5771161 0.9073591
-## knn    0.7517732 0.7377618 1.0000000 0.7057982 0.9051602 0.9505332
-## glmnet 0.9630220 0.7917453 0.7057982 1.0000000 0.7657261 0.8071089
-## rpart  0.7263609 0.5771161 0.9051602 0.7657261 1.0000000 0.8401274
-## ramger 0.8925212 0.9073591 0.9505332 0.8071089 0.8401274 1.0000000</code></pre>
+<pre><code>##           lm   gbm   knn glmnet rpart ramger
+## lm     1.000 0.926 0.752  0.963 0.726  0.893
+## gbm    0.926 1.000 0.738  0.792 0.577  0.907
+## knn    0.752 0.738 1.000  0.706 0.905  0.951
+## glmnet 0.963 0.792 0.706  1.000 0.766  0.807
+## rpart  0.726 0.577 0.905  0.766 1.000  0.840
+## ramger 0.893 0.907 0.951  0.807 0.840  1.000</code></pre>
 <pre class="r"><code>  dotplot(resamples(multimodel), metric = &quot;Rsquared&quot;) #you can set metric=MAE, RMSE, or Rsquared </code></pre>
-<p><img src="bog10_files/figure-html/visualize%20results-1.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-1.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>   xyplot(resamples(multimodel), metric = &quot;Rsquared&quot;)</code></pre>
-<p><img src="bog10_files/figure-html/visualize%20results-2.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-2.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>    splom(resamples(multimodel), metric = &quot;Rsquared&quot;)</code></pre>
-<p><img src="bog10_files/figure-html/visualize%20results-3.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-3.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>  dotplot(resamples(multimodel), metric = &quot;RMSE&quot;) #you can set metric=MAE, RMSE, or Rsquared </code></pre>
-<p><img src="bog10_files/figure-html/visualize%20results-4.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-4.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>   xyplot(resamples(multimodel), metric = &quot;RMSE&quot;)</code></pre>
-<p><img src="bog10_files/figure-html/visualize%20results-5.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-5.png" width="768" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>    splom(resamples(multimodel), metric = &quot;RMSE&quot;)</code></pre>
-<p><img src="bog10_files/figure-html/visualize%20results-6.png" width="672" /></p>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-6.png" width="768" style="display: block; margin: auto;" /></p>
 <p>The figure below shows the correlation between the models that I stacked together. The linear regression correlated strongly with the LASSO regression, but also with gradient boost and random forest. The selection of very similar variables throughout the whole process could be a reason for this.</p>
 <pre class="r"><code>modelCor(resamples(multimodel))</code></pre>
-<pre><code>##               lm       gbm       knn    glmnet     rpart    ramger
-## lm     1.0000000 0.9259779 0.7517732 0.9630220 0.7263609 0.8925212
-## gbm    0.9259779 1.0000000 0.7377618 0.7917453 0.5771161 0.9073591
-## knn    0.7517732 0.7377618 1.0000000 0.7057982 0.9051602 0.9505332
-## glmnet 0.9630220 0.7917453 0.7057982 1.0000000 0.7657261 0.8071089
-## rpart  0.7263609 0.5771161 0.9051602 0.7657261 1.0000000 0.8401274
-## ramger 0.8925212 0.9073591 0.9505332 0.8071089 0.8401274 1.0000000</code></pre>
+<pre><code>##           lm   gbm   knn glmnet rpart ramger
+## lm     1.000 0.926 0.752  0.963 0.726  0.893
+## gbm    0.926 1.000 0.738  0.792 0.577  0.907
+## knn    0.752 0.738 1.000  0.706 0.905  0.951
+## glmnet 0.963 0.792 0.706  1.000 0.766  0.807
+## rpart  0.726 0.577 0.905  0.766 1.000  0.840
+## ramger 0.893 0.907 0.951  0.807 0.840  1.000</code></pre>
 <p>Now, I run the model:</p>
 <pre class="r"><code>#we can now use stacking with the list of models
 library(caretEnsemble)  
@@ -2803,20 +2737,20 @@ model_list &lt;- caretStack(multimodel,
 ## -3263032   -51716     1810    50039  4408661 
 ## 
 ## Coefficients:
-##               Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) -3.357e+04  3.471e+03  -9.673  &lt; 2e-16 ***
-## lm           1.279e+00  1.156e-01  11.065  &lt; 2e-16 ***
-## gbm          3.804e-01  2.007e-02  18.952  &lt; 2e-16 ***
-## knn          1.361e-01  1.285e-02  10.592  &lt; 2e-16 ***
-## glmnet      -1.130e+00  1.167e-01  -9.681  &lt; 2e-16 ***
-## rpart        6.631e-02  1.322e-02   5.015  5.4e-07 ***
-## ramger       3.284e-01  2.711e-02  12.114  &lt; 2e-16 ***
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -3.36e+04   3.47e+03   -9.67  &lt; 2e-16 ***
+## lm           1.28e+00   1.16e-01   11.06  &lt; 2e-16 ***
+## gbm          3.80e-01   2.01e-02   18.95  &lt; 2e-16 ***
+## knn          1.36e-01   1.28e-02   10.59  &lt; 2e-16 ***
+## glmnet      -1.13e+00   1.17e-01   -9.68  &lt; 2e-16 ***
+## rpart        6.63e-02   1.32e-02    5.01  5.4e-07 ***
+## ramger       3.28e-01   2.71e-02   12.11  &lt; 2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 199600 on 10492 degrees of freedom
-## Multiple R-squared:  0.8541, Adjusted R-squared:  0.854 
-## F-statistic: 1.024e+04 on 6 and 10492 DF,  p-value: &lt; 2.2e-16</code></pre>
+## Residual standard error: 2e+05 on 10492 degrees of freedom
+## Multiple R-squared:  0.854,  Adjusted R-squared:  0.854 
+## F-statistic: 1.02e+04 on 6 and 10492 DF,  p-value: &lt;2e-16</code></pre>
 <pre class="r"><code>#predict the price of each house in the test data set
 #recall that the output of &quot;train&quot; function (knn_fit) automatically keeps the best model 
 all_prediction &lt;- predict(model_list, newdata = test_data)
@@ -2824,8 +2758,8 @@ all_prediction &lt;- predict(model_list, newdata = test_data)
 all_results&lt;-data.frame(RMSE = RMSE(all_prediction, test_data$price), Rsquare = R2(all_prediction, test_data$price))
 
 all_results</code></pre>
-<pre><code>##       RMSE   Rsquare
-## 1 187360.2 0.8657965</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 187360   0.866</code></pre>
 </div>
 </div>
 <div id="selection-of-the-model" class="section level1">
@@ -2834,13 +2768,13 @@ all_results</code></pre>
 <pre class="r"><code>data.frame(name=c(&quot;Linear Regression&quot;, &quot;LASSO&quot;, &quot;KNN&quot;, &quot;Regression Tree&quot;, &quot;Random Forest&quot;, &quot;Gradient Boosting&quot;, &quot;Stacked Model&quot;),RMSE_Training= c(227300, 234251, 268281, 252842, 207808, 210764, 199600), RSquared_Training= c(0.8133, 0.8026, 0.7472, 0.7694, 0.8432
 , 0.8403, 0.8541))</code></pre>
 <pre><code>##                name RMSE_Training RSquared_Training
-## 1 Linear Regression        227300            0.8133
-## 2             LASSO        234251            0.8026
-## 3               KNN        268281            0.7472
-## 4   Regression Tree        252842            0.7694
-## 5     Random Forest        207808            0.8432
-## 6 Gradient Boosting        210764            0.8403
-## 7     Stacked Model        199600            0.8541</code></pre>
+## 1 Linear Regression        227300             0.813
+## 2             LASSO        234251             0.803
+## 3               KNN        268281             0.747
+## 4   Regression Tree        252842             0.769
+## 5     Random Forest        207808             0.843
+## 6 Gradient Boosting        210764             0.840
+## 7     Stacked Model        199600             0.854</code></pre>
 <p>Stacking is clearly the best method, explaining 85.41% of overall variability and having the lowest error. The table shows a difference in R² and RMSE between training and testing data. While the difference is not huge, it is surprising that most models perform better in the testing data than in the training data. This is unexpected but might be caused by the seed I used when splitting the total data into training and testing. I would expect, to have a slightly different result when using another seed.</p>
 <div id="pick-investments" class="section level2">
 <h2>Pick investments</h2>
@@ -2870,10 +2804,10 @@ oos_data&lt;-oos_data%&gt;%
 
 #if we invest in everything
 mean(oos_data$profitMargin)</code></pre>
-<pre><code>## [1] 0.03784686</code></pre>
+<pre><code>## [1] 0.0378</code></pre>
 <pre class="r"><code>#just invest in those we chose
 sum(oos_data$actualProfit)/numchoose</code></pre>
-<pre><code>## [1] 0.6962578</code></pre>
+<pre><code>## [1] 0.696</code></pre>
 <p>To control, I calculate how much profit I would make on the training dataset:</p>
 <pre class="r"><code>##try for testing data
 numchoose=200
@@ -2898,10 +2832,10 @@ train_data_pred&lt;-train_data_pred%&gt;%
 
 #if we invest in everything
 mean(train_data_pred$actualProfit)</code></pre>
-<pre><code>## [1] 0.01820068</code></pre>
+<pre><code>## [1] 0.0182</code></pre>
 <pre class="r"><code>#just invest in those we chose
 sum(train_data_pred$actualProfit)/numchoose</code></pre>
-<pre><code>## [1] 0.9554447</code></pre>
+<pre><code>## [1] 0.955</code></pre>
 </div>
 </div>
 <div id="conclusion" class="section level1">
