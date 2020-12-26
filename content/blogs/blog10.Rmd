@@ -5,6 +5,7 @@ description: London House Prices
 draft: no
 keywords: ''
 slug: blog10
+image: london.jpg
 categories:
 - ''
 - ''
