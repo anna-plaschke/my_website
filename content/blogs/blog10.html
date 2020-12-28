@@ -1,0 +1,2944 @@
+---
+title: 'Smart Investment Decisions: Which house should I buy in London'
+date: '2020-12-20T22:42:51-05:00'
+description: London House Prices
+draft: no
+keywords: ''
+slug: blog10
+image: houses.jpg
+categories:
+- ''
+- ''
+subtitle: Various analyses
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<div id="abstract" class="section level1">
+<h1>Abstract</h1>
+<p>This report is about estimating housing prices in London with estimation engines to guide investment decisions. Transaction data from houses sold in London in 2019 as well as various information on these houses are used to create seven different estimation engines using linear regression, LASSO regression, knn, tree, random forest, gradient boosting, and stacking. The best model is used to select the most promising 200 houses out of 2,000 houses that are currently on sale. This will be done by calculating the deviation of the predicted price and asked price.</p>
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>London house prices have risen substantially above the general inflation since 1995. Given this positive development of house prices, investing in properties in London seems very lucrative. However, house prices have crashed twice since 1990 and the current uncertainty in the British economy caused by Brexit and the global pandemic COVID-19 can have impact on its house prices. Recent governmental initiatives to lower property prices, are adding an additional factor of uncertainty. This may lead to lower house prices making investments in properties highly interesting if seen as a mid to long-term investment.
+However, while some of the houses are overpriced, it is crucial to gather and evaluating more information on the properties when taking investment decisions.
+Purpose of this project is to build an estimation engine to guide investment decisions in the London house market. This estimation engine predicts a price based on detailed information on the property for sale such as location, size, and energy efficiency which I will compare to the asking price. I will use publicly available data on transactions in 2019 in London data from Land Registry’s Price Paid Data, Energy Performance Certificate (EPC) data, and public transport information data to determine the effects of the various variables.
+In this report, I explain how I got the data, which machine learning algorithms I used and how I tuned them. Finally, I will apply the estimation engine to recommend top 200 houses out of 2,000 houses on the market for sale at the moment.</p>
+</div>
+<div id="body" class="section level1">
+<h1>Body</h1>
+<div id="data-used" class="section level2">
+<h2>Data Used</h2>
+<p>For my project, I combine three datasets:
+I use publicly available transaction data occurred in London in 2019 from Land Registry’s Price Paid Data that tracks the property sales in England and Wales and includes details on property types.
+I merge this data with detailed information about each property from a publicly available data set with Energy Performance Certificate (EPC) data. From this, I retrieve data including size, number of bedrooms, and energy ratings.
+Finally, I add public transport information such as nearest station, walking distance to station, and the number of lines for each property.
+I clean the dataset, making sure that the correct data type is assigned to each variable and remove the variables with too many missing datapoints.</p>
+<pre class="r"><code>#read in the data
+library(data.table)
+london_house_prices_2019_training&lt;-read.csv(&quot;data/training_data_assignment_with_prices.csv&quot;)
+london_house_prices_2019_out_of_sample&lt;-read.csv(&quot;data/test_data_assignment.csv&quot;)
+
+#fix dates
+london_house_prices_2019_training &lt;- london_house_prices_2019_training %&gt;% mutate(date=as.Date(date))
+#change characters to factors
+london_house_prices_2019_training &lt;- london_house_prices_2019_training %&gt;% mutate_if(is.character,as.factor)
+london_house_prices_2019_out_of_sample&lt;-london_house_prices_2019_out_of_sample %&gt;% mutate_if(is.character,as.factor)
+#remove address2 and town because of missingness
+london_house_prices_2019_training &lt;- london_house_prices_2019_training %&gt;% select(-c(town, address2))
+london_house_prices_2019_out_of_sample&lt;-london_house_prices_2019_out_of_sample %&gt;% select(-c(town, address2))
+
+#make sure out of sample data and training data has the same levels for factors 
+a&lt;-union(levels(london_house_prices_2019_training$postcode_short),levels(london_house_prices_2019_out_of_sample$postcode_short))
+london_house_prices_2019_out_of_sample$postcode_short &lt;- factor(london_house_prices_2019_out_of_sample$postcode_short, levels = a)
+london_house_prices_2019_training$postcode_short &lt;- factor(london_house_prices_2019_training$postcode_short, levels = a)</code></pre>
+</div>
+<div id="visualize-data" class="section level2">
+<h2>Visualize data</h2>
+<p>Before visualizing the data I calculate the average price total and average price per Sqrmtr</p>
+<pre class="r"><code>london_house_prices_2019_training %&gt;% summarise(average_price =mean(price), average_price_sqmtr =mean(price/total_floor_area))</code></pre>
+<pre><code>##   average_price average_price_sqmtr
+## 1        593791                6343</code></pre>
+<p>To get a good initial understanding on the structure of the data and the relationship between housing prices and the explanatory variables, I create a few visualizations:</p>
+<p>First, I plot the distribution of the prices and detect that they are right skewed, with a medium price of 595,000 pounds.</p>
+<pre class="r"><code>library(patchwork)
+p1 &lt;- ggplot(london_house_prices_2019_training, aes(x=price, fill=(price &lt; 2000000)))+
+  geom_histogram()+
+  labs(y=&quot;Number of Properties&quot;, x=&quot;House Price&quot;, title=&quot;Distribution of House Prices in London&quot;)+
+  theme_classic()+ #add theme
+  scale_x_continuous(labels=scales::dollar_format())+
+  theme(legend.position = &quot;none&quot;)+
+  scale_fill_manual(values=c(&quot;dark grey&quot;, &quot;#5691B0&quot; ))+
+  geom_vline(xintercept = 593790.9, color = &#39;red&#39;, linetype = &#39;dashed&#39;) +
+  annotate(geom=&quot;text&quot;, x = 2000790.9,y = 8500, label=&#39;Average Price\n = ~595,000&#39;, color = &#39;red&#39;, size=3.5) +
+  
+  
+  
+  NULL
+  
+  p2 &lt;- ggplot(london_house_prices_2019_training, aes(x=price, fill=(price &lt; 2000000)))+
+  geom_histogram()+
+  labs(y=&quot;Number of Properties&quot;, x=&quot;House Price&quot;, title=&quot;Deep Dive:&quot;, subtitle= &quot;Distribution of House Prices (&lt; 2 Mio) in London&quot;)+
+  theme_classic()+ #add theme
+theme(legend.position = &quot;none&quot;)+
+scale_x_continuous(labels=scales::dollar_format(), limits = c(0,2000000))+
+scale_fill_manual(values=c(&quot;dark grey&quot;, &quot;#5691B0&quot; ))+
+  NULL
+
+  p1+p2</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualize-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>Second, I plot the average price per property type as well as the frequency of each property type. While detached houses, the least frequent sold property type, are on average more expensive, Flats, the most frequent sold property type, are on average the cheapest properties to buy.</p>
+<pre class="r"><code>p1 &lt;- london_house_prices_2019_training %&gt;% 
+  group_by(property_type) %&gt;% 
+  summarise(average_price=mean(price)) %&gt;% 
+  ggplot(aes(y=average_price, x=reorder(property_type, -average_price), fill=property_type))+ 
+  geom_col()+
+  labs(y=&quot;Average Price&quot;, x=&quot;Property Type&quot;, title=&quot;Average Price per Property Type&quot;)+
+  scale_x_discrete(labels = c(&#39;Detached&#39;,&#39;Terraced&#39;,  &#39;Semi- Detached&#39;,&quot;Flats/Maisonettes&quot;))+
+  scale_fill_manual(values=c(&quot;#317395&quot;,&quot;#B5D7E9&quot;, &quot;#76B3D3&quot;, &quot;#5691B0&quot; ))+
+  theme_classic()+ #add theme
+  theme(legend.position = &quot;none&quot;)+
+  scale_y_continuous(labels=scales::dollar_format())+
+  NULL
+
+p2&lt;- london_house_prices_2019_training %&gt;% 
+   group_by(property_type) %&gt;% 
+  summarise(count=n()) %&gt;% 
+  ggplot(aes(x=reorder(property_type, -count), y=count, fill=property_type))+
+    geom_col()+
+  scale_x_discrete(labels = c(&quot;Flats/Maisonettes&quot;,&#39;Terraced&#39;,   &#39;Semi- Detached&#39;,&#39;Detached&#39;))+
+  scale_fill_manual(values=c( &quot;#317395&quot;,&quot;#B5D7E9&quot;, &quot;#76B3D3&quot;, &quot;#5691B0&quot;))+
+   theme(legend.position = &quot;none&quot;)+
+  
+ scale_y_continuous(label=comma)+
+  labs(y=&quot;Number of Property Type&quot;, x=&quot;Property Type&quot;, title=&quot;Frequency of Property Types sold in 2019&quot;)+
+  
+  
+  NULL
+
+p1+p2</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualize3-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>To understand the influence of a property’s size and zone I plot these variables and detect strong relationship between size and price, as well as london zones and prices.</p>
+<pre class="r"><code>london_house_prices_2019_training %&gt;%
+  mutate(london_zone2=as.factor(london_zone)) %&gt;% 
+
+  ggplot(aes(y=price, x=total_floor_area, colour=london_zone2))+ 
+ #geom_smooth()+
+  geom_point(alpha=0.35)+
+  labs(x=&quot;Size of Flat (in Sqmtr)&quot;, y=&quot;Price&quot;, title=&quot;Positive Relationship between Property&#39; Price and Size&quot;, colour=&quot;London Zone&quot;)+
+  theme_classic()+ #add theme
+  scale_y_continuous(labels=scales::dollar_format())+
+
+  NULL</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualize_londonzone-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>Then, I visualized the positive relationship between average income and price.</p>
+<pre class="r"><code>london_house_prices_2019_training %&gt;% 
+  ggplot(aes(y=price, x=average_income))+ 
+  geom_point(alpha=0.35)+
+  geom_smooth()+
+  labs(x=&quot;Average Income&quot;, y=&quot;Price&quot;, title=&quot;Relationship between Average Income and Price&quot;)+
+  theme_classic()+ #add theme
+  scale_y_continuous(labels=scales::dollar_format(), limits=c(0, 3000000))+
+  scale_x_continuous(label=comma)+
+  NULL</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualizeaverageincome-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>I look at the price/floor area by district.</p>
+<pre class="r"><code>london_house_prices_2019_training %&gt;% 
+  mutate(price_floor =price/total_floor_area) %&gt;%
+  group_by(district) %&gt;% 
+  summarise(average_price_floor=mean(price_floor)) %&gt;% 
+  ggplot(aes(x=average_price_floor, y=reorder(district, average_price_floor)), by_row=TRUE)+ 
+  geom_col()+
+  labs(x=&quot;Average Price per squaremetre&quot;, y=&quot;&quot;, title=&quot;Average Price per District&quot;)+
+  theme_classic()+ #add theme
+  NULL</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualizedistrict-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>Finally, I check if there are strong correlations between the variables. Some variables such as total floor area, number of habitable rooms, and current CO2 emissions are correlating strongly. Whilst it is important to keep such correlations in mind, they do not constitute a problem when creating models for prediction.</p>
+<pre class="r"><code># produce a correlation table using GGally::ggcor()
+
+library(&quot;GGally&quot;)
+london_house_prices_2019_training %&gt;% 
+  select(-ID) %&gt;% #keep Y variable last
+  ggcorr(method = c(&quot;pairwise&quot;, &quot;pearson&quot;), layout.exp = 2,label_round=2, label = TRUE,label_size = 2,hjust = 1,nbreaks = 5,size = 2,angle = -20)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/correlation%20table-1.png" width="768" style="display: block; margin: auto;" />
+## Tuning Model</p>
+<p>Before creating models, I split the data into training and testing data. I use the training dataset to build my models and test them subsequently on the testing data. Having an outcome variable for the testing data, I can detect if my model overfits before using it for predictions on unlabeled data (houses with no transaction price).</p>
+<pre class="r"><code>#let&#39;s do the initial split
+set.seed(1)
+library(rsample)
+train_test_split &lt;- initial_split(london_house_prices_2019_training, prop = 0.75) #training set contains 75% of the data
+train_data &lt;- training(train_test_split)
+test_data &lt;- testing(train_test_split)</code></pre>
+<p>As first step, I set seed and stabilize a cross-fold validation that I use for all my models. Cross-fold validation is a technique to test the predictive power of a model on a dataset that was not used to create the model, when having a limited number of observations. The seed instead makes it possible to replicate the model with exact the same results.</p>
+<pre class="r"><code>#Define control variables
+set.seed(1)#because I use cross-validation and want to be able to replicate the model
+control &lt;- trainControl (
+    method=&quot;cv&quot;, #cross-fold validation
+    number=10,
+    verboseIter=TRUE) #by setting this to true the model will report its progress after each estimation</code></pre>
+<p>I tune all the models maximizing R² and minimizing RMSE. R² is the amount of variance in the data explained by the model. If my model has an R² of 80% for example, the model explains 80% of the different prices between the houses in my dataset. RMSE on the other side, stands for the root mean squared error and is the prediction error of the model.</p>
+</div>
+<div id="linear-regression" class="section level2">
+<h2>Linear Regression</h2>
+<p>The first model I create, is a linear regression. A linear regression looks for the line of best fit between all the variables. I use a stepwise regression when selecting the variables, meaning that I include all of them and subsequently remove unsignificant ones.
+The only variables I exclude since the beginning are illogical variables such as latitude and longitude, variables with missing data, and variables that are missing in the dataset on which I will do the final predictions. Latitude and longitude are illogical for a linear regression because I assume prices to be higher in the centre if London, and a linear correlation between longitude/latitude and price would therefore be unlikely.</p>
+<div id="linear-regression-1" class="section level3">
+<h3>1 Linear Regression</h3>
+<pre class="r"><code>#we are going to train the model and report the results using k-fold cross validation
+model_lm_0&lt;-train(
+    price ~ 
+
+   num_tube_lines 
+   +num_rail_lines
+   +num_light_rail_lines
+   +distance_to_station 
+   #+nearest_station #not using it because of new station
+   +type_of_closest_station
+   
+    +whether_old_or_new
+    +freehold_or_leasehold
+  
+
+   +london_zone
+   #+postcode_short #too many variables
+    #+local_aut #not in out of sample data
+    +average_income
+  # +nearest_station #problems in out of sample
+   
+    +total_floor_area
+    +number_habitable_rooms 
+    +property_type
+   +tenure
+    
+    +current_energy_rating
+   +energy_consumption_potential
+   +energy_consumption_current
+    +windows_energy_eff
+    +co2_emissions_potential
+   +co2_emissions_current
+    +water_company
+    
+    ,
+    train_data,
+   method = &quot;lm&quot;,
+    trControl = control
+   )
+
+# summary of the results
+model_lm_0$result</code></pre>
+<p>After excluding all insignificant variables, I create interaction variables between variables that are very important (e.g., total floor area, number of habitable rooms, and London zone), as well as non-linear terms (e.g., (total floor area) ² ) .
+Then, I replace the geographical categorical variable postcode short with London zones, because while many postcodes turn out to be insignificant, London zones seems to be a good indicator for geographical distribution of prices.</p>
+</div>
+<div id="linear-regression-2" class="section level3">
+<h3>2 Linear Regression</h3>
+<pre class="r"><code>#we are going to train the model and report the results using k-fold cross validation
+model_lm&lt;-train(
+    price ~ 
+   num_tube_lines 
+
+    +district:property_type
+    +london_zone*poly(total_floor_area,2)*number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential
+   +energy_consumption_current
+   +current_energy_rating
+    +windows_energy_eff
+    +co2_emissions_potential
+   +co2_emissions_current
+    +water_company
+    ,
+    train_data,
+   method = &quot;lm&quot;,
+    trControl = control
+   )</code></pre>
+<pre><code>## + Fold01: intercept=TRUE 
+## - Fold01: intercept=TRUE 
+## + Fold02: intercept=TRUE 
+## - Fold02: intercept=TRUE 
+## + Fold03: intercept=TRUE 
+## - Fold03: intercept=TRUE 
+## + Fold04: intercept=TRUE 
+## - Fold04: intercept=TRUE 
+## + Fold05: intercept=TRUE 
+## - Fold05: intercept=TRUE 
+## + Fold06: intercept=TRUE 
+## - Fold06: intercept=TRUE 
+## + Fold07: intercept=TRUE 
+## - Fold07: intercept=TRUE 
+## + Fold08: intercept=TRUE 
+## - Fold08: intercept=TRUE 
+## + Fold09: intercept=TRUE 
+## - Fold09: intercept=TRUE 
+## + Fold10: intercept=TRUE 
+## - Fold10: intercept=TRUE 
+## Aggregating results
+## Fitting final model on full training set</code></pre>
+<pre class="r"><code># summary of the results
+model_lm$result</code></pre>
+<pre><code>##   intercept   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1      TRUE 233128    0.804 117778  40439     0.0284  7436</code></pre>
+<p>Then, I plot the results of the final model as well as the importance of each variable:</p>
+<pre class="r"><code>model_lm$results</code></pre>
+<pre><code>##   intercept   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1      TRUE 233128    0.804 117778  40439     0.0284  7436</code></pre>
+<pre class="r"><code># we can check variable importance as well
+importance &lt;- varImp(model_lm, scale=TRUE)
+plot(importance)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/varimportance-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="prediction-lm" class="section level3">
+<h3>Prediction lm</h3>
+<p>Below I use the predict function to test the performance of the model in testing data and summarize the performance of the linear regression model.</p>
+<pre class="r"><code># We can predict the testing values
+
+predictions_lm &lt;- predict(model_lm,test_data)
+
+lm_results&lt;-data.frame(RMSE = RMSE(predictions_lm, test_data$price), #how much did qe predict wrong
+                            Rsquare = R2(predictions_lm, test_data$price)) #how much does the model cover
+lm_results                         </code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 208392   0.835</code></pre>
+<p>The performance of the model (in R²):
+- Training 0.8102
+- Testing 0.8358638</p>
+</div>
+</div>
+<div id="lasso" class="section level2">
+<h2>LASSO</h2>
+<p>As second model, I performed a LASSO regression using the same variables as in the linear regression. LASSO regression is a type of linear regression that shirks the impact of the variables (regularization) and eliminates insignificant variables (parameter selection). To do so, I introduce artificially a bias (lambda) which adds a penalty to the coefficients for each variable. As consequence, all variables have a lower coefficient, and some go down to zero, resulting into a simpler model with less variance but a higher bias.
+I optimize the model calculating the error of the model (RMSE – root mean standard error) as well as the explanatory power of my model (R²) for different biases (lambda). Finally, I select the model with the lowest RMSE and highest R².</p>
+<pre class="r"><code>#split data into training &amp; testing -&gt; already done
+#we need to optimize the lambda in this sequence
+lambda_seq &lt;- seq(0, 1000, length =100)
+
+#we use cross fold validation
+set.seed(1)
+control &lt;- trainControl(
+  method=&quot;cv&quot;,
+  number = 10,
+  verboseIter = FALSE)
+
+#LASSO regression to select the best lambda
+set.seed(1)
+lasso_fit &lt;- train(price ~
+    #  distance_to_station #not significant
+    num_tube_lines #not significant
+    
+    +whether_old_or_new #not significant
+    +freehold_or_leasehold #not significant
+
+    +distance_to_station
+    +district:property_type
+    +london_zone*poly(total_floor_area,2)*number_habitable_rooms 
+ 
+    +average_income
+    
+    +energy_consumption_potential
+    +energy_consumption_current #new
+    +current_energy_rating #new
+    +windows_energy_eff
+    +co2_emissions_potential
+    +co2_emissions_current #new
+    +water_company,
+    
+        data=train_data,
+        method=&quot;glmnet&quot;,
+        preProc = c(&quot;center&quot;, &quot;scale&quot;), #This option standardizes the data before running the LASSO regression if alpha = 0 -&gt;RIDGE REG
+  
+   trControl = control,
+  tuneGrid = expand.grid(alpha = 1, lambda = lambda_seq) #alpha=1 specifies to run a LASSO regression. If alpha=0 the model would run ridge regression.
+
+)
+
+coef(lasso_fit$finalModel, lasso_fit$bestTune$lambda)</code></pre>
+<pre><code>## 166 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                                                                       1
+## (Intercept)                                                    594480.4
+## num_tube_lines                                                  15627.7
+## whether_old_or_newY                                               224.5
+## freehold_or_leaseholdL                                         -16424.4
+## distance_to_station                                             -2672.4
+## london_zone                                                   -183472.0
+## poly(total_floor_area, 2)1                                    1014162.8
+## poly(total_floor_area, 2)2                                     321756.7
+## number_habitable_rooms                                         -77333.0
+## average_income                                                  60282.3
+## energy_consumption_potential                                   -31968.4
+## energy_consumption_current                                      -3455.7
+## current_energy_ratingC                                           7340.9
+## current_energy_ratingD                                          11157.3
+## current_energy_ratingE                                           1872.5
+## current_energy_ratingF                                          -6706.5
+## current_energy_ratingG                                          -6338.3
+## windows_energy_effGood                                           6860.1
+## windows_energy_effPoor                                          12230.9
+## windows_energy_effVery Good                                      5449.2
+## windows_energy_effVery Poor                                     15294.0
+## co2_emissions_potential                                         52468.6
+## co2_emissions_current                                           19618.9
+## water_companyEssex &amp; Suffolk Water                               1951.1
+## water_companyLeep Utilities                                       480.6
+## water_companySES Water                                          16647.1
+## water_companyThames Water                                       19487.2
+## districtBarking and Dagenham:property_typeD                       741.2
+## districtBarnet:property_typeD                                    8899.5
+## districtBexley:property_typeD                                    6705.5
+## districtBrent:property_typeD                                       17.9
+## districtBromley:property_typeD                                   4916.5
+## districtCamden:property_typeD                                   20854.7
+## districtCity of London:property_typeD                               .  
+## districtCroydon:property_typeD                                      .  
+## districtEaling:property_typeD                                   -2317.4
+## districtEnfield:property_typeD                                   1697.5
+## districtGreenwich:property_typeD                                -2060.0
+## districtHackney:property_typeD                                      .  
+## districtHammersmith and Fulham:property_typeD                       .  
+## districtHaringey:property_typeD                                     .  
+## districtHarrow:property_typeD                                   15067.9
+## districtHavering:property_typeD                                  8804.1
+## districtHillingdon:property_typeD                               11477.0
+## districtHounslow:property_typeD                                 -1948.6
+## districtIslington:property_typeD                                 3586.6
+## districtKensington and Chelsea:property_typeD                   26187.9
+## districtKingston upon Thames:property_typeD                     17165.4
+## districtLambeth:property_typeD                                      .  
+## districtLewisham:property_typeD                                 -3538.1
+## districtMerton:property_typeD                                    7032.9
+## districtNewham:property_typeD                                    -830.4
+## districtRedbridge:property_typeD                                 -505.6
+## districtRichmond upon Thames:property_typeD                     21716.2
+## districtSouthwark:property_typeD                                 1695.9
+## districtSutton:property_typeD                                   -2205.3
+## districtTower Hamlets:property_typeD                                .  
+## districtWaltham Forest:property_typeD                           -2466.1
+## districtWandsworth:property_typeD                                1418.8
+## districtWestminster:property_typeD                                  .  
+## districtBarking and Dagenham:property_typeF                     -2026.1
+## districtBarnet:property_typeF                                   -3295.1
+## districtBexley:property_typeF                                   -6900.2
+## districtBrent:property_typeF                                     1751.8
+## districtBromley:property_typeF                                 -10417.3
+## districtCamden:property_typeF                                   17719.7
+## districtCity of London:property_typeF                            6747.4
+## districtCroydon:property_typeF                                 -11591.3
+## districtEaling:property_typeF                                   -3341.8
+## districtEnfield:property_typeF                                  -3003.8
+## districtGreenwich:property_typeF                                -4605.3
+## districtHackney:property_typeF                                   5717.0
+## districtHammersmith and Fulham:property_typeF                    6835.5
+## districtHaringey:property_typeF                                  2921.2
+## districtHarrow:property_typeF                                   -3248.2
+## districtHavering:property_typeF                                 -1685.6
+## districtHillingdon:property_typeF                               -2903.0
+## districtHounslow:property_typeF                                 -4087.1
+## districtIslington:property_typeF                                 7575.7
+## districtKensington and Chelsea:property_typeF                   58576.9
+## districtKingston upon Thames:property_typeF                     -6698.3
+## districtLambeth:property_typeF                                    190.1
+## districtLewisham:property_typeF                                 -9213.2
+## districtMerton:property_typeF                                   -5475.4
+## districtNewham:property_typeF                                   -2019.2
+## districtRedbridge:property_typeF                                -6521.9
+## districtRichmond upon Thames:property_typeF                     -1321.1
+## districtSouthwark:property_typeF                                 3226.7
+## districtSutton:property_typeF                                  -13613.8
+## districtTower Hamlets:property_typeF                            -5952.0
+## districtWaltham Forest:property_typeF                            -377.0
+## districtWandsworth:property_typeF                                 432.1
+## districtWestminster:property_typeF                              51586.5
+## districtBarking and Dagenham:property_typeS                     -2821.9
+## districtBarnet:property_typeS                                    9386.9
+## districtBexley:property_typeS                                   -9391.0
+## districtBrent:property_typeS                                      941.9
+## districtBromley:property_typeS                                  -4364.0
+## districtCamden:property_typeS                                    4957.4
+## districtCity of London:property_typeS                               .  
+## districtCroydon:property_typeS                                 -14299.3
+## districtEaling:property_typeS                                     545.1
+## districtEnfield:property_typeS                                    229.0
+## districtGreenwich:property_typeS                                -8143.4
+## districtHackney:property_typeS                                   4730.4
+## districtHammersmith and Fulham:property_typeS                    4410.2
+## districtHaringey:property_typeS                                  -583.5
+## districtHarrow:property_typeS                                    3694.2
+## districtHavering:property_typeS                                  6868.8
+## districtHillingdon:property_typeS                                5663.6
+## districtHounslow:property_typeS                                   732.9
+## districtIslington:property_typeS                                10416.9
+## districtKensington and Chelsea:property_typeS                   21702.0
+## districtKingston upon Thames:property_typeS                      6164.4
+## districtLambeth:property_typeS                                  -5793.6
+## districtLewisham:property_typeS                                 -9075.0
+## districtMerton:property_typeS                                   -3421.5
+## districtNewham:property_typeS                                   -1764.4
+## districtRedbridge:property_typeS                                -8344.5
+## districtRichmond upon Thames:property_typeS                     18367.4
+## districtSouthwark:property_typeS                                 4246.4
+## districtSutton:property_typeS                                   -7473.4
+## districtTower Hamlets:property_typeS                                .  
+## districtWaltham Forest:property_typeS                            2508.4
+## districtWandsworth:property_typeS                                   .  
+## districtWestminster:property_typeS                              36645.3
+## districtBarking and Dagenham:property_typeT                     -3750.0
+## districtBarnet:property_typeT                                    2038.4
+## districtBexley:property_typeT                                   -9459.4
+## districtBrent:property_typeT                                     5873.7
+## districtBromley:property_typeT                                  -9290.5
+## districtCamden:property_typeT                                   17439.6
+## districtCity of London:property_typeT                               .  
+## districtCroydon:property_typeT                                 -19230.9
+## districtEaling:property_typeT                                     925.4
+## districtEnfield:property_typeT                                   -909.1
+## districtGreenwich:property_typeT                                -8340.4
+## districtHackney:property_typeT                                   5746.9
+## districtHammersmith and Fulham:property_typeT                   19177.7
+## districtHaringey:property_typeT                                  3045.0
+## districtHarrow:property_typeT                                     945.0
+## districtHavering:property_typeT                                  3049.0
+## districtHillingdon:property_typeT                                 -95.0
+## districtHounslow:property_typeT                                  3878.1
+## districtIslington:property_typeT                                11445.4
+## districtKensington and Chelsea:property_typeT                  104020.5
+## districtKingston upon Thames:property_typeT                      1782.9
+## districtLambeth:property_typeT                                  -6490.8
+## districtLewisham:property_typeT                                -13920.0
+## districtMerton:property_typeT                                   -7423.7
+## districtNewham:property_typeT                                  -13263.4
+## districtRedbridge:property_typeT                                -9798.2
+## districtRichmond upon Thames:property_typeT                     15582.9
+## districtSouthwark:property_typeT                                    .  
+## districtSutton:property_typeT                                  -11001.5
+## districtTower Hamlets:property_typeT                             -551.7
+## districtWaltham Forest:property_typeT                             398.7
+## districtWandsworth:property_typeT                                 456.0
+## districtWestminster:property_typeT                              35411.7
+## london_zone:poly(total_floor_area, 2)1                        -791217.7
+## london_zone:poly(total_floor_area, 2)2                        -272639.0
+## london_zone:number_habitable_rooms                             103682.4
+## poly(total_floor_area, 2)1:number_habitable_rooms             -401559.0
+## poly(total_floor_area, 2)2:number_habitable_rooms              -68996.2
+## london_zone:poly(total_floor_area, 2)1:number_habitable_rooms  399638.7
+## london_zone:poly(total_floor_area, 2)2:number_habitable_rooms   57036.3</code></pre>
+<div id="predict-lasso" class="section level3">
+<h3>Predict lasso</h3>
+<pre class="r"><code>#lasso_fit$results
+plot(lasso_fit)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/lasso_predict-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>predictions_lasso &lt;- predict(lasso_fit, test_data)
+lasso_results &lt;- data.frame( RMSE =RMSE(predictions_lasso, test_data$price),
+                             Rsquare =R2(predictions_lasso, test_data$price))
+
+lasso_results</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 207501   0.836</code></pre>
+<p>The performance of the model (in R²):
+- Training: 0.8026139
+- Testing: 0.8360793</p>
+</div>
+</div>
+<div id="knn" class="section level2">
+<h2>KNN</h2>
+<p>As third model I use the k-Nearest Neighbours (k-NN) model. It predicts a value based on a datapoint’s k nearest neighbours. This means, that the price of a property is predicted based on the k most similar properties in the training dataset.
+To select the variables, I use the knowledge gained from the linear regression and take the significant variables from the linear regression. Furthermore, I include latitude and longitude as this model does not assume a linear relationship between the dependent and the independent variable. Finally, I remove the interaction variables given this model’s ability in determining them by itself.
+Before running the model, I make sure to standardize the variables, as the distance between the points should not be influenced by different units of the variables. Then, I optimize my model using different numbers for the number of neighbours (k).</p>
+<p>To do so, I first use 10 random values for k with tuneLength, and then optimize for values close to the best performing k-value with tuneGrid.</p>
+<div id="knn-10-random-values-for-k" class="section level3">
+<h3>KNN: 10 random values for k</h3>
+<pre class="r"><code>#knn
+# selecting the best k with the highest R²
+set.seed(1) #because I use cross-validation and want to be able to replicate the model
+
+knn_fit_1 &lt;- train(
+  price ~ 
+    
+        #  distance_to_station #not significant
+   num_tube_lines #not significant
+    
+    +latitude
+    +longitude
+  
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+  ,
+  train_data,
+                   
+                method = &quot;knn&quot;, 
+                 trControl = control, #use the same as I used in linear regression
+                 tuneLength = 10, #number of parameter values train function will try
+                 preProcess = c(&quot;center&quot;, &quot;scale&quot;), #center and scale the data in k-nn this is pretty important
+                 metric=&quot;RMSE&quot; #default metric is accuracy, I change it to R²
+
+  )
+
+print(knn_fit_1)</code></pre>
+<pre><code>## k-Nearest Neighbors 
+## 
+## 10499 samples
+##    13 predictor
+## 
+## Pre-processing: centered (52), scaled (52) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
+## Resampling results across tuning parameters:
+## 
+##   k   RMSE    Rsquared  MAE   
+##    5  267358  0.746     125679
+##    7  268003  0.750     124951
+##    9  268917  0.754     125417
+##   11  272270  0.753     126574
+##   13  275337  0.750     127294
+##   15  278772  0.746     128228
+##   17  279448  0.749     128974
+##   19  280789  0.749     129780
+##   21  283118  0.748     130544
+##   23  285960  0.745     131288
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final value used for the model was k = 5.</code></pre>
+<pre class="r"><code>plot(knn_fit_1)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/knn_model_1-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="knn-tunegrid" class="section level3">
+<h3>KNN: tuneGrid</h3>
+<p>The best k seems to be between 1 and 7, therefore I use tuneGrid to get the best k.</p>
+<pre class="r"><code>#knn2
+Grid_knn &lt;- expand.grid(k=seq(1, 7, 1))
+# selecting the best k with the highest R²
+set.seed(1) #because I use cross-validation and want to be able to replicate the model
+
+knn_fit_2 &lt;- train(  
+  price ~ 
+    
+        #  distance_to_station #not significant
+   num_tube_lines #not significant
+    
+    +latitude
+    +longitude
+  
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+  ,
+  train_data,
+
+    method = &quot;knn&quot;, 
+     trControl = control, #use the same as I used in linear regression
+     tuneGrid = Grid_knn, #looking for numbers around 
+     preProcess = c(&quot;center&quot;, &quot;scale&quot;), #center and scale the data in k-nn this is pretty important
+     metric=&quot;RMSE&quot;) #default metric is accuracy is binary, otherwise RMSE, I change it to R²
+
+print(knn_fit_2)</code></pre>
+<pre><code>## k-Nearest Neighbors 
+## 
+## 10499 samples
+##    13 predictor
+## 
+## Pre-processing: centered (52), scaled (52) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
+## Resampling results across tuning parameters:
+## 
+##   k  RMSE    Rsquared  MAE   
+##   1  313051  0.658     149998
+##   2  281924  0.709     134824
+##   3  275575  0.725     130291
+##   4  271762  0.734     127669
+##   5  267358  0.746     125679
+##   6  265788  0.752     124721
+##   7  268003  0.750     124951
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final value used for the model was k = 6.</code></pre>
+<pre class="r"><code>plot(knn_fit_2)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/knn_model_2-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="prediction-knn" class="section level3">
+<h3>Prediction KNN</h3>
+<pre class="r"><code>#predict the price of each house in the test data set
+#recall that the output of &quot;train&quot; function (knn_fit) automatically keeps the best model 
+knn_prediction &lt;- predict(knn_fit_2, newdata = test_data)
+
+knn_results&lt;-data.frame(RMSE = RMSE(knn_prediction, test_data$price), Rsquare = R2(knn_prediction, test_data$price))
+
+knn_results</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 260115   0.751</code></pre>
+<p>The number of neighbors that optimize RMSE are k=6.</p>
+<p>The performance of the model (in R²):
+- training:0.7524809
+- testing: 0.7509709</p>
+</div>
+</div>
+<div id="regression-tree-model" class="section level2">
+<h2>Regression Tree Model</h2>
+<p>The fourth model is a regression tree and splits the data base multiple times based on various variables with respective cut-off values. After each split, subsets are created that are again divided based on another variable. The splitting stops after a predefined number of splits or other parameters that can be pre-set.
+One of these parameters, is the complexity parameter (cp) that stabilizes that a split is executed, only if the cost this additional split is below its value. I optimized the model (low RMSE and high R²) for this parameter.
+This model detects relationships between variables as well as nonlinear variables. Consequently, I do not need to create interaction variables myself. I use all the significant variables from the linear regression but remove the interactions between them.
+On the other side, this model is not as good in detecting linear relationships and is a very unstable method due to overfitting (high variance). This means if the data changes even slightly they can fit very different models.</p>
+<div id="tree-1" class="section level3">
+<h3>Tree 1</h3>
+<pre class="r"><code>#no need to scale the data
+
+set.seed(12) #because I use cross-validation and want to be able to replicate the model
+model_tree_1 &lt;- train(
+  price ~ 
+    
+        #  distance_to_station #not significant
+   num_tube_lines #not significant
+    
+    +latitude
+    +longitude
+    
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+  ,
+  train_data,
+  method = &quot;rpart&quot;, 
+  metric= &quot;RMSE&quot;,
+  trControl = control, #I use the same as in lm  
+  tuneLength= 30
+  
+    )
+
+#You can view how the tree performs
+model_tree_1$results</code></pre>
+<pre><code>##         cp   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1  0.00164 264365    0.742 141511  38949     0.0554  5740
+## 2  0.00186 266556    0.738 142519  39248     0.0550  5941
+## 3  0.00198 267970    0.735 143592  39405     0.0556  6322
+## 4  0.00202 268254    0.735 143988  39548     0.0559  6702
+## 5  0.00273 272978    0.726 147145  38766     0.0526  7032
+## 6  0.00283 273553    0.725 147789  39076     0.0525  7533
+## 7  0.00289 273818    0.725 148295  38975     0.0521  7398
+## 8  0.00318 276656    0.719 150837  39662     0.0559  7903
+## 9  0.00408 278710    0.714 152584  38184     0.0530  7414
+## 10 0.00443 281791    0.708 153687  39279     0.0513  7013
+## 11 0.00456 282010    0.708 153932  39086     0.0518  6708
+## 12 0.00462 282636    0.707 154158  39313     0.0526  6738
+## 13 0.00510 285748    0.701 155335  40228     0.0553  6965
+## 14 0.00571 288520    0.695 156575  41560     0.0596  7778
+## 15 0.00619 293865    0.682 157678  41021     0.0672  7851
+## 16 0.00632 294350    0.680 158019  40738     0.0679  7639
+## 17 0.00798 297009    0.675 162522  42001     0.0736  7525
+## 18 0.00857 299525    0.670 164962  44730     0.0729  8582
+## 19 0.00891 300604    0.667 165095  44285     0.0747  8356
+## 20 0.00966 303419    0.659 168440  44942     0.0764  9998
+## 21 0.01282 315338    0.632 174684  44254     0.0797 11046
+## 22 0.01352 319583    0.621 177083  42237     0.0855 10596
+## 23 0.01359 319583    0.621 177083  42237     0.0855 10596
+## 24 0.01832 327989    0.601 183778  41518     0.0846  8308
+## 25 0.02398 332593    0.589 185846  41072     0.0773  8996
+## 26 0.03224 345498    0.563 188729  45582     0.0573  9130
+## 27 0.04310 358185    0.527 196768  42264     0.0782  9802
+## 28 0.07590 376073    0.474 215196  36290     0.0903 13055
+## 29 0.16197 422396    0.345 235651  66448     0.0874 13000
+## 30 0.31416 465807    0.276 254039  70395     0.0327 26705</code></pre>
+<pre class="r"><code>#summary(model2_tree)
+
+#You can view the final tree
+rpart.plot(model_tree_1$finalModel)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/tree_model%20-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#you can also visualize the variable importance
+importance &lt;- varImp(model_tree_1, scale=TRUE)
+plot(importance)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/tree_model%20-2.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="tree-2" class="section level3">
+<h3>Tree 2</h3>
+<p>The best cp seems to be between 0.000 and 0.0001, therefore I use tuneGrid to get the best cp.</p>
+<pre class="r"><code>#no need to scale the data
+
+#run model
+set.seed(1) #because I use cross-validation and want to be able to replicate the model
+model_tree_2 &lt;- train(
+  price ~ 
+    
+        #  distance_to_station #not significant
+   num_tube_lines #not significant
+    
+    +latitude
+    +longitude
+  
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+  ,
+  train_data,
+ 
+ 
+  method = &quot;rpart&quot;,
+  metric=&quot;RMSE&quot;,
+  trControl = control, #I use the same as in lm  
+  tuneGrid= expand.grid(cp=seq(0.000, 0.0001, 0.00001))
+    )
+
+#You can view how the tree performs
+model_tree_2$results</code></pre>
+<pre><code>##       cp   RMSE Rsquared    MAE RMSESD RsquaredSD MAESD
+## 1  0e+00 243218    0.786 117368  38730     0.0502  6176
+## 2  1e-05 242872    0.787 116591  38809     0.0500  6334
+## 3  2e-05 242700    0.787 116504  38766     0.0497  6220
+## 4  3e-05 242835    0.787 116555  38590     0.0498  6031
+## 5  4e-05 243097    0.786 117376  38655     0.0500  6023
+## 6  5e-05 243311    0.785 117656  38492     0.0499  5799
+## 7  6e-05 243437    0.785 117937  38576     0.0500  6003
+## 8  7e-05 243507    0.785 118145  38853     0.0507  6221
+## 9  8e-05 243700    0.784 118314  38962     0.0517  6125
+## 10 9e-05 243853    0.784 118551  38927     0.0523  6049
+## 11 1e-04 243958    0.784 118951  38977     0.0526  6112</code></pre>
+<pre class="r"><code>#summary(model_tree_2)
+plot(model_tree_2)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/tree_model_hypertune2%20-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#You can view the final tree
+rpart.plot(model_tree_2$finalModel)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/tree_model_hypertune2%20-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#you can also visualize the variable importance
+importance &lt;- varImp(model_tree_2, scale=TRUE)
+plot(importance)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/tree_model_hypertune2%20-3.png" width="768" style="display: block; margin: auto;" /></p>
+<p>RSquared is 0.7869522 for cp = 0.00002</p>
+</div>
+<div id="prediction" class="section level3">
+<h3>Prediction</h3>
+<pre class="r"><code># We can predict the testing values
+predictions_tree &lt;- predict(model_tree_2,test_data)
+
+tree_results&lt;-data.frame(RMSE = RMSE(predictions_tree, test_data$price), #how much did qe predict wrong
+                            Rsquare = R2(predictions_tree, test_data$price)) #how much does the model cover
+tree_results                         </code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 229721     0.8</code></pre>
+<p>The performance of the model (in R²):
+- Training R² 0.7869522
+- Testing R² is 0.8000181.</p>
+<p>We need to be careful about making conclusions based on model trees because there is a high variance. This means if the data changes even slightly they can fit very different models. (you could test this using different seeds)</p>
+</div>
+</div>
+<div id="random-forest" class="section level2">
+<h2>Random Forest</h2>
+<p>Random Forest is an ensembled learning method that creates multiple trees and takes the average of the individual trees’ predictions as prediction. It corrects the tendency of regression trees to overfitt to their training dataset.
+To optimize RMSE and R² for the random trees, I tuned the number of variables to possibly split at in each node and as split rule I selected “variance” as opposed to “extratrees”. To save computational power I used 5 as a minimum node size (which is the default option for prediction).</p>
+<div id="rf-1" class="section level3">
+<h3>RF 1</h3>
+<pre class="r"><code>#random forest is an assembled method 
+
+set.seed(1)
+rf_fit &lt;- train(
+  price ~ 
+    
+        #  distance_to_station #not significant
+   num_tube_lines #not significant
+    
+    +latitude
+    +longitude
+    
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+  ,
+  train_data,
+ 
+  
+  method = &quot;ranger&quot;,
+  metric=&quot;RMSE&quot;, 
+  trControl = control,
+  tuneLength= 10,
+  importance = &#39;permutation&#39;)
+
+print(rf_fit)</code></pre>
+<pre><code>## Random Forest 
+## 
+## 10499 samples
+##    13 predictor
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
+## Resampling results across tuning parameters:
+## 
+##   mtry  splitrule   RMSE    Rsquared  MAE   
+##    2    variance    326210  0.768     155557
+##    2    extratrees  367703  0.710     180575
+##    7    variance    219461  0.840      98794
+##    7    extratrees  239633  0.815     106881
+##   13    variance    206101  0.850      95272
+##   13    extratrees  216523  0.838      97900
+##   18    variance    203677  0.852      95053
+##   18    extratrees  210693  0.844      96271
+##   24    variance    202533  0.852      95173
+##   24    extratrees  208625  0.845      95546
+##   29    variance    202227  0.851      95203
+##   29    extratrees  207037  0.847      95353
+##   35    variance    201855  0.851      95260
+##   35    extratrees  205923  0.848      95334
+##   40    variance    202009  0.851      95441
+##   40    extratrees  207782  0.844      95555
+##   46    variance    202827  0.849      95701
+##   46    extratrees  205341  0.848      95319
+##   52    variance    202402  0.850      95710
+##   52    extratrees  205920  0.846      95628
+## 
+## Tuning parameter &#39;min.node.size&#39; was held constant at a value of 5
+## RMSE was used to select the optimal model using the smallest value.
+## The final values used for the model were mtry = 35, splitrule = variance
+##  and min.node.size = 5.</code></pre>
+<pre class="r"><code>plot(rf_fit)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/random_forest-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>After selecting</p>
+</div>
+<div id="rf-2" class="section level3">
+<h3>RF 2</h3>
+<p>The best .mtry seems to be between 25 and 29, therefore I use tune grid to find the best value.</p>
+<pre class="r"><code>#random forest is an assembled method 
+gridRF &lt;- data.frame(.mtry = c(25:29), .splitrule=&quot;variance&quot;, .min.node.size = 5)
+
+
+set.seed(1)
+rf_fit_2 &lt;- train(price~
+  
+   distance_to_station
+   +latitude
+   +longitude
+    
+   #+num_tube_lines #not significant
+    
+   # +whether_old_or_new #not significant
+   +freehold_or_leasehold
+  
+   +district
+   +property_type
+   +london_zone
+   +total_floor_area
+   +number_habitable_rooms 
+   
+   +energy_consumption_potential 
+   +windows_energy_eff
+   +co2_emissions_potential
+   +water_company,
+  
+    train_data, 
+                                  
+    method = &quot;ranger&quot;,
+    metric=&quot;RMSE&quot;, #?? rmse or R²
+    trControl = control, #same as lm
+    tuneGrid = gridRF, # The tuneGrid parameter lets us decide which values the main parameter will take While tuneLength only limit the number of default parameters to use.
+    importance = &#39;permutation&#39;,
+    verbose = TRUE)
+
+print(rf_fit_2)</code></pre>
+<pre><code>## Random Forest 
+## 
+## 10499 samples
+##    13 predictor
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
+## Resampling results across tuning parameters:
+## 
+##   mtry  RMSE    Rsquared  MAE  
+##   25    208283  0.843     98899
+##   26    208096  0.843     98988
+##   27    207808  0.843     98923
+##   28    208763  0.841     98830
+##   29    208463  0.842     98984
+## 
+## Tuning parameter &#39;splitrule&#39; was held constant at a value of variance
+## 
+## Tuning parameter &#39;min.node.size&#39; was held constant at a value of 5
+## RMSE was used to select the optimal model using the smallest value.
+## The final values used for the model were mtry = 27, splitrule = variance
+##  and min.node.size = 5.</code></pre>
+<pre class="r"><code>plot(rf_fit_2)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/unnamed-chunk-1-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>The best .mtry is 27.</p>
+</div>
+<div id="prediction-rf" class="section level3">
+<h3>Prediction RF</h3>
+<pre class="r"><code>rf_prediction &lt;- predict(rf_fit_2, newdata = test_data)
+
+rf_results&lt;-data.frame(RMSE = RMSE(rf_prediction, test_data$price), Rsquare = R2(rf_prediction, test_data$price))
+
+rf_results</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 194590   0.855</code></pre>
+</div>
+</div>
+<div id="gradient-boosting-machine" class="section level2">
+<h2>Gradient Boosting Machine</h2>
+<p>Also gradient boosting is an ensembled learning method based on trees. Gradient boosting method combines the current model with the next best possible model as long as the combined model presents a lower overall error (RMSE) than the individual model.
+To optimize RMSE and R², I tune the maximum nodes per tree and the number of trees. An increasing number of trees reduces the error but could lead to over-fitting and needs much computational power. In addition, the learning rate (shrinkage) and the minimum number of observations in tree’s terminal nodes could potentially be tuned. I used a slow learn rate of 0.05 as recommended when growing trees and due to the size of my training data, 10 as minimum number of observations.</p>
+<pre class="r"><code>modelLookup(&quot;gbm&quot;)
+
+#Usual trainControl - take the same
+
+#Expand the search grid (see above for definitions)
+grid&lt;-expand.grid(interaction.depth = seq(4, 8, by = 2), #2. interaction.depth (Maximum nodes per tree) - number of splits it has to perform on a tree (starting from a single node).
+                  n.trees = seq(500, 1500, by = 500), #Number of trees (the number of gradient boosting iteration) i.e. N. Increasing N reduces the error on training set, but setting it too high may lead to over-fitting.
+                  shrinkage =0.05, #It is considered as a learning rate.Shrinkage is commonly used in ridge regression where it reduces regression coefficients to zero and, thus, reduces the impact of potentially unstable regression coefficients. , Use a small shrinkage (slow learn rate) when growing many trees. 
+                  n.minobsinnode = 10)#the minimum number of observations in trees&#39; terminal nodes. Set n.minobsinnode = 10. When working with small training samples it may be vital to lower this setting to five or even three.
+
+set.seed(1)
+#Train for gbm
+gbmFit1 &lt;- train(price~
+    
+    distance_to_station 
+    +latitude
+    +longitude
+    
+    +freehold_or_leasehold
+  
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company,
+  
+     train_data,
+                 
+                 method = &quot;gbm&quot;, 
+                 trControl = control,#same as for lm
+                 tuneGrid =grid,
+                   metric = &quot;RMSE&quot;,
+                 verbose = TRUE
+                 )
+
+
+print(gbmFit1)</code></pre>
+<pre class="r"><code>modelLookup(&quot;gbm&quot;)</code></pre>
+<pre><code>##   model         parameter                   label forReg forClass probModel
+## 1   gbm           n.trees   # Boosting Iterations   TRUE     TRUE      TRUE
+## 2   gbm interaction.depth          Max Tree Depth   TRUE     TRUE      TRUE
+## 3   gbm         shrinkage               Shrinkage   TRUE     TRUE      TRUE
+## 4   gbm    n.minobsinnode Min. Terminal Node Size   TRUE     TRUE      TRUE</code></pre>
+<pre class="r"><code>#Usual trainControl - take the same
+
+#Expand the search grid (see above for definitions)
+grid&lt;-expand.grid(interaction.depth = 8,
+                  n.trees = 1500,
+                  shrinkage =0.05, 
+                  n.minobsinnode = 10)#the minimum number of observations in trees&#39; terminal nodes. Set n.minobsinnode = 10. When working with small training samples it may be vital to lower this setting to five or even three.
+
+set.seed(1)
+#Train for gbm
+gbmFit1 &lt;- train(price~
+    
+    distance_to_station 
+    +latitude
+    +longitude
+    
+
+    +freehold_or_leasehold
+  
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company,
+  
+     train_data,
+                 
+                 method = &quot;gbm&quot;, 
+                 trControl = control,#same as for lm
+                 tuneGrid =grid,
+                   metric = &quot;RMSE&quot;,
+                 verbose = TRUE
+                 )</code></pre>
+<pre><code>## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 262347596363.5839             nan     0.0500 14382245346.9363
+##      2 246614721525.0241             nan     0.0500 15185861657.1504
+##      3 231905423206.5676             nan     0.0500 14717161142.1852
+##      4 217010662199.5157             nan     0.0500 12719143569.3750
+##      5 203773144099.5748             nan     0.0500 14143456763.8079
+##      6 192783315477.3744             nan     0.0500 10554473399.6575
+##      7 181168038825.7074             nan     0.0500 9106442352.5266
+##      8 171014607338.3752             nan     0.0500 8515128292.9318
+##      9 161837726354.7243             nan     0.0500 8577450291.5377
+##     10 154358116318.9413             nan     0.0500 7641761840.0972
+##     20 100535182416.2249             nan     0.0500 3611215921.5039
+##     40 59904700583.0140             nan     0.0500 802207134.6662
+##     60 46321093673.1390             nan     0.0500 236807673.7554
+##     80 40451938262.0492             nan     0.0500 123453884.4482
+##    100 37247002762.7370             nan     0.0500 -72446542.0637
+##    120 34872773800.1324             nan     0.0500 46227892.1206
+##    140 33234602873.0408             nan     0.0500 -17808503.2228
+##    160 31497260848.8718             nan     0.0500 -97194596.2215
+##    180 30159100177.0270             nan     0.0500 -65342762.8384
+##    200 28726576531.4834             nan     0.0500 -80254275.4988
+##    220 27696132039.5231             nan     0.0500 -32725679.8405
+##    240 26831531698.8766             nan     0.0500 -61963244.2203
+##    260 25929461470.6465             nan     0.0500 -62171266.9503
+##    280 25094417868.4568             nan     0.0500 -42234132.2722
+##    300 24386502456.5707             nan     0.0500 -42964380.7879
+##    320 23759174522.9171             nan     0.0500 -33521256.7866
+##    340 23065207445.6233             nan     0.0500 -3010124.7462
+##    360 22341549738.4777             nan     0.0500 35257612.2181
+##    380 21662700528.1765             nan     0.0500 24594297.6845
+##    400 21100257069.0354             nan     0.0500 25148442.2872
+##    420 20583063757.4841             nan     0.0500 -38033003.6910
+##    440 20124161650.4190             nan     0.0500 -10130312.8728
+##    460 19708431318.5386             nan     0.0500 -17866257.7666
+##    480 19221531137.6906             nan     0.0500 -55348318.7028
+##    500 18729363886.2986             nan     0.0500 2828708.7548
+##    520 18418972192.3429             nan     0.0500 -25146016.3957
+##    540 18011656706.8510             nan     0.0500 -16314102.7513
+##    560 17608027522.3131             nan     0.0500 -32073221.3519
+##    580 17228801173.8338             nan     0.0500 -38926909.7771
+##    600 16910682964.8364             nan     0.0500 -32935445.0651
+##    620 16598366336.3145             nan     0.0500 -1592318.8908
+##    640 16329350638.6897             nan     0.0500 -21655936.4104
+##    660 15999126034.0500             nan     0.0500 -14639236.6688
+##    680 15702346806.0136             nan     0.0500 -14078268.6964
+##    700 15443020436.6287             nan     0.0500 -22239535.0661
+##    720 15126033295.2094             nan     0.0500 -30529749.0061
+##    740 14840617175.3650             nan     0.0500 -18555045.2787
+##    760 14592825766.2101             nan     0.0500 -23107962.1107
+##    780 14357616647.6201             nan     0.0500 539865.8668
+##    800 14150789134.4171             nan     0.0500 -14102725.3274
+##    820 13928770959.4328             nan     0.0500 -26432641.7051
+##    840 13710478684.3644             nan     0.0500 29406.6383
+##    860 13523113186.7292             nan     0.0500 -11540354.9817
+##    880 13288946667.3787             nan     0.0500 -26563047.3513
+##    900 13093980994.4768             nan     0.0500 -15788395.7034
+##    920 12916438229.7933             nan     0.0500 -4021908.1754
+##    940 12719469574.2668             nan     0.0500 303459.2119
+##    960 12546101979.3861             nan     0.0500 -8743404.0026
+##    980 12396688526.6400             nan     0.0500 -5621251.2413
+##   1000 12241225765.2774             nan     0.0500 2103991.5437
+##   1020 12076691259.7292             nan     0.0500 3855302.4047
+##   1040 11897904603.7746             nan     0.0500 -999378.3232
+##   1060 11736241821.5887             nan     0.0500 6068188.3153
+##   1080 11594712197.0245             nan     0.0500 -9725358.0435
+##   1100 11451937555.7922             nan     0.0500 -5384391.0362
+##   1120 11299067731.1017             nan     0.0500 -7124763.9688
+##   1140 11163858880.0871             nan     0.0500 -11759937.3388
+##   1160 11039880098.5612             nan     0.0500 -11120292.5412
+##   1180 10905100392.5950             nan     0.0500 -4255707.4755
+##   1200 10783942548.3931             nan     0.0500 -11910226.7833
+##   1220 10657191406.7658             nan     0.0500 -13200159.2249
+##   1240 10534719205.3029             nan     0.0500 -5601883.9121
+##   1260 10417624070.3429             nan     0.0500 -4993429.6416
+##   1280 10289588232.3086             nan     0.0500 -6647698.3742
+##   1300 10173827558.8727             nan     0.0500 -4782580.1154
+##   1320 10047707848.0734             nan     0.0500 -3434441.3790
+##   1340 9926152032.0329             nan     0.0500 -3288749.6139
+##   1360 9816290202.5436             nan     0.0500 -5846966.6305
+##   1380 9709331409.3669             nan     0.0500 -3216073.9386
+##   1400 9612070013.0681             nan     0.0500 -6060861.1698
+##   1420 9500504159.8758             nan     0.0500 -3741334.3132
+##   1440 9402836373.4466             nan     0.0500 -5013655.2343
+##   1460 9309239683.6499             nan     0.0500 -2206689.1406
+##   1480 9206978773.3292             nan     0.0500 -7473899.1324
+##   1500 9108710725.7639             nan     0.0500 -4484757.3616
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 258934579543.9947             nan     0.0500 14237476162.2671
+##      2 240933767023.7702             nan     0.0500 16575237534.2692
+##      3 226306640102.1287             nan     0.0500 15981218977.1003
+##      4 213029829409.8011             nan     0.0500 11171849151.0881
+##      5 201129415220.9012             nan     0.0500 13562586771.8449
+##      6 189802782802.7922             nan     0.0500 11094156853.3848
+##      7 179020926911.0676             nan     0.0500 11319883860.8236
+##      8 170332396970.3209             nan     0.0500 9691186413.2369
+##      9 161955082815.6409             nan     0.0500 8348154990.5642
+##     10 154397319726.4233             nan     0.0500 7413416938.0460
+##     20 98793644963.3914             nan     0.0500 3269180292.1477
+##     40 58272509776.8767             nan     0.0500 923494507.5351
+##     60 44818895959.1949             nan     0.0500 180236697.4430
+##     80 39094858706.4861             nan     0.0500 2106030.7391
+##    100 36312311618.4917             nan     0.0500 -33515137.2962
+##    120 33997933051.8143             nan     0.0500 -8859789.8524
+##    140 32175096534.2564             nan     0.0500 -9073498.6873
+##    160 30819972225.5311             nan     0.0500 -48268809.3849
+##    180 29574834713.4712             nan     0.0500 -65702353.7148
+##    200 28625753103.5119             nan     0.0500 -48428202.7010
+##    220 27753655179.5560             nan     0.0500 -81766678.3598
+##    240 26730831676.3307             nan     0.0500 -65244573.4810
+##    260 25972372503.2402             nan     0.0500 -73008970.8392
+##    280 25154442029.7148             nan     0.0500 -61840825.8312
+##    300 24484317728.7191             nan     0.0500 -27306807.6584
+##    320 23737272849.8498             nan     0.0500 -44558790.9189
+##    340 23204294309.6993             nan     0.0500 -14221840.9176
+##    360 22686971125.3850             nan     0.0500 -34159853.9166
+##    380 22062281652.7747             nan     0.0500 -38520547.6398
+##    400 21573655501.1326             nan     0.0500 -54068994.3169
+##    420 21019827775.7742             nan     0.0500 -33336235.4249
+##    440 20555938087.8315             nan     0.0500 -26906869.2912
+##    460 20062885278.3070             nan     0.0500 5559276.3396
+##    480 19632260349.0112             nan     0.0500 -20739585.1274
+##    500 19240007120.0073             nan     0.0500 -39622925.3554
+##    520 18849524452.4819             nan     0.0500 -25771002.0853
+##    540 18472068959.5482             nan     0.0500 -35953472.9918
+##    560 18068351000.4883             nan     0.0500 -40664628.5374
+##    580 17692739124.6102             nan     0.0500 4825989.4439
+##    600 17382468206.7713             nan     0.0500 -25513442.0310
+##    620 17097738096.3035             nan     0.0500 -552195.1163
+##    640 16782899845.4806             nan     0.0500 -22916908.9074
+##    660 16468511337.6971             nan     0.0500 -35423006.9020
+##    680 16128878720.0223             nan     0.0500 4455191.0466
+##    700 15841648997.9734             nan     0.0500 -16873186.1581
+##    720 15560347203.3678             nan     0.0500 -9482669.8190
+##    740 15260483689.1468             nan     0.0500 -26235201.7799
+##    760 15010724532.7511             nan     0.0500 -22144741.7679
+##    780 14782903058.6981             nan     0.0500 381394.0074
+##    800 14537447150.7428             nan     0.0500 -6116564.0419
+##    820 14300438370.1942             nan     0.0500 -8796689.4180
+##    840 14104232854.2105             nan     0.0500 -23994526.0066
+##    860 13872748485.2191             nan     0.0500 9824968.2264
+##    880 13699792401.5292             nan     0.0500 -12348176.4338
+##    900 13497350821.8412             nan     0.0500 2864677.4175
+##    920 13277278465.1533             nan     0.0500 -13189458.0490
+##    940 13080486098.9773             nan     0.0500 -15903995.6423
+##    960 12876203055.2070             nan     0.0500 -3178705.5375
+##    980 12664045726.4615             nan     0.0500 -10226292.1814
+##   1000 12507894670.4681             nan     0.0500 -11914145.8830
+##   1020 12338618277.8486             nan     0.0500 -11590912.4809
+##   1040 12177686900.0226             nan     0.0500 -7323016.5922
+##   1060 11992628545.8653             nan     0.0500 -8468837.5059
+##   1080 11827369493.2815             nan     0.0500 -5999329.4652
+##   1100 11680489180.8167             nan     0.0500 -6137686.7665
+##   1120 11544943308.3848             nan     0.0500 -7181798.5133
+##   1140 11438200653.2138             nan     0.0500 -23655330.3182
+##   1160 11287631507.1222             nan     0.0500 -10556567.9782
+##   1180 11157629800.0825             nan     0.0500 -15192861.8351
+##   1200 11025144418.6088             nan     0.0500 -4761752.3710
+##   1220 10886190530.7106             nan     0.0500 -22834351.4207
+##   1240 10767219439.3612             nan     0.0500 -10920229.8718
+##   1260 10643387233.2931             nan     0.0500 -14577632.4368
+##   1280 10534865816.2924             nan     0.0500 -2541396.1470
+##   1300 10434379980.0400             nan     0.0500 -20248007.6511
+##   1320 10296054358.9943             nan     0.0500 -6703048.8339
+##   1340 10190385581.0233             nan     0.0500 -1010243.0515
+##   1360 10077256467.6261             nan     0.0500 -970221.8580
+##   1380 9964210953.7809             nan     0.0500 143087.3445
+##   1400 9855001376.9561             nan     0.0500 -10988073.8072
+##   1420 9747587995.9145             nan     0.0500 -5914786.8445
+##   1440 9640183729.4192             nan     0.0500 1096614.0954
+##   1460 9545021458.2459             nan     0.0500 -10373190.2713
+##   1480 9436484233.8647             nan     0.0500 -277812.0446
+##   1500 9345105773.8027             nan     0.0500 -6448944.8384
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 256575314690.1495             nan     0.0500 16244631225.8447
+##      2 240714287543.3895             nan     0.0500 15167759082.9650
+##      3 225339558477.5882             nan     0.0500 15072426950.7023
+##      4 211465649178.6497             nan     0.0500 11351305168.1097
+##      5 198068036006.4715             nan     0.0500 11122150404.9971
+##      6 186760874885.0877             nan     0.0500 9190553009.3746
+##      7 175942727248.2926             nan     0.0500 9414479303.7813
+##      8 166994383513.1892             nan     0.0500 8581283178.0495
+##      9 158466898677.0564             nan     0.0500 7457184000.0009
+##     10 150629075251.4391             nan     0.0500 8019686319.2440
+##     20 97486036794.3419             nan     0.0500 3213203378.9284
+##     40 58701459633.4179             nan     0.0500 856867995.7917
+##     60 45704062115.2525             nan     0.0500 267351345.9416
+##     80 39811334526.3744             nan     0.0500 161531374.6786
+##    100 36604194353.3230             nan     0.0500 -140779166.8133
+##    120 34412582944.3449             nan     0.0500 -172479248.0714
+##    140 32505301063.9842             nan     0.0500 -38246932.6614
+##    160 31208574394.2916             nan     0.0500 -63069223.0032
+##    180 29854604022.3709             nan     0.0500 -61526368.0493
+##    200 28590743677.5116             nan     0.0500 -59497812.1719
+##    220 27567209753.7931             nan     0.0500 16142712.8177
+##    240 26531668201.7047             nan     0.0500 -50272119.7337
+##    260 25640266126.2039             nan     0.0500 -41315246.1685
+##    280 24810499300.9985             nan     0.0500 -71735522.6957
+##    300 24023043339.4724             nan     0.0500 -20368084.1013
+##    320 23256621690.9287             nan     0.0500 -34997660.7351
+##    340 22696319071.4292             nan     0.0500 -65460349.8588
+##    360 22059049302.6533             nan     0.0500 -6224039.5368
+##    380 21483362057.7676             nan     0.0500 -52345925.3536
+##    400 20942592742.5251             nan     0.0500 -7733630.6510
+##    420 20414818487.9548             nan     0.0500 -18364242.2119
+##    440 19960119213.5106             nan     0.0500 -27657315.5877
+##    460 19510513307.8449             nan     0.0500 -26421947.7641
+##    480 19082727583.9125             nan     0.0500 1749217.3108
+##    500 18669671549.3855             nan     0.0500 -7758499.4744
+##    520 18266110469.1421             nan     0.0500 13266302.3024
+##    540 17899847646.0134             nan     0.0500 -34988153.4126
+##    560 17552816546.1778             nan     0.0500 -16131938.1216
+##    580 17248627411.6848             nan     0.0500 -22768310.5029
+##    600 16929303248.9091             nan     0.0500 -28034239.7535
+##    620 16613761012.0206             nan     0.0500 -19856404.4434
+##    640 16315869753.3484             nan     0.0500 -4103583.4611
+##    660 16037370291.8895             nan     0.0500 -7589965.3044
+##    680 15799429389.3833             nan     0.0500 -17323618.1932
+##    700 15529452797.7571             nan     0.0500 -3047632.3231
+##    720 15271666053.6237             nan     0.0500 -20548687.4629
+##    740 15032109990.7171             nan     0.0500 -17434209.1919
+##    760 14765607379.0539             nan     0.0500 -22587114.5724
+##    780 14546863993.0572             nan     0.0500 -9414862.7510
+##    800 14287710340.9180             nan     0.0500 -10197706.3782
+##    820 14085616682.3117             nan     0.0500 -20888380.6467
+##    840 13882860680.5960             nan     0.0500 -21360796.8506
+##    860 13675347517.1912             nan     0.0500 -14176084.9950
+##    880 13461577372.3609             nan     0.0500 -12952156.2829
+##    900 13281858918.7162             nan     0.0500 -16107645.8380
+##    920 13082400182.2423             nan     0.0500 -8919449.7501
+##    940 12857425514.9486             nan     0.0500 -18953400.9135
+##    960 12690193517.8093             nan     0.0500 -3980519.2865
+##    980 12508419404.8229             nan     0.0500 -9167607.9393
+##   1000 12341493985.6557             nan     0.0500 -12666302.3843
+##   1020 12192953448.5454             nan     0.0500 -25537864.1412
+##   1040 12034953608.7971             nan     0.0500 8911578.6826
+##   1060 11850967655.4558             nan     0.0500 -6906910.5347
+##   1080 11702901099.8584             nan     0.0500 -6891859.9247
+##   1100 11543891729.3056             nan     0.0500 -6062850.8477
+##   1120 11416310199.5860             nan     0.0500 -6143817.7279
+##   1140 11258375556.3727             nan     0.0500 -886344.3903
+##   1160 11132110205.7559             nan     0.0500 -3804181.1158
+##   1180 10976388004.0598             nan     0.0500 -11694435.5430
+##   1200 10844824518.2620             nan     0.0500 -10442208.6716
+##   1220 10717210805.4826             nan     0.0500 -238673.7314
+##   1240 10607343635.1456             nan     0.0500 -17863340.4280
+##   1260 10474200227.7402             nan     0.0500 -5575062.4740
+##   1280 10359291830.1909             nan     0.0500 -4672661.4207
+##   1300 10242102503.9871             nan     0.0500 -1918692.2255
+##   1320 10141211572.6061             nan     0.0500 -5478251.7348
+##   1340 10022916057.4367             nan     0.0500 -16705009.4880
+##   1360 9905705771.7060             nan     0.0500 -4805449.6203
+##   1380 9783531713.3331             nan     0.0500 -4475493.5101
+##   1400 9677219027.9134             nan     0.0500 -4225806.1684
+##   1420 9577098098.1061             nan     0.0500 -8663597.7153
+##   1440 9479000471.1130             nan     0.0500 -10982000.2927
+##   1460 9384299717.6869             nan     0.0500 -4216753.7597
+##   1480 9288521333.4792             nan     0.0500 -7518065.9888
+##   1500 9200229937.5457             nan     0.0500 -2312352.1501
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 259713250186.4764             nan     0.0500 18916373748.5351
+##      2 242645294916.7951             nan     0.0500 16060233434.9988
+##      3 227904686354.1818             nan     0.0500 14760286420.5051
+##      4 214768963352.1091             nan     0.0500 13326799966.4317
+##      5 202787101918.8123             nan     0.0500 12117787504.6699
+##      6 190707888298.4553             nan     0.0500 11782815672.6109
+##      7 180287869272.8154             nan     0.0500 8963087932.7472
+##      8 170126514922.6546             nan     0.0500 9618482585.5681
+##      9 162373945017.2156             nan     0.0500 7387410059.9165
+##     10 154403481079.7264             nan     0.0500 6304703885.0916
+##     20 100892365229.9885             nan     0.0500 3446922951.0517
+##     40 61291032286.5811             nan     0.0500 679485670.1946
+##     60 47499628844.4942             nan     0.0500 129285739.0114
+##     80 41042280304.1604             nan     0.0500 -34790715.7232
+##    100 37909128081.5381             nan     0.0500 -2380659.2287
+##    120 35772885627.1508             nan     0.0500 -117781851.5312
+##    140 34058692782.4624             nan     0.0500 -63738547.7824
+##    160 32389711586.6867             nan     0.0500 -40183146.1317
+##    180 31013006877.3264             nan     0.0500 -36498934.3300
+##    200 29791658251.5737             nan     0.0500 8553849.0868
+##    220 28644634472.4789             nan     0.0500 -75384871.7432
+##    240 27651364618.1782             nan     0.0500 -124006065.1046
+##    260 26797062166.7216             nan     0.0500 -14154158.6827
+##    280 26010341222.3934             nan     0.0500 -50272195.1136
+##    300 25281967774.8183             nan     0.0500 -45423300.5751
+##    320 24626871066.4330             nan     0.0500 -38204496.9297
+##    340 23837924235.1658             nan     0.0500 -33250298.2676
+##    360 23146166406.0604             nan     0.0500 -21549456.8772
+##    380 22463437902.1060             nan     0.0500 10964059.7955
+##    400 21831567821.9918             nan     0.0500 -1722411.1485
+##    420 21279278784.1337             nan     0.0500 -10163645.0498
+##    440 20794820974.7560             nan     0.0500 -1893078.8858
+##    460 20336301572.2341             nan     0.0500 -49303226.4162
+##    480 19894468740.6599             nan     0.0500 -33257822.2015
+##    500 19485499352.2577             nan     0.0500 -30032895.9679
+##    520 19061670058.3289             nan     0.0500 -37211601.3410
+##    540 18675981785.1329             nan     0.0500 -41409707.5692
+##    560 18285577224.5204             nan     0.0500 -41958837.5345
+##    580 17956922293.4955             nan     0.0500 -40888681.6876
+##    600 17560417989.4106             nan     0.0500 -9002417.8663
+##    620 17256138439.9362             nan     0.0500 -34217809.4956
+##    640 16913752545.4966             nan     0.0500 -7100024.0419
+##    660 16649252461.9957             nan     0.0500 -23058690.6213
+##    680 16329188138.6945             nan     0.0500 -39065136.3006
+##    700 16056533280.0241             nan     0.0500 -31371899.9771
+##    720 15835359753.0895             nan     0.0500 -15170197.8959
+##    740 15577301852.1263             nan     0.0500 8175711.5027
+##    760 15327354268.7961             nan     0.0500 -8755556.5901
+##    780 15065898334.6127             nan     0.0500 -13514662.8419
+##    800 14835820707.2240             nan     0.0500 -18417785.6551
+##    820 14593537354.1255             nan     0.0500 -25449840.3774
+##    840 14378272787.4112             nan     0.0500 -873093.3246
+##    860 14164810563.8718             nan     0.0500 -23514887.4994
+##    880 13959303946.1004             nan     0.0500 -22282143.2087
+##    900 13804324665.3021             nan     0.0500 -26240688.7695
+##    920 13628632535.8752             nan     0.0500 8960456.3861
+##    940 13445533667.4205             nan     0.0500 -13484442.4791
+##    960 13245559042.9270             nan     0.0500 -18128143.5093
+##    980 13061516890.0317             nan     0.0500 -14267927.3418
+##   1000 12878010972.3810             nan     0.0500 -5687490.1319
+##   1020 12675137943.5755             nan     0.0500 -8628304.8618
+##   1040 12509764904.7436             nan     0.0500 -10998842.9745
+##   1060 12365480551.6777             nan     0.0500 -5772616.2326
+##   1080 12188836250.0177             nan     0.0500 -6126891.4251
+##   1100 12004984315.2020             nan     0.0500 2112867.3349
+##   1120 11867594157.0619             nan     0.0500 -3832272.9223
+##   1140 11742778693.4315             nan     0.0500 -9148620.1283
+##   1160 11601763388.5370             nan     0.0500 -16664479.9073
+##   1180 11448899451.5459             nan     0.0500 -12171535.3645
+##   1200 11271945676.8977             nan     0.0500 -1060693.3922
+##   1220 11121263942.3734             nan     0.0500 -9284615.2991
+##   1240 10995762736.1480             nan     0.0500 -14486879.7827
+##   1260 10869425402.2591             nan     0.0500 -12952780.6084
+##   1280 10779078275.8334             nan     0.0500 -11176056.4927
+##   1300 10661245837.8549             nan     0.0500 -5546547.1185
+##   1320 10551212627.0533             nan     0.0500 -8328320.8494
+##   1340 10428751945.9096             nan     0.0500 -10035990.1910
+##   1360 10316829904.9935             nan     0.0500 -6823098.8167
+##   1380 10192657713.1791             nan     0.0500 -14733828.0764
+##   1400 10069528075.1755             nan     0.0500 -6987028.7109
+##   1420 9957485417.7389             nan     0.0500 -10212853.2007
+##   1440 9860756800.5674             nan     0.0500 -7696212.6578
+##   1460 9763676673.8184             nan     0.0500 -6568035.9439
+##   1480 9668600121.9779             nan     0.0500 -6820813.7752
+##   1500 9562609969.1504             nan     0.0500 -7930935.0340
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 243187185231.1353             nan     0.0500 16129206371.9213
+##      2 228711957418.4793             nan     0.0500 15030617867.0021
+##      3 214826008402.9748             nan     0.0500 12318123021.1741
+##      4 202418098562.9252             nan     0.0500 11402391407.8545
+##      5 190386901288.4785             nan     0.0500 12675779554.2958
+##      6 180492034339.1853             nan     0.0500 9488040594.7388
+##      7 170625260111.5352             nan     0.0500 9801360508.4649
+##      8 161825413877.1815             nan     0.0500 8317245048.5401
+##      9 153708276291.2162             nan     0.0500 6080023007.3792
+##     10 146581495893.7227             nan     0.0500 6975637411.5139
+##     20 94659061386.3714             nan     0.0500 3097486211.8222
+##     40 57895304980.1125             nan     0.0500 348903210.5535
+##     60 45736273552.4510             nan     0.0500 298421604.9010
+##     80 39966380257.2454             nan     0.0500 67580162.0355
+##    100 37083325585.2244             nan     0.0500 -51849910.2425
+##    120 34947443193.2500             nan     0.0500 -41897360.6346
+##    140 32930343616.2975             nan     0.0500 -56645034.8416
+##    160 31469697301.0035             nan     0.0500 -122610355.4524
+##    180 30156548340.9028             nan     0.0500 -80939339.6009
+##    200 28941453065.6327             nan     0.0500 -48058537.8465
+##    220 27914490868.1277             nan     0.0500 -70657790.0271
+##    240 26878935372.3127             nan     0.0500 -29851223.3823
+##    260 26059360504.7330             nan     0.0500 -66254223.1655
+##    280 25348417626.9655             nan     0.0500 -24846278.1722
+##    300 24643115195.1666             nan     0.0500 -35716917.4143
+##    320 23936908403.5051             nan     0.0500 -40370781.9239
+##    340 23362098651.8433             nan     0.0500 -39344.2467
+##    360 22682013997.2572             nan     0.0500 -33813522.7364
+##    380 22106793815.3879             nan     0.0500 -48922371.1199
+##    400 21474509989.6000             nan     0.0500 -13033927.0078
+##    420 21049151004.9361             nan     0.0500 -42712707.7421
+##    440 20529325975.1639             nan     0.0500 10282197.2613
+##    460 20030337407.6464             nan     0.0500 -52823060.5957
+##    480 19483591222.1736             nan     0.0500 -20329585.5941
+##    500 19022951264.0371             nan     0.0500 -37472666.5809
+##    520 18617950578.2438             nan     0.0500 -27471657.2546
+##    540 18237370898.4419             nan     0.0500 -34909511.7937
+##    560 17901656796.8856             nan     0.0500 -23573980.8633
+##    580 17520505296.2404             nan     0.0500 -18100370.1777
+##    600 17169709431.2019             nan     0.0500 -13069312.1346
+##    620 16870077106.7719             nan     0.0500 -8207951.5889
+##    640 16547829481.2617             nan     0.0500 -17755470.6889
+##    660 16241391381.3739             nan     0.0500 -1973704.9177
+##    680 15969733875.8451             nan     0.0500 -21241653.3614
+##    700 15750444248.8881             nan     0.0500 -22602653.4164
+##    720 15481802217.9946             nan     0.0500 2860697.6600
+##    740 15248657142.7552             nan     0.0500 -6544168.8025
+##    760 15042936559.1360             nan     0.0500 -18260460.0028
+##    780 14796209902.9408             nan     0.0500 -3463667.9372
+##    800 14552703667.1808             nan     0.0500 -19175043.8613
+##    820 14333741297.9526             nan     0.0500 -12467760.9592
+##    840 14078789340.6881             nan     0.0500 -13512580.4242
+##    860 13847419106.7138             nan     0.0500 -16292827.0069
+##    880 13631884298.9941             nan     0.0500 -11011991.5521
+##    900 13437479042.6727             nan     0.0500 -2944989.8390
+##    920 13221561821.5726             nan     0.0500 2570707.0978
+##    940 13032131413.5857             nan     0.0500 10518623.8246
+##    960 12850237917.8462             nan     0.0500 -11450516.0729
+##    980 12687191032.9075             nan     0.0500 -5257949.4156
+##   1000 12527334693.9891             nan     0.0500 -10892267.1150
+##   1020 12380761843.8854             nan     0.0500 -8790529.8669
+##   1040 12197348703.4369             nan     0.0500 -14258581.5155
+##   1060 12016029471.1690             nan     0.0500 -11540545.0206
+##   1080 11851616447.7543             nan     0.0500 -8943748.8287
+##   1100 11691727251.0452             nan     0.0500 -4912274.0691
+##   1120 11545094186.9205             nan     0.0500 -18970868.3011
+##   1140 11401485133.1011             nan     0.0500 -15998224.7362
+##   1160 11257494965.4137             nan     0.0500 -15056736.8053
+##   1180 11144975246.4330             nan     0.0500 -18797861.8827
+##   1200 11022845306.1885             nan     0.0500 -4155012.1926
+##   1220 10901827860.8408             nan     0.0500 -9024635.0317
+##   1240 10783353826.0913             nan     0.0500 -14286404.1728
+##   1260 10668757111.9792             nan     0.0500 -1062104.7459
+##   1280 10549186467.6458             nan     0.0500 -2865469.8599
+##   1300 10427945437.4993             nan     0.0500 -10357637.0973
+##   1320 10321132582.5366             nan     0.0500 -11655148.5413
+##   1340 10193811221.4553             nan     0.0500 -6848024.0918
+##   1360 10054785938.5676             nan     0.0500 -3754739.3788
+##   1380 9943087485.1230             nan     0.0500 -5033174.5956
+##   1400 9827395804.5145             nan     0.0500 -6604843.9380
+##   1420 9725623335.6331             nan     0.0500 -10615608.5400
+##   1440 9637097724.2771             nan     0.0500 -6793021.2533
+##   1460 9531962636.4477             nan     0.0500 -9062802.6480
+##   1480 9430082308.6168             nan     0.0500 -15760122.8142
+##   1500 9338081009.0831             nan     0.0500 -8950227.0343
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 258742833950.3639             nan     0.0500 16759864754.9238
+##      2 242452644536.5377             nan     0.0500 15011826684.7267
+##      3 228133967160.9022             nan     0.0500 14138367201.4446
+##      4 214797299196.6986             nan     0.0500 13927045935.7210
+##      5 203034865781.3854             nan     0.0500 12421363221.3702
+##      6 191884198466.2985             nan     0.0500 11480355974.1991
+##      7 181347624561.8727             nan     0.0500 9056625010.4074
+##      8 171499652096.9721             nan     0.0500 8537790038.1054
+##      9 163276457037.8472             nan     0.0500 7999745605.6221
+##     10 155143531041.3646             nan     0.0500 6963615067.8906
+##     20 102156922484.0829             nan     0.0500 3871890545.4141
+##     40 60529134833.4183             nan     0.0500 1278709311.5129
+##     60 47368715394.8145             nan     0.0500 261890551.8876
+##     80 41424382922.7093             nan     0.0500 53813016.1957
+##    100 38175611767.4931             nan     0.0500 68567007.5217
+##    120 35497967306.7326             nan     0.0500 628191.0548
+##    140 33615984788.8163             nan     0.0500 -127240782.9664
+##    160 32054424182.4867             nan     0.0500 -7822820.4876
+##    180 30477747872.3252             nan     0.0500 -70512633.5081
+##    200 29383137924.8566             nan     0.0500 -162776810.2783
+##    220 28237439713.0659             nan     0.0500 -57195316.3497
+##    240 27287453261.2309             nan     0.0500 -101933069.6512
+##    260 26371902380.7392             nan     0.0500 12117782.2190
+##    280 25527426521.3213             nan     0.0500 -41106102.6961
+##    300 24805582212.0646             nan     0.0500 -145626108.9905
+##    320 24054139207.9232             nan     0.0500 -67432623.6315
+##    340 23399830620.7388             nan     0.0500 -59520355.4527
+##    360 22705868259.1157             nan     0.0500 -24153272.0025
+##    380 22180455416.9219             nan     0.0500 -41322149.3425
+##    400 21663707915.7492             nan     0.0500 -11988604.8418
+##    420 21219235358.6150             nan     0.0500 -50766484.6990
+##    440 20781485419.9021             nan     0.0500 -47634799.7097
+##    460 20314792290.1386             nan     0.0500 -49551027.8518
+##    480 19868242942.0312             nan     0.0500 -38231177.4115
+##    500 19469927362.4392             nan     0.0500 -26238482.8175
+##    520 19100237373.7857             nan     0.0500 -38587903.2440
+##    540 18684719813.5605             nan     0.0500 -34746071.5140
+##    560 18322561225.4882             nan     0.0500 -5693277.1019
+##    580 17936786251.3797             nan     0.0500 -36791035.1286
+##    600 17533068840.7963             nan     0.0500 -32479436.7430
+##    620 17188855295.6374             nan     0.0500 -24961934.1628
+##    640 16923707510.5254             nan     0.0500 -20757850.8622
+##    660 16570236155.3669             nan     0.0500 9073560.5453
+##    680 16251732469.0596             nan     0.0500 -33434738.2138
+##    700 15960271839.9636             nan     0.0500 -12102828.0859
+##    720 15670974940.5105             nan     0.0500 -20860302.3724
+##    740 15417185202.1997             nan     0.0500 -24531636.9841
+##    760 15166038123.9784             nan     0.0500 -10527652.3131
+##    780 14898239186.9682             nan     0.0500 -28357474.6724
+##    800 14617127979.8177             nan     0.0500 -13958272.9703
+##    820 14400037408.6517             nan     0.0500 -17633059.3647
+##    840 14168748209.9200             nan     0.0500 -16862144.2924
+##    860 13914615602.6901             nan     0.0500 -20593040.2041
+##    880 13712568396.3190             nan     0.0500 -9453965.8745
+##    900 13490915353.1742             nan     0.0500 3999099.1435
+##    920 13257565126.3746             nan     0.0500 -18055710.2034
+##    940 13080843010.1786             nan     0.0500 -8694210.7340
+##    960 12893710310.4493             nan     0.0500 -5014229.0826
+##    980 12733470137.9460             nan     0.0500 -11595343.6710
+##   1000 12586796059.8268             nan     0.0500 -2382294.4580
+##   1020 12437137971.5958             nan     0.0500 -11466625.0147
+##   1040 12259670170.8707             nan     0.0500 -11274315.3410
+##   1060 12089127694.2857             nan     0.0500 -18542748.5314
+##   1080 11922217146.3490             nan     0.0500 -11017313.5139
+##   1100 11783463270.7614             nan     0.0500 -21116795.6619
+##   1120 11644249408.8850             nan     0.0500 -11153932.1556
+##   1140 11489223319.8264             nan     0.0500 -2686081.1554
+##   1160 11343353086.3522             nan     0.0500 -6723961.6277
+##   1180 11211561543.7146             nan     0.0500 -14102999.0153
+##   1200 11086737503.9676             nan     0.0500 -7208335.0495
+##   1220 10955997977.5031             nan     0.0500 -4385203.1547
+##   1240 10837505657.4847             nan     0.0500 605952.2496
+##   1260 10709760070.2060             nan     0.0500 -3639625.4985
+##   1280 10579121095.0096             nan     0.0500 -3732003.3678
+##   1300 10442276914.0743             nan     0.0500 -3525701.1182
+##   1320 10329424973.0600             nan     0.0500 -5503314.9453
+##   1340 10223218212.7415             nan     0.0500 -6442546.3930
+##   1360 10120500022.6566             nan     0.0500 -13657271.2775
+##   1380 10000420677.0673             nan     0.0500 -2249891.0675
+##   1400 9884864283.8894             nan     0.0500 -4688134.6832
+##   1420 9785948428.9338             nan     0.0500 -14826864.4590
+##   1440 9661219881.5906             nan     0.0500 -5540889.2144
+##   1460 9554551909.1617             nan     0.0500 845167.5965
+##   1480 9448480789.9798             nan     0.0500 -6260660.0244
+##   1500 9330783401.1039             nan     0.0500 -559315.0543
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 242649791951.7567             nan     0.0500 16983706767.5695
+##      2 226899256983.6523             nan     0.0500 15026029479.2680
+##      3 213226325677.6133             nan     0.0500 14521747157.2713
+##      4 200250654514.3906             nan     0.0500 13094599179.7760
+##      5 187638958745.4034             nan     0.0500 11433963563.6074
+##      6 177519569421.1631             nan     0.0500 10941234458.0073
+##      7 167206066584.8113             nan     0.0500 10026213696.3536
+##      8 158549949146.1157             nan     0.0500 6527886501.4918
+##      9 149968611879.0331             nan     0.0500 7712177103.3566
+##     10 142680182367.6884             nan     0.0500 7184755146.8896
+##     20 91169632023.4790             nan     0.0500 3245791566.1835
+##     40 53897570577.7340             nan     0.0500 843852861.4636
+##     60 41458642737.7700             nan     0.0500 288338640.5952
+##     80 36271368056.5096             nan     0.0500 64580174.0370
+##    100 33794943115.7794             nan     0.0500 38655206.2278
+##    120 31828887597.6988             nan     0.0500 -15456699.7254
+##    140 30073205203.7635             nan     0.0500 -55866918.7899
+##    160 28875422973.2454             nan     0.0500 -75470279.3854
+##    180 27615517035.8404             nan     0.0500 -47529149.4288
+##    200 26680991753.4261             nan     0.0500 -746096.4479
+##    220 25517521528.5585             nan     0.0500 -1631407.5214
+##    240 24622364024.6456             nan     0.0500 11609351.2090
+##    260 23824746093.6051             nan     0.0500 -33552222.6368
+##    280 23066801328.0429             nan     0.0500 -65638555.0309
+##    300 22460102705.2514             nan     0.0500 -28186160.6690
+##    320 21843620874.1590             nan     0.0500 -17534476.0817
+##    340 21311041631.8160             nan     0.0500 -18111846.7083
+##    360 20791837518.9841             nan     0.0500 -51999690.8423
+##    380 20267154864.3514             nan     0.0500 -33252693.4670
+##    400 19771770684.7683             nan     0.0500 -44414843.7601
+##    420 19336322802.7429             nan     0.0500 -13817269.0757
+##    440 18887855828.3470             nan     0.0500 -9338933.3557
+##    460 18513848150.8026             nan     0.0500 -27599674.6137
+##    480 18162261095.8200             nan     0.0500 -3731714.7469
+##    500 17831386335.0100             nan     0.0500 2068265.5011
+##    520 17421087821.5427             nan     0.0500 -17199415.3592
+##    540 17062236124.3499             nan     0.0500 -22216742.0628
+##    560 16733497627.1632             nan     0.0500 -7656296.9194
+##    580 16401541533.7033             nan     0.0500 -21079165.4139
+##    600 16141138050.5743             nan     0.0500 -23170629.5389
+##    620 15791066935.7902             nan     0.0500 7650453.1239
+##    640 15510494962.5572             nan     0.0500 -24217707.0143
+##    660 15261522368.7625             nan     0.0500 -22869580.6837
+##    680 15008288356.9923             nan     0.0500 -13065932.5142
+##    700 14766520077.9751             nan     0.0500 -8163148.0764
+##    720 14542710625.9038             nan     0.0500 -12269956.5528
+##    740 14352189933.2497             nan     0.0500 -7353802.5127
+##    760 14083911070.4984             nan     0.0500 -12786713.1933
+##    780 13876005342.4605             nan     0.0500 8947978.5370
+##    800 13668227207.8030             nan     0.0500 3960920.3520
+##    820 13447193279.6456             nan     0.0500 -19383750.8741
+##    840 13237281415.3513             nan     0.0500 -6573590.1201
+##    860 13011244671.7442             nan     0.0500 254482.6373
+##    880 12830314020.1302             nan     0.0500 -10140797.6317
+##    900 12671834846.0258             nan     0.0500 -9104514.7888
+##    920 12452143603.1106             nan     0.0500 -13302319.0451
+##    940 12253614396.3100             nan     0.0500 -3329634.7026
+##    960 12075332159.5742             nan     0.0500 -11715550.6576
+##    980 11926895486.3842             nan     0.0500 -16596680.5373
+##   1000 11740952242.8241             nan     0.0500 -12429524.8977
+##   1020 11579470697.8975             nan     0.0500 -858942.0569
+##   1040 11434129052.5559             nan     0.0500 -10028951.2298
+##   1060 11314173030.3438             nan     0.0500 -9533848.6098
+##   1080 11161768909.1161             nan     0.0500 -8695156.7183
+##   1100 11027318670.8928             nan     0.0500 -10460093.6426
+##   1120 10899683968.5380             nan     0.0500 -7711338.3771
+##   1140 10768220699.6991             nan     0.0500 -7949233.7589
+##   1160 10649474800.7277             nan     0.0500 -12207420.5203
+##   1180 10540663394.3777             nan     0.0500 -14104524.6598
+##   1200 10406814305.1475             nan     0.0500 -2622247.9774
+##   1220 10284710289.6902             nan     0.0500 -12634267.9793
+##   1240 10157965133.0620             nan     0.0500 -12743356.8576
+##   1260 10049976998.5291             nan     0.0500 -3459703.6568
+##   1280 9947651720.3491             nan     0.0500 -10878345.9839
+##   1300 9833587874.0937             nan     0.0500 -9536596.6407
+##   1320 9725188485.9391             nan     0.0500 -11929108.9410
+##   1340 9622486269.7147             nan     0.0500 -7772216.5459
+##   1360 9529372648.5437             nan     0.0500 1384393.4903
+##   1380 9434297401.5934             nan     0.0500 -12459802.1597
+##   1400 9332237848.3992             nan     0.0500 -5848147.4012
+##   1420 9235863831.6028             nan     0.0500 -8656609.1792
+##   1440 9134784158.1711             nan     0.0500 -2294019.4827
+##   1460 9035265157.1491             nan     0.0500 -7208087.7665
+##   1480 8949685451.8688             nan     0.0500 963808.8065
+##   1500 8855094548.9893             nan     0.0500 -2555951.7967
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 248833159947.2840             nan     0.0500 16057858620.7577
+##      2 232619360144.8608             nan     0.0500 16263070388.7636
+##      3 220298703295.5231             nan     0.0500 13567914361.1876
+##      4 206385945434.2388             nan     0.0500 13652958807.6211
+##      5 194672370331.1234             nan     0.0500 11369929202.5687
+##      6 184520512347.3973             nan     0.0500 10722657826.8694
+##      7 175237383198.0252             nan     0.0500 9090670691.2852
+##      8 165979343343.7433             nan     0.0500 8320492193.4147
+##      9 157841676373.5061             nan     0.0500 6046552990.2481
+##     10 149772589124.2349             nan     0.0500 6730772635.5868
+##     20 97636511277.4490             nan     0.0500 3337698937.3309
+##     40 57649557928.0169             nan     0.0500 649726708.6880
+##     60 45180681012.5950             nan     0.0500 250627821.1683
+##     80 39009182992.5192             nan     0.0500 51947110.3272
+##    100 36052848951.2696             nan     0.0500 -53595799.6151
+##    120 33987422589.6317             nan     0.0500 -16170915.3665
+##    140 32220029390.5629             nan     0.0500 -100813445.4555
+##    160 30774648370.7739             nan     0.0500 -99296938.0866
+##    180 29635720049.8813             nan     0.0500 -45643258.2717
+##    200 28474591208.0246             nan     0.0500 -47138840.3955
+##    220 27435280893.9789             nan     0.0500 -73354400.2893
+##    240 26433544820.5561             nan     0.0500 -38909486.2129
+##    260 25456499260.7952             nan     0.0500 -110918425.6963
+##    280 24866604837.5381             nan     0.0500 -35268882.9235
+##    300 24057771067.1045             nan     0.0500 14527216.9412
+##    320 23239411562.0904             nan     0.0500 -78007432.1588
+##    340 22610916977.8772             nan     0.0500 -39344839.1279
+##    360 22043011523.9201             nan     0.0500 -43766786.6722
+##    380 21447444301.8052             nan     0.0500 -35721578.8333
+##    400 21039873449.8224             nan     0.0500 -44697822.7607
+##    420 20531924646.0936             nan     0.0500 -46744918.5340
+##    440 20031742154.7612             nan     0.0500 19832009.4939
+##    460 19617763217.7395             nan     0.0500 -35549701.0044
+##    480 19134432034.8226             nan     0.0500 -35667989.2174
+##    500 18701235377.0034             nan     0.0500 -27955964.3153
+##    520 18357595361.5324             nan     0.0500 -6140425.6101
+##    540 17988927051.7501             nan     0.0500 -25061611.0461
+##    560 17632632174.4071             nan     0.0500 353688.5625
+##    580 17254106317.3244             nan     0.0500 15719651.3660
+##    600 16910641546.0446             nan     0.0500 -30436429.9358
+##    620 16594470735.4064             nan     0.0500 1760126.5859
+##    640 16324613565.2663             nan     0.0500 -21939800.0444
+##    660 16012162946.5632             nan     0.0500 -26044325.7318
+##    680 15743180855.5707             nan     0.0500 -28396130.4016
+##    700 15492945320.6243             nan     0.0500 -31198181.1055
+##    720 15252447227.8296             nan     0.0500 -22485394.5122
+##    740 14992852276.0945             nan     0.0500 12195505.2273
+##    760 14771471571.1885             nan     0.0500 -13867496.3644
+##    780 14523083924.6481             nan     0.0500 -27167917.6835
+##    800 14364264256.0811             nan     0.0500 -19994438.8080
+##    820 14162725742.3948             nan     0.0500 -18854828.4067
+##    840 13971159334.1022             nan     0.0500 -10008647.0812
+##    860 13741234721.7846             nan     0.0500 -18593055.4440
+##    880 13523783918.5312             nan     0.0500 -21969339.2216
+##    900 13331702473.6918             nan     0.0500 -4093809.1060
+##    920 13112720188.1189             nan     0.0500 3852395.3150
+##    940 12912821096.3408             nan     0.0500 -13449518.8685
+##    960 12734708914.5556             nan     0.0500 -12506684.2518
+##    980 12549171897.8836             nan     0.0500 -10077656.3448
+##   1000 12394169265.6020             nan     0.0500 2512332.2822
+##   1020 12225490121.9393             nan     0.0500 -7346233.2622
+##   1040 12061379085.9847             nan     0.0500 -4477973.6398
+##   1060 11895202288.7772             nan     0.0500 -26914741.8767
+##   1080 11741227161.0222             nan     0.0500 -2723824.1436
+##   1100 11597348678.3465             nan     0.0500 -11108234.0628
+##   1120 11460108363.4075             nan     0.0500 -7813514.4862
+##   1140 11309619996.8024             nan     0.0500 -736989.5933
+##   1160 11175238745.2420             nan     0.0500 -5931351.7085
+##   1180 11037490567.5329             nan     0.0500 -6311229.1797
+##   1200 10918736729.3804             nan     0.0500 -4640638.6717
+##   1220 10796198946.7346             nan     0.0500 -2088593.0882
+##   1240 10653738071.8442             nan     0.0500 -12804449.8296
+##   1260 10559811530.1339             nan     0.0500 -7943609.7162
+##   1280 10416541984.8042             nan     0.0500 -5470056.6309
+##   1300 10290152653.5679             nan     0.0500 -2342649.3261
+##   1320 10153398322.8143             nan     0.0500 -582898.1423
+##   1340 10033870722.5354             nan     0.0500 -1886630.8477
+##   1360 9925001292.7960             nan     0.0500 -7347472.5212
+##   1380 9817739144.9454             nan     0.0500 -180765.3187
+##   1400 9724898890.2799             nan     0.0500 -2771589.6569
+##   1420 9617986186.7312             nan     0.0500 -6243976.7087
+##   1440 9518955440.8911             nan     0.0500 -6986625.5845
+##   1460 9426981160.8435             nan     0.0500 -4240043.5397
+##   1480 9328629266.0048             nan     0.0500 -5243089.0344
+##   1500 9239765275.5080             nan     0.0500 -8397765.8881
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 261077204091.5774             nan     0.0500 16806133242.7596
+##      2 244330249080.4302             nan     0.0500 16956080769.3180
+##      3 228722341723.8415             nan     0.0500 14409075342.7326
+##      4 215327081499.5758             nan     0.0500 14100177363.7748
+##      5 203828197818.2587             nan     0.0500 11745773133.4069
+##      6 191967778446.1989             nan     0.0500 11764262741.2997
+##      7 182607931704.8990             nan     0.0500 9565912248.1802
+##      8 171121857534.9655             nan     0.0500 10785533504.3119
+##      9 162400211890.5793             nan     0.0500 9653796342.5522
+##     10 154485468976.7570             nan     0.0500 8448259137.9684
+##     20 98818950582.3676             nan     0.0500 3193159486.9382
+##     40 58629238861.7265             nan     0.0500 646308856.3876
+##     60 45284264461.4765             nan     0.0500 137480633.0107
+##     80 40038061262.0787             nan     0.0500 29287859.5241
+##    100 36403718320.4851             nan     0.0500 -21018170.3283
+##    120 34069055390.4958             nan     0.0500 62451838.4312
+##    140 32300773535.3140             nan     0.0500 -142744065.2277
+##    160 30532353926.7915             nan     0.0500 -33077416.2770
+##    180 29423400534.3304             nan     0.0500 -92190914.2583
+##    200 28348499063.4229             nan     0.0500 -24802912.2552
+##    220 27345586656.5984             nan     0.0500 -76567199.8085
+##    240 26282507274.1979             nan     0.0500 -16082041.6243
+##    260 25485021465.0483             nan     0.0500 -23086329.3971
+##    280 24768773318.5949             nan     0.0500 -90231856.0652
+##    300 24031011750.5534             nan     0.0500 -65636502.4585
+##    320 23427742302.3361             nan     0.0500 -59569827.5214
+##    340 22678780022.4294             nan     0.0500 -17474527.4837
+##    360 22007303591.0790             nan     0.0500 -18694317.1358
+##    380 21568427515.2661             nan     0.0500 -30265765.3559
+##    400 21056911979.8007             nan     0.0500 -39108193.2960
+##    420 20533014950.5934             nan     0.0500 -27756174.0543
+##    440 20003958260.9335             nan     0.0500 -45623871.4456
+##    460 19569806477.3293             nan     0.0500 -32425909.8731
+##    480 19140732818.8711             nan     0.0500 -57714242.5686
+##    500 18702563499.4578             nan     0.0500 -46581067.2627
+##    520 18264474489.8358             nan     0.0500 -12831916.3091
+##    540 17905387121.2503             nan     0.0500 11368837.9054
+##    560 17546964874.5429             nan     0.0500 -2896064.9839
+##    580 17204859267.4713             nan     0.0500 -12615248.6052
+##    600 16908303215.4431             nan     0.0500 -38812901.2064
+##    620 16518376569.6275             nan     0.0500 -11047658.2470
+##    640 16235393874.6609             nan     0.0500 -28344423.1590
+##    660 15978331143.2675             nan     0.0500 -14551411.3764
+##    680 15658805934.5003             nan     0.0500 -18867716.7337
+##    700 15387328063.6293             nan     0.0500 -23978919.3870
+##    720 15146239768.2422             nan     0.0500 -25073237.0977
+##    740 14899148452.5827             nan     0.0500 -12083330.1951
+##    760 14696150523.9043             nan     0.0500 -5723170.6788
+##    780 14416947993.7098             nan     0.0500 -6842044.0232
+##    800 14180911653.6609             nan     0.0500 -3670395.3423
+##    820 13949197644.4995             nan     0.0500 -16531942.6923
+##    840 13724753772.7260             nan     0.0500 123352.8937
+##    860 13550495500.3279             nan     0.0500 -15090853.8547
+##    880 13353148452.4185             nan     0.0500 -4054470.5902
+##    900 13139222972.6544             nan     0.0500 -16754447.0190
+##    920 12978933866.7019             nan     0.0500 -19229366.9039
+##    940 12824228558.5677             nan     0.0500 -13009040.9159
+##    960 12645632527.4091             nan     0.0500 -12596057.4968
+##    980 12487711988.6536             nan     0.0500 -17015635.9491
+##   1000 12344926405.0192             nan     0.0500 -17563456.0110
+##   1020 12164781928.2263             nan     0.0500 -15781056.4934
+##   1040 11994220632.4536             nan     0.0500 -8383800.3755
+##   1060 11840427702.9643             nan     0.0500 -6692534.1448
+##   1080 11703372864.4749             nan     0.0500 -2994846.3616
+##   1100 11561285503.3205             nan     0.0500 -7808024.6509
+##   1120 11417520815.6514             nan     0.0500 611648.9030
+##   1140 11306624241.5151             nan     0.0500 -11737442.6166
+##   1160 11171801771.2895             nan     0.0500 -4948248.0979
+##   1180 11010278670.5498             nan     0.0500 -9030616.4140
+##   1200 10871434423.5037             nan     0.0500 -5262774.0571
+##   1220 10752304757.4559             nan     0.0500 -7618889.6534
+##   1240 10630271890.4356             nan     0.0500 -3183600.6658
+##   1260 10502082668.8358             nan     0.0500 -5953141.4337
+##   1280 10377948673.6559             nan     0.0500 -10557656.7863
+##   1300 10246013966.0555             nan     0.0500 -4659066.1008
+##   1320 10138113780.9637             nan     0.0500 -5473895.2136
+##   1340 10017270823.5736             nan     0.0500 -2800484.9044
+##   1360 9918685498.7592             nan     0.0500 -7137270.9046
+##   1380 9789226685.1399             nan     0.0500 8225713.6175
+##   1400 9688444734.6165             nan     0.0500 -8191426.4413
+##   1420 9572154173.1695             nan     0.0500 -7111108.6452
+##   1440 9469933821.1635             nan     0.0500 -11254726.7268
+##   1460 9369619651.5303             nan     0.0500 -7346580.0357
+##   1480 9266376417.5061             nan     0.0500 -5336763.0339
+##   1500 9188765198.3835             nan     0.0500 -5382015.2187
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 256961028552.3868             nan     0.0500 13596315509.3445
+##      2 242146740565.5752             nan     0.0500 16336372439.7014
+##      3 227709060109.8990             nan     0.0500 13644655049.3976
+##      4 214055499587.5862             nan     0.0500 13090602391.5037
+##      5 201346627485.7445             nan     0.0500 12307528211.7569
+##      6 190221147476.5506             nan     0.0500 11621879303.9520
+##      7 180232286168.9012             nan     0.0500 9131752464.6458
+##      8 169260312490.7976             nan     0.0500 8703402659.8409
+##      9 160528851504.3266             nan     0.0500 9118202016.5918
+##     10 153211698172.8436             nan     0.0500 6870080662.2512
+##     20 98290736239.3418             nan     0.0500 3210893604.8377
+##     40 58016466422.2620             nan     0.0500 632800180.0425
+##     60 45098683624.3209             nan     0.0500 146903328.2896
+##     80 39532729204.8481             nan     0.0500 100723943.9826
+##    100 36459418099.1744             nan     0.0500 -51391789.1663
+##    120 34229566558.2467             nan     0.0500 -134278792.3482
+##    140 32518526566.8096             nan     0.0500 -59882878.7069
+##    160 31102796050.5344             nan     0.0500 -62823660.9841
+##    180 29951200732.9341             nan     0.0500 -68468926.5057
+##    200 28800113310.9201             nan     0.0500 -2156269.3018
+##    220 27853986364.2722             nan     0.0500 -53820668.4438
+##    240 26938041750.4250             nan     0.0500 -38153491.6082
+##    260 26045812573.7098             nan     0.0500 -21908168.1229
+##    280 25177141670.6617             nan     0.0500 -49244398.7714
+##    300 24457133894.2398             nan     0.0500 -72069190.0715
+##    320 23802472083.3671             nan     0.0500 -57321951.5706
+##    340 23148502555.4734             nan     0.0500 6508426.9148
+##    360 22557044559.6212             nan     0.0500 -35903377.7200
+##    380 21995980960.5757             nan     0.0500 -46361976.7515
+##    400 21445749194.7578             nan     0.0500 -5954793.9083
+##    420 20869669481.0330             nan     0.0500 -22689147.3483
+##    440 20339903662.9383             nan     0.0500 -51463948.3910
+##    460 19893782249.2852             nan     0.0500 -37098485.0279
+##    480 19455314474.1958             nan     0.0500 -24864095.1708
+##    500 19038567356.1932             nan     0.0500 -57005649.0130
+##    520 18664158627.1321             nan     0.0500 -21894686.5828
+##    540 18188747780.1245             nan     0.0500 -27691238.9925
+##    560 17824332881.0343             nan     0.0500 -39152035.6873
+##    580 17532993068.5588             nan     0.0500 -27146497.6014
+##    600 17265270043.7083             nan     0.0500 -38980961.4920
+##    620 16920592388.0907             nan     0.0500 -37137931.3007
+##    640 16595896625.5806             nan     0.0500 -29218850.6083
+##    660 16308643837.5684             nan     0.0500 -16291458.1193
+##    680 16007916236.5441             nan     0.0500 -20336120.0757
+##    700 15744063141.1721             nan     0.0500 -12046017.3234
+##    720 15476107004.4255             nan     0.0500 -7596703.9764
+##    740 15209222491.6077             nan     0.0500 -19875027.8745
+##    760 14994813967.0010             nan     0.0500 -5291467.3949
+##    780 14778526365.2925             nan     0.0500 -5615030.9089
+##    800 14565901805.9698             nan     0.0500 -10377744.5734
+##    820 14392727998.0688             nan     0.0500 2606440.9411
+##    840 14166311436.4503             nan     0.0500 -16047755.2501
+##    860 13903377056.3113             nan     0.0500 4375602.4282
+##    880 13677124825.8941             nan     0.0500 -8897434.2833
+##    900 13466383395.7153             nan     0.0500 -6252236.1763
+##    920 13242011516.3404             nan     0.0500 -14519953.2942
+##    940 13076256378.8012             nan     0.0500 -8531283.8778
+##    960 12910012840.4628             nan     0.0500 -10899351.6371
+##    980 12715329320.5089             nan     0.0500 -17836744.5377
+##   1000 12571992960.1607             nan     0.0500 -10309378.5694
+##   1020 12379021068.7641             nan     0.0500 -2009980.8462
+##   1040 12233715331.7915             nan     0.0500 -9418733.2602
+##   1060 12049029955.6078             nan     0.0500 -12289607.7055
+##   1080 11876319509.5442             nan     0.0500 -7148485.4369
+##   1100 11725409965.9565             nan     0.0500 -10905979.9926
+##   1120 11587163627.5358             nan     0.0500 -10660475.9545
+##   1140 11425035150.4955             nan     0.0500 763526.2310
+##   1160 11264721128.3077             nan     0.0500 -1883134.8012
+##   1180 11124187575.5818             nan     0.0500 -9537011.4258
+##   1200 10966922198.5193             nan     0.0500 -9484901.1301
+##   1220 10836082505.8130             nan     0.0500 -6919043.8489
+##   1240 10708959700.2013             nan     0.0500 -743022.2542
+##   1260 10567200974.6532             nan     0.0500 -7838450.0046
+##   1280 10432916989.9528             nan     0.0500 -12642749.4292
+##   1300 10310700740.1489             nan     0.0500 -6657609.9878
+##   1320 10192349453.8540             nan     0.0500 -12658955.2008
+##   1340 10071880122.8658             nan     0.0500 -13731830.9572
+##   1360 9965913219.5583             nan     0.0500 3825181.7878
+##   1380 9856685452.7405             nan     0.0500 603409.6377
+##   1400 9746182794.3446             nan     0.0500 -5668004.8149
+##   1420 9636813200.3789             nan     0.0500 -4012583.3083
+##   1440 9545394402.4610             nan     0.0500 -6976281.7784
+##   1460 9446452228.0202             nan     0.0500 -8573858.1662
+##   1480 9341795997.7662             nan     0.0500 -7270132.3751
+##   1500 9252761718.1349             nan     0.0500 -4157779.6242
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 256273172922.1127             nan     0.0500 16475993940.5618
+##      2 240305076581.4894             nan     0.0500 14179391921.7267
+##      3 225508286190.2109             nan     0.0500 13825070054.2698
+##      4 212260687495.8755             nan     0.0500 11631125610.8081
+##      5 199204591087.0238             nan     0.0500 10773922169.9477
+##      6 187558171109.1367             nan     0.0500 10107129753.4585
+##      7 177274191407.0065             nan     0.0500 10557791311.4995
+##      8 166866406249.2773             nan     0.0500 10756396012.9423
+##      9 158602927514.1418             nan     0.0500 7718907688.3376
+##     10 150521710442.0020             nan     0.0500 8003752032.9885
+##     20 97534507168.3902             nan     0.0500 3284238527.0179
+##     40 58342597234.1578             nan     0.0500 920288147.0516
+##     60 44816781472.4510             nan     0.0500 168496814.5089
+##     80 39232782570.4869             nan     0.0500 -36574976.1233
+##    100 36358126577.8185             nan     0.0500 65080894.1299
+##    120 34488305582.7475             nan     0.0500 -39993817.8369
+##    140 32823764105.5015             nan     0.0500 -79572543.4698
+##    160 31380557614.1650             nan     0.0500 -39505101.6803
+##    180 29903024364.6493             nan     0.0500 -14617622.8508
+##    200 28756423883.1286             nan     0.0500 -26691370.9429
+##    220 27624092407.2248             nan     0.0500 -74754370.1664
+##    240 26648764229.0802             nan     0.0500 -39642775.0494
+##    260 25885724708.5284             nan     0.0500 -33487504.0349
+##    280 25182825060.7734             nan     0.0500 -23772745.3403
+##    300 24563193694.0631             nan     0.0500 -50259830.8138
+##    320 23951361552.1786             nan     0.0500 -72028102.7714
+##    340 23332667919.7964             nan     0.0500 -48122244.4774
+##    360 22760178699.1839             nan     0.0500 -15456707.6986
+##    380 22168435675.6530             nan     0.0500 -26520089.7398
+##    400 21564025550.7548             nan     0.0500 25571670.8474
+##    420 21069527601.4791             nan     0.0500 -12776476.3768
+##    440 20605350792.4676             nan     0.0500 -16192257.5518
+##    460 20144818046.6543             nan     0.0500 -20844513.6268
+##    480 19687271692.9390             nan     0.0500 -72295216.6777
+##    500 19307707118.9132             nan     0.0500 -46861216.2410
+##    520 18891817919.2596             nan     0.0500 1714567.9597
+##    540 18524376263.6984             nan     0.0500 -41087083.7318
+##    560 18109758295.9956             nan     0.0500 -10184732.6989
+##    580 17785013062.5296             nan     0.0500 -25460090.9326
+##    600 17482902518.3414             nan     0.0500 -30366128.4707
+##    620 17157643259.6789             nan     0.0500 -26371112.9977
+##    640 16872842494.7559             nan     0.0500 -18408341.9112
+##    660 16538831936.5227             nan     0.0500 -20967998.9223
+##    680 16250649090.4657             nan     0.0500 -6373194.3272
+##    700 15965547957.3812             nan     0.0500 -12766871.0418
+##    720 15695754583.7372             nan     0.0500 -19215794.0135
+##    740 15432219380.3812             nan     0.0500 -16632824.1014
+##    760 15169715708.1510             nan     0.0500 -19145496.8969
+##    780 14944547840.7392             nan     0.0500 4892100.8099
+##    800 14722578032.3923             nan     0.0500 -10474598.8448
+##    820 14500095843.4936             nan     0.0500 -26633249.9670
+##    840 14333919064.2247             nan     0.0500 -5854535.2540
+##    860 14120945838.3005             nan     0.0500 -27309558.6069
+##    880 13857549229.5940             nan     0.0500 6348403.2779
+##    900 13663246309.8473             nan     0.0500 -8401382.9371
+##    920 13469369170.9343             nan     0.0500 -12068111.2114
+##    940 13246960563.4971             nan     0.0500 -9407034.2429
+##    960 13093016917.3819             nan     0.0500 -8843450.0626
+##    980 12920276770.8224             nan     0.0500 -1848802.6936
+##   1000 12742442760.5994             nan     0.0500 -2383721.6992
+##   1020 12581892757.3096             nan     0.0500 -6554784.3777
+##   1040 12431445179.2181             nan     0.0500 -4840458.7708
+##   1060 12259890396.9444             nan     0.0500 4398427.9296
+##   1080 12116565749.5842             nan     0.0500 -4734322.7069
+##   1100 11979595280.6954             nan     0.0500 -12220622.9264
+##   1120 11860090642.8968             nan     0.0500 -6698014.0730
+##   1140 11726185117.1190             nan     0.0500 -9888075.4965
+##   1160 11576930973.1215             nan     0.0500 -10993185.4440
+##   1180 11460232887.5132             nan     0.0500 -4340808.7436
+##   1200 11345043143.8726             nan     0.0500 -1952055.3181
+##   1220 11214904746.9705             nan     0.0500 1068088.9584
+##   1240 11083897458.9971             nan     0.0500 706620.2969
+##   1260 10962677739.8483             nan     0.0500 -7382916.3404
+##   1280 10849606011.0306             nan     0.0500 -176935.7341
+##   1300 10745377082.6016             nan     0.0500 1999158.8720
+##   1320 10637541650.2774             nan     0.0500 -9323111.8382
+##   1340 10535860768.1162             nan     0.0500 -4203902.1689
+##   1360 10404903008.3344             nan     0.0500 1445044.8743
+##   1380 10307696451.1562             nan     0.0500 -3496346.2977
+##   1400 10204337420.8437             nan     0.0500 -13853587.3194
+##   1420 10096866369.5880             nan     0.0500 5290040.0087
+##   1440 9990284020.6638             nan     0.0500 -3732865.8372
+##   1460 9901004852.9039             nan     0.0500 -9755343.6530
+##   1480 9777775633.1540             nan     0.0500 -5688719.7052
+##   1500 9663781438.7971             nan     0.0500 -4057078.3835</code></pre>
+<pre class="r"><code>print(gbmFit1)</code></pre>
+<pre><code>## Stochastic Gradient Boosting 
+## 
+## 10499 samples
+##    13 predictor
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 9450, 9450, 9449, 9448, 9450, 9449, ... 
+## Resampling results:
+## 
+##   RMSE    Rsquared  MAE  
+##   210923  0.84      99060
+## 
+## Tuning parameter &#39;n.trees&#39; was held constant at a value of 1500
+## 
+## Tuning parameter &#39;shrinkage&#39; was held constant at a value of 0.05
+## 
+## Tuning parameter &#39;n.minobsinnode&#39; was held constant at a value of 10</code></pre>
+<p>RMSE was used to select the optimal model using the smallest value.
+The final values used for the model were n.trees = 1500, interaction.depth = 8, shrinkage = 0.05 and n.minobsinnode = 10.</p>
+<pre class="r"><code>gbm_prediction &lt;- predict(gbmFit1, newdata = test_data)
+
+gbm_results&lt;-data.frame(RMSE = RMSE(gbm_prediction, test_data$price), Rsquare = R2(gbm_prediction, test_data$price))
+
+gbm_results</code></pre>
+<p>Perfomance of the model (in R²):
+- Training 0.8403008
+- Testing 0.8472716 201039.8</p>
+</div>
+<div id="stacking" class="section level2">
+<h2>Stacking</h2>
+<p>Finally, I combine all the models that I trained and make a final prediction based on the predictions of the individual models. This method is an ensembled learning method called stacking and usually outperforms all the individual models.</p>
+<pre class="r"><code>#number of folds in cross validation
+CVfolds &lt;- 5
+
+#Define folds
+set.seed(1)
+  #create five folds with no repeats
+indexPreds &lt;- createMultiFolds(train_data$price, CVfolds,times = 1) 
+#Define traincontrol using folds
+ctrl &lt;- trainControl(method = &quot;cv&quot;,  number = CVfolds, returnResamp = &quot;final&quot;, savePredictions = &quot;final&quot;, index = indexPreds,sampling = NULL)
+
+#LINEAR REGRESSION
+model_lm&lt;-train(
+    price ~ 
+   num_tube_lines 
+   +distance_to_station
+   
+    +district:property_type
+    +london_zone*poly(total_floor_area,2)*number_habitable_rooms 
+   
+   +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+    
+    ,
+    train_data,
+   method = &quot;lm&quot;,
+    trControl = ctrl
+   )
+
+# LASSO
+lasso_fit &lt;- train(price ~
+
+   num_tube_lines 
+   +distance_to_station
+   
+    +district:property_type
+    +london_zone*poly(total_floor_area,2)*number_habitable_rooms 
+
+   +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company,
+    
+        data=train_data,
+        method=&quot;glmnet&quot;,
+        preProc = c(&quot;center&quot;, &quot;scale&quot;), #This option standardizes the data before running the LASSO regression if alpha = 0 -&gt;RIDGE REG
+  
+   trControl = ctrl,
+  tuneGrid = expand.grid(alpha = 1, lambda = 40.40404) #insert the optimized
+)
+
+# TREE
+model_tree_2 &lt;- train(
+  price ~ 
+    
+   num_tube_lines 
+    
+    +latitude
+    +longitude
+    
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+  ,
+  train_data,
+ 
+  method = &quot;rpart&quot;,
+  metric=&quot;RMSE&quot;,
+  trControl = ctrl,  
+  tuneGrid= expand.grid(cp=0.00002)
+    )
+
+#KNN
+
+knn_fit_2 &lt;- train(  
+  price ~ 
+    
+   num_tube_lines 
+    
+    +latitude
+    +longitude
+
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    +average_income
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company
+  ,
+  train_data,
+
+    method = &quot;knn&quot;, 
+     trControl = ctrl,
+     tuneGrid = expand.grid(k=6), #looking for numbers around 
+     preProcess = c(&quot;center&quot;, &quot;scale&quot;), #center and scale the data in k-nn this is pretty important
+     metric=&quot;RMSE&quot;) #default metric is accuracy is binary, otherwise RMSE, I change it to R²
+
+
+# Random Forest
+rf_fit_2 &lt;- train(price~
+  
+   distance_to_station
+   +latitude
+   +longitude
+    
+ 
+   +freehold_or_leasehold
+  
+   +district
+   +property_type
+   +london_zone
+   +total_floor_area
+   +number_habitable_rooms 
+   
+   +energy_consumption_potential 
+   +windows_energy_eff
+   +co2_emissions_potential
+   +water_company,
+  
+    train_data, 
+                                  
+    method = &quot;ranger&quot;,
+    metric=&quot;RMSE&quot;, 
+    trControl = ctrl, 
+    tuneGrid = data.frame(.mtry = 27, .splitrule=&quot;variance&quot;, .min.node.size = 5),
+    importance = &#39;permutation&#39;)
+
+
+# Gradient
+grid&lt;-expand.grid(interaction.depth = 8, #seq(6, 10, by = 2), #2. interaction.depth (Maximum nodes per tree) - number of splits it has to perform on a tree (starting from a single node).
+                  n.trees = 1500,##Number of trees (the number of gradient boosting iteration) i.e. N. Increasing N reduces the error on training set, but setting it too high may lead to over-fitting.
+                  shrinkage =0.05, #It is considered as a learning rate, use a small shrinkage (slow learn rate) when growing many trees. 
+                  n.minobsinnode = 10)#the minimum number of observations in trees&#39; terminal nodes. 
+
+gbmFit1 &lt;- train(price~
+    
+    distance_to_station 
+    +latitude
+    +longitude
+    
+    +freehold_or_leasehold
+  
+    +district
+    +property_type
+    +london_zone
+    +total_floor_area
+    +number_habitable_rooms 
+    
+    +energy_consumption_potential 
+    +windows_energy_eff
+    +co2_emissions_potential
+    +water_company,
+  
+     train_data,
+                 
+                 method = &quot;gbm&quot;, 
+                 trControl = ctrl,
+                 tuneGrid =grid,
+                   metric = &quot;RMSE&quot;
+                 )</code></pre>
+<pre><code>## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 247437688705.4287             nan     0.0500 16801252301.2286
+##      2 232000278268.7830             nan     0.0500 15690971801.8620
+##      3 218828715591.3823             nan     0.0500 14106227202.8752
+##      4 205149091076.5482             nan     0.0500 12788910307.6939
+##      5 193468845035.5358             nan     0.0500 9757749739.6899
+##      6 183062089130.4374             nan     0.0500 10848202067.8948
+##      7 172291539975.4364             nan     0.0500 9470000832.9087
+##      8 163214068742.9066             nan     0.0500 7615975344.3065
+##      9 154737960754.7700             nan     0.0500 7875555203.9193
+##     10 147833823108.9143             nan     0.0500 7109522111.4091
+##     20 95624937375.2434             nan     0.0500 2488688721.7182
+##     40 58092570913.3721             nan     0.0500 950912601.8645
+##     60 45720667173.3667             nan     0.0500 216688799.9767
+##     80 40422896772.1081             nan     0.0500 137066553.2981
+##    100 37088400609.1000             nan     0.0500 -80460469.0406
+##    120 34632966244.9075             nan     0.0500 -120556986.8314
+##    140 32705038931.6038             nan     0.0500 -82286260.6530
+##    160 31108822663.6984             nan     0.0500 -50359260.6044
+##    180 29804648110.2538             nan     0.0500 -45773553.0638
+##    200 28475772744.5148             nan     0.0500 -61852314.9401
+##    220 27377462100.7449             nan     0.0500 -47809341.3956
+##    240 26490908447.8670             nan     0.0500 -128925155.8264
+##    260 25556126149.4352             nan     0.0500 -19549531.7794
+##    280 24635458756.1371             nan     0.0500 -78076118.9399
+##    300 23948105351.6986             nan     0.0500 -38316972.5993
+##    320 23272549122.9257             nan     0.0500 -33706969.5887
+##    340 22490097524.4572             nan     0.0500 -59175625.4364
+##    360 21913320289.2327             nan     0.0500 -81212438.8221
+##    380 21274755158.0386             nan     0.0500 -36026982.3494
+##    400 20599748547.6230             nan     0.0500 -14355642.3414
+##    420 20068631707.7723             nan     0.0500 -12469755.2147
+##    440 19542858228.6832             nan     0.0500 -11172592.0571
+##    460 18957357908.1856             nan     0.0500 -30209488.4526
+##    480 18520113900.8436             nan     0.0500 -44097434.8410
+##    500 18106351966.9998             nan     0.0500 -2689730.3581
+##    520 17729385466.6864             nan     0.0500 -23576089.0579
+##    540 17364459474.5803             nan     0.0500 -23042515.0439
+##    560 16993376893.4093             nan     0.0500 -26829867.2448
+##    580 16637945433.6468             nan     0.0500 -5031381.5125
+##    600 16241509125.1088             nan     0.0500 -28517106.0280
+##    620 15949782148.7863             nan     0.0500 -19627916.7605
+##    640 15644076619.6955             nan     0.0500 -19562244.3131
+##    660 15367835705.5778             nan     0.0500 -32529324.8970
+##    680 15121015306.8522             nan     0.0500 -6995581.9433
+##    700 14829581815.4196             nan     0.0500 12299534.4644
+##    720 14584374758.2405             nan     0.0500 -18207259.6416
+##    740 14361383025.5789             nan     0.0500 -10153063.1291
+##    760 14113383270.6949             nan     0.0500 -2342932.3574
+##    780 13859412434.8414             nan     0.0500 -21503185.5878
+##    800 13608157151.5257             nan     0.0500 -17122922.7747
+##    820 13405498629.3242             nan     0.0500 -11937472.9078
+##    840 13194032278.9143             nan     0.0500 -29046910.0443
+##    860 12991025036.5170             nan     0.0500 -12257807.3376
+##    880 12772064407.5574             nan     0.0500 -4436759.1798
+##    900 12605245762.4946             nan     0.0500 -2316528.2865
+##    920 12436950735.2306             nan     0.0500 -5876477.6883
+##    940 12248571760.3645             nan     0.0500 -4719345.9821
+##    960 12071145325.9307             nan     0.0500 -8056584.7381
+##    980 11872934646.7866             nan     0.0500 -12635342.6009
+##   1000 11691570997.7380             nan     0.0500 -12517932.8066
+##   1020 11533281478.7139             nan     0.0500 -11155896.7995
+##   1040 11358480874.8904             nan     0.0500 -7089073.4319
+##   1060 11233333550.3298             nan     0.0500 -9573067.8657
+##   1080 11087773656.8590             nan     0.0500 -11676314.5897
+##   1100 10939282478.3953             nan     0.0500 -10325639.8591
+##   1120 10806951942.8404             nan     0.0500 -10566758.2213
+##   1140 10673602322.8670             nan     0.0500 -8394480.4835
+##   1160 10532386780.4276             nan     0.0500 -12659095.1066
+##   1180 10388414557.8044             nan     0.0500 5537969.6325
+##   1200 10267046954.5759             nan     0.0500 -5298494.5268
+##   1220 10138555309.0737             nan     0.0500 -1417217.0564
+##   1240 10007393587.1272             nan     0.0500 -7221218.4085
+##   1260 9884409148.0953             nan     0.0500 -3893119.3180
+##   1280 9766316088.5224             nan     0.0500 -6982833.8691
+##   1300 9641018051.4913             nan     0.0500 -6058292.3689
+##   1320 9525771025.4948             nan     0.0500 -13425171.2655
+##   1340 9428161845.2522             nan     0.0500 -12974105.7873
+##   1360 9310307904.4361             nan     0.0500 -4800012.5692
+##   1380 9197895335.2128             nan     0.0500 -5212347.4768
+##   1400 9095293289.4673             nan     0.0500 -11650171.7175
+##   1420 8985995031.2347             nan     0.0500 2916449.3046
+##   1440 8885559645.2912             nan     0.0500 -7129216.5155
+##   1460 8790457619.8345             nan     0.0500 -9212977.3824
+##   1480 8696663815.7667             nan     0.0500 -6896679.9748
+##   1500 8597522170.1863             nan     0.0500 -6298537.6785
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 251203392392.6218             nan     0.0500 19344882605.9957
+##      2 234529263549.3858             nan     0.0500 17483443616.1385
+##      3 220173872432.6830             nan     0.0500 14467723251.8060
+##      4 206328159598.5661             nan     0.0500 11265029035.4564
+##      5 194161485143.1612             nan     0.0500 10743208848.0867
+##      6 183708627434.2637             nan     0.0500 10668275198.3186
+##      7 173237403545.4839             nan     0.0500 10336632424.6296
+##      8 164298076597.5103             nan     0.0500 7780511081.7556
+##      9 155792614724.3971             nan     0.0500 7173932923.2228
+##     10 148457780399.1842             nan     0.0500 6910057664.0994
+##     20 97763732035.2382             nan     0.0500 2875515430.3423
+##     40 58900773855.1187             nan     0.0500 918231443.3753
+##     60 46183142670.6044             nan     0.0500 253414611.3341
+##     80 40201278078.0805             nan     0.0500 69071359.8496
+##    100 36699451908.0091             nan     0.0500 -4516673.3067
+##    120 34302018774.7417             nan     0.0500 -9793333.4514
+##    140 32239454530.4458             nan     0.0500 -35196531.9144
+##    160 30903961176.0136             nan     0.0500 -107953654.9803
+##    180 29609868801.4378             nan     0.0500 11564621.6200
+##    200 28272624249.7456             nan     0.0500 42234699.3563
+##    220 27215128104.3425             nan     0.0500 -38628780.3761
+##    240 26227552075.7280             nan     0.0500 -36024153.9477
+##    260 25382314915.9630             nan     0.0500 5581784.5762
+##    280 24558449616.3890             nan     0.0500 -17399545.5599
+##    300 23800143557.5414             nan     0.0500 -28672447.0224
+##    320 23228259880.5985             nan     0.0500 -17536645.3697
+##    340 22611033158.6527             nan     0.0500 -39774918.4282
+##    360 22140754789.0262             nan     0.0500 -29909985.4045
+##    380 21539089965.2597             nan     0.0500 -56837071.4607
+##    400 21006010445.1879             nan     0.0500 -19866737.5342
+##    420 20570501692.2485             nan     0.0500 -29590002.3431
+##    440 20127696884.5072             nan     0.0500 -45831246.8909
+##    460 19655207296.3137             nan     0.0500 -20441181.9312
+##    480 19241343967.6648             nan     0.0500 -26365636.8724
+##    500 18832311092.0197             nan     0.0500 -45451824.1377
+##    520 18316443033.3673             nan     0.0500 -60991947.8298
+##    540 17919126655.5172             nan     0.0500 -14575932.5523
+##    560 17578663913.5246             nan     0.0500 -22899199.9812
+##    580 17232961523.5101             nan     0.0500 -30097122.0064
+##    600 16889764649.2289             nan     0.0500 -12629884.3628
+##    620 16578600806.3272             nan     0.0500 -13320013.4055
+##    640 16304986461.5123             nan     0.0500 -6501267.9757
+##    660 16005890114.1592             nan     0.0500 -18230020.6700
+##    680 15686469037.5680             nan     0.0500 -46999612.9232
+##    700 15403856111.9631             nan     0.0500 -27166298.6348
+##    720 15127514481.1521             nan     0.0500 -24820471.2971
+##    740 14852155115.9459             nan     0.0500 -16084368.7082
+##    760 14568011376.2146             nan     0.0500 -19219897.0704
+##    780 14294724529.1704             nan     0.0500 9065125.2962
+##    800 14023171519.7364             nan     0.0500 -26434488.8656
+##    820 13819591704.6066             nan     0.0500 -18162991.4190
+##    840 13591781834.2017             nan     0.0500 -20190265.1968
+##    860 13382386123.3599             nan     0.0500 -4419774.3000
+##    880 13175049039.0262             nan     0.0500 -18230969.3747
+##    900 12981550883.2149             nan     0.0500 -16212708.1816
+##    920 12774177215.8483             nan     0.0500 -12548070.3101
+##    940 12584930645.3376             nan     0.0500 -8206728.6178
+##    960 12406856216.8821             nan     0.0500 -17873884.2780
+##    980 12208764478.9520             nan     0.0500 4002501.3718
+##   1000 12041402422.3606             nan     0.0500 -15007376.5228
+##   1020 11888619859.1288             nan     0.0500 -10304794.2639
+##   1040 11729419641.1294             nan     0.0500 -7997410.8868
+##   1060 11552969034.2644             nan     0.0500 -1060328.2748
+##   1080 11398003761.4592             nan     0.0500 -16261175.9755
+##   1100 11243669602.3688             nan     0.0500 -654272.8387
+##   1120 11107895547.1591             nan     0.0500 -14972216.5820
+##   1140 10992705728.9962             nan     0.0500 -3329225.7788
+##   1160 10850873737.8402             nan     0.0500 -17387176.9088
+##   1180 10719762185.4472             nan     0.0500 -18864670.8849
+##   1200 10581010520.8986             nan     0.0500 -3139779.3311
+##   1220 10436798609.9160             nan     0.0500 -18672376.0004
+##   1240 10322270295.5927             nan     0.0500 -14248382.3870
+##   1260 10188391548.8068             nan     0.0500 4382505.7696
+##   1280 10052155777.3462             nan     0.0500 -1733655.9220
+##   1300 9938786238.2663             nan     0.0500 3050129.0254
+##   1320 9822575226.6972             nan     0.0500 -11962581.4963
+##   1340 9711724050.8268             nan     0.0500 -11770566.6723
+##   1360 9587038187.6770             nan     0.0500 -822333.6319
+##   1380 9488740978.3182             nan     0.0500 -6620612.3834
+##   1400 9383516481.3260             nan     0.0500 -9789046.0878
+##   1420 9267603771.8339             nan     0.0500 -340856.8886
+##   1440 9166119635.1323             nan     0.0500 -11159009.6714
+##   1460 9067276906.2260             nan     0.0500 -79573.5737
+##   1480 8969042475.5866             nan     0.0500 -4810129.8591
+##   1500 8876747816.7409             nan     0.0500 1258214.5088
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 257832453782.5124             nan     0.0500 19602069228.8723
+##      2 241082847214.0711             nan     0.0500 18014915801.4955
+##      3 226147129184.6718             nan     0.0500 15610551148.6476
+##      4 212483943930.3416             nan     0.0500 14120372400.8190
+##      5 200290053366.6906             nan     0.0500 12807336022.7842
+##      6 188683691101.6127             nan     0.0500 9697859385.7568
+##      7 177055708949.3166             nan     0.0500 11286524552.0228
+##      8 167361969167.4400             nan     0.0500 9084676439.0758
+##      9 158245404946.2050             nan     0.0500 8411053317.3486
+##     10 149852517903.2663             nan     0.0500 7286703276.9721
+##     20 95932971388.8225             nan     0.0500 3872198582.6725
+##     40 57469358375.5171             nan     0.0500 859251216.6947
+##     60 44132083337.5622             nan     0.0500 -45260808.1626
+##     80 38734596859.0976             nan     0.0500 42685945.9327
+##    100 35783232325.8149             nan     0.0500 -59407880.7167
+##    120 33534472681.1316             nan     0.0500 -90182502.5801
+##    140 31670865299.9807             nan     0.0500 30693393.0432
+##    160 30399762830.5174             nan     0.0500 -75498694.2365
+##    180 29053507112.1285             nan     0.0500 -32876814.1289
+##    200 27660526988.9776             nan     0.0500 -59604574.9750
+##    220 26661881812.8947             nan     0.0500 -44880190.4880
+##    240 25805513127.7589             nan     0.0500 -34775555.9173
+##    260 24951058150.6592             nan     0.0500 -38280813.8107
+##    280 24265190184.7988             nan     0.0500 -89865069.2265
+##    300 23514899191.8895             nan     0.0500 -55939094.2960
+##    320 22846529489.5833             nan     0.0500 -21678901.5008
+##    340 22241722931.6147             nan     0.0500 -72639543.4436
+##    360 21669254450.4368             nan     0.0500 -50194359.9988
+##    380 21071626810.0067             nan     0.0500 -68234595.7483
+##    400 20669073172.2180             nan     0.0500 742271.2956
+##    420 20198969016.0675             nan     0.0500 -30482270.8289
+##    440 19701711111.2000             nan     0.0500 -13790515.0276
+##    460 19277684929.6747             nan     0.0500 -17597674.2445
+##    480 18851986432.5235             nan     0.0500 -30658769.2931
+##    500 18419872309.0325             nan     0.0500 -12709707.5661
+##    520 18034503236.8089             nan     0.0500 -2652920.0498
+##    540 17669477555.0583             nan     0.0500 -18499678.1658
+##    560 17323280148.1029             nan     0.0500 -6389876.5418
+##    580 17002830888.6033             nan     0.0500 -11224128.3790
+##    600 16687777520.3583             nan     0.0500 -27055275.9887
+##    620 16385256636.7353             nan     0.0500 -4810463.7090
+##    640 16071995743.3280             nan     0.0500 -17698091.0570
+##    660 15807069050.6145             nan     0.0500 -14777260.5033
+##    680 15507406014.9158             nan     0.0500 -31272771.7744
+##    700 15218299674.2426             nan     0.0500 -20817229.4336
+##    720 14972368172.4079             nan     0.0500 -36049140.5975
+##    740 14734570617.9544             nan     0.0500 -20105028.3027
+##    760 14460319326.3111             nan     0.0500 -6387907.1781
+##    780 14211407588.8203             nan     0.0500 3711776.9274
+##    800 13961047159.7350             nan     0.0500 -24287686.6757
+##    820 13744819908.1639             nan     0.0500 3170680.0159
+##    840 13477364031.8947             nan     0.0500 -28227326.6305
+##    860 13263240331.5939             nan     0.0500 -15065353.7046
+##    880 13082541088.3425             nan     0.0500 -16028019.4990
+##    900 12902809225.5303             nan     0.0500 -23779974.8605
+##    920 12724318288.2856             nan     0.0500 -3147657.2575
+##    940 12539307152.1351             nan     0.0500 -3654384.6394
+##    960 12335050319.1319             nan     0.0500 -14443040.5316
+##    980 12168639840.8320             nan     0.0500 -14977260.9678
+##   1000 11996209100.4582             nan     0.0500 -18693892.2972
+##   1020 11855901659.7468             nan     0.0500 -8798645.8295
+##   1040 11699581425.6238             nan     0.0500 -15970362.9078
+##   1060 11539082468.2978             nan     0.0500 2981656.5609
+##   1080 11394951775.2452             nan     0.0500 -13174392.2152
+##   1100 11235164367.1390             nan     0.0500 -5736375.9502
+##   1120 11106895481.5597             nan     0.0500 -10727736.8546
+##   1140 10942314463.4981             nan     0.0500 -12364184.2845
+##   1160 10803770740.9620             nan     0.0500 -4580430.6311
+##   1180 10679405648.8745             nan     0.0500 3395139.3460
+##   1200 10570311415.0426             nan     0.0500 -19403432.6361
+##   1220 10442359059.4609             nan     0.0500 -4806954.1705
+##   1240 10291586634.7517             nan     0.0500 -3595122.0516
+##   1260 10160402194.9309             nan     0.0500 806074.6402
+##   1280 10035462951.9658             nan     0.0500 -3462910.6448
+##   1300 9902785388.8658             nan     0.0500 8891951.5147
+##   1320 9783589863.5066             nan     0.0500 -8452873.1774
+##   1340 9657263218.3910             nan     0.0500 -6885831.0535
+##   1360 9547039887.5819             nan     0.0500 -9991172.5045
+##   1380 9431280498.4185             nan     0.0500 -6288002.1895
+##   1400 9322022219.2580             nan     0.0500 -9258141.5213
+##   1420 9223275930.6152             nan     0.0500 -8740198.1921
+##   1440 9120383844.6298             nan     0.0500 -11226898.1740
+##   1460 9009490297.2610             nan     0.0500 -1332762.9914
+##   1480 8915281768.0753             nan     0.0500 2071345.6554
+##   1500 8822700901.2461             nan     0.0500 -8519650.6575
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 258768875615.4841             nan     0.0500 20788264223.2576
+##      2 242298274267.3581             nan     0.0500 16189472667.0661
+##      3 227263309703.9819             nan     0.0500 15607427543.3734
+##      4 213562699686.1152             nan     0.0500 12810910203.6035
+##      5 200583642217.8555             nan     0.0500 12715454695.3170
+##      6 188612312716.7159             nan     0.0500 9291512107.7753
+##      7 177815681232.6924             nan     0.0500 8854729872.0179
+##      8 168707280715.0586             nan     0.0500 9448714372.1164
+##      9 160327643564.3338             nan     0.0500 9304522755.6371
+##     10 152052729079.2238             nan     0.0500 7285335039.3477
+##     20 99277880132.5523             nan     0.0500 3525041391.9227
+##     40 59075420404.3493             nan     0.0500 758098076.2381
+##     60 45905132944.3801             nan     0.0500 150864832.3737
+##     80 40277765243.4037             nan     0.0500 27085350.5500
+##    100 37252416978.5639             nan     0.0500 -29250723.9635
+##    120 34915631799.6153             nan     0.0500 -80017300.3011
+##    140 32887470759.3464             nan     0.0500 -74906855.3093
+##    160 31401257065.3274             nan     0.0500 -27781236.9718
+##    180 30008414301.3661             nan     0.0500 -54407669.8603
+##    200 28995391616.5640             nan     0.0500 -38983037.9838
+##    220 27992351945.6012             nan     0.0500 -54059565.1321
+##    240 27094069813.1610             nan     0.0500 -25595973.8679
+##    260 26056645515.6979             nan     0.0500 -39778018.3336
+##    280 25106734311.1263             nan     0.0500 -8148969.1881
+##    300 24401721846.3725             nan     0.0500 -31716119.1427
+##    320 23592250736.3010             nan     0.0500 -24536548.2942
+##    340 22819019757.0565             nan     0.0500 21452978.2207
+##    360 22235140028.0625             nan     0.0500 -42580206.8320
+##    380 21650235391.2817             nan     0.0500 -23121481.4526
+##    400 21147917667.8512             nan     0.0500 -40850834.1961
+##    420 20649394224.4801             nan     0.0500 -55632730.6568
+##    440 20164827285.9685             nan     0.0500 -34340111.6986
+##    460 19708008366.1965             nan     0.0500 -26904900.6645
+##    480 19163493100.6559             nan     0.0500 11462885.8101
+##    500 18762139710.6187             nan     0.0500 -27961580.6964
+##    520 18248676146.9786             nan     0.0500 -36589403.1521
+##    540 17865487362.6215             nan     0.0500 -5754457.7977
+##    560 17442198203.4223             nan     0.0500 -17487433.4555
+##    580 17092016004.5553             nan     0.0500 -31181480.5679
+##    600 16778577401.1917             nan     0.0500 -26402570.4252
+##    620 16418756018.0820             nan     0.0500 -2622766.7861
+##    640 16155299955.4977             nan     0.0500 -28190448.2910
+##    660 15852122475.1059             nan     0.0500 -16868453.1137
+##    680 15575640034.9584             nan     0.0500 -15345975.5106
+##    700 15324115238.3178             nan     0.0500 -12851562.0436
+##    720 15110786147.6783             nan     0.0500 -17310284.7596
+##    740 14853194945.5165             nan     0.0500 -7848858.8144
+##    760 14614309703.2426             nan     0.0500 -17807954.1999
+##    780 14369559183.0986             nan     0.0500 -12510305.6648
+##    800 14092528357.5526             nan     0.0500 -6374997.2305
+##    820 13873968825.9696             nan     0.0500 -11252037.1803
+##    840 13682949620.5290             nan     0.0500 345197.7131
+##    860 13463736144.5008             nan     0.0500 -11103568.2348
+##    880 13277150862.4057             nan     0.0500 -20943408.6402
+##    900 13041187565.4077             nan     0.0500 3852015.0117
+##    920 12839575609.2895             nan     0.0500 -11925749.6978
+##    940 12629135530.9884             nan     0.0500 -12482762.9303
+##    960 12445795992.2094             nan     0.0500 -9646217.7820
+##    980 12260808708.5173             nan     0.0500 -15758908.5782
+##   1000 12083464020.0268             nan     0.0500 -9510428.8467
+##   1020 11895993728.2972             nan     0.0500 -3224239.8537
+##   1040 11736551883.0273             nan     0.0500 -8985759.7424
+##   1060 11560260419.9724             nan     0.0500 -17368129.0168
+##   1080 11395890559.5762             nan     0.0500 -11636344.5716
+##   1100 11231462960.8721             nan     0.0500 -9201865.8273
+##   1120 11095110727.1141             nan     0.0500 4321402.4205
+##   1140 10956612229.8037             nan     0.0500 -16920348.8914
+##   1160 10817810555.9859             nan     0.0500 -8250178.0734
+##   1180 10686306953.7374             nan     0.0500 -16032329.7398
+##   1200 10548078737.6017             nan     0.0500 -1641263.5025
+##   1220 10416379858.2776             nan     0.0500 -10226178.8852
+##   1240 10296831939.4207             nan     0.0500 -7050287.6795
+##   1260 10182730595.6681             nan     0.0500 -5787638.6946
+##   1280 10055694115.5930             nan     0.0500 -5402335.5294
+##   1300 9930160381.4398             nan     0.0500 -11579779.3864
+##   1320 9807854130.5481             nan     0.0500 -8008083.5546
+##   1340 9717342106.8317             nan     0.0500 -14565342.7346
+##   1360 9611239891.0548             nan     0.0500 1316366.7541
+##   1380 9500817498.2141             nan     0.0500 -1069072.8462
+##   1400 9415000376.5840             nan     0.0500 -1209869.0486
+##   1420 9314737734.9074             nan     0.0500 -5298688.6195
+##   1440 9220758829.8052             nan     0.0500 -11794477.6778
+##   1460 9123231821.6435             nan     0.0500 -8354817.5872
+##   1480 9024711307.9251             nan     0.0500 -19240373.8671
+##   1500 8920470232.8748             nan     0.0500 -6467160.5776
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 258909339918.8690             nan     0.0500 18844999337.4506
+##      2 243891483172.0254             nan     0.0500 15078073696.5793
+##      3 229591388437.0222             nan     0.0500 12956388217.6491
+##      4 215024474771.6006             nan     0.0500 15502393800.4451
+##      5 202976870668.8875             nan     0.0500 13618598007.9925
+##      6 192131546117.8822             nan     0.0500 10726006952.1989
+##      7 181814208454.6968             nan     0.0500 10066577822.1216
+##      8 172262606644.6008             nan     0.0500 9347443783.6331
+##      9 163401508866.7413             nan     0.0500 9269358684.6585
+##     10 154624664126.8134             nan     0.0500 8049065044.0284
+##     20 100380384229.5783             nan     0.0500 3535429361.4723
+##     40 58787923181.1791             nan     0.0500 633834165.9540
+##     60 45226458906.7937             nan     0.0500 293888167.3495
+##     80 39951415652.9891             nan     0.0500 -22940656.4192
+##    100 36855600725.6866             nan     0.0500 -196595541.1954
+##    120 34258667364.7127             nan     0.0500 -92221266.9923
+##    140 32210515254.2621             nan     0.0500 -16944888.6598
+##    160 30568807494.8040             nan     0.0500 -82288389.1737
+##    180 29064076672.0278             nan     0.0500 -96274393.4498
+##    200 27792900937.6425             nan     0.0500 -49455106.5358
+##    220 26588756829.0611             nan     0.0500 -57142617.5414
+##    240 25519894899.6631             nan     0.0500 -95028649.7053
+##    260 24494794405.7692             nan     0.0500 -56032097.4869
+##    280 23732351364.7546             nan     0.0500 -59850140.7348
+##    300 23042201593.4881             nan     0.0500 -28454664.9745
+##    320 22328019599.3422             nan     0.0500 -55136947.5459
+##    340 21581907236.1899             nan     0.0500 -25208196.8429
+##    360 20939722023.3211             nan     0.0500 -22806351.2030
+##    380 20348132864.2421             nan     0.0500 -25897418.2975
+##    400 19867626719.8213             nan     0.0500 -51518384.1216
+##    420 19339397599.9123             nan     0.0500 1981498.5579
+##    440 18893382630.2561             nan     0.0500 -30185496.9763
+##    460 18454067362.9378             nan     0.0500 1701148.0979
+##    480 18052457201.8958             nan     0.0500 -18003665.3678
+##    500 17618309814.1054             nan     0.0500 -32596938.6268
+##    520 17225763925.7692             nan     0.0500 -12783373.4203
+##    540 16872406732.2674             nan     0.0500 -34156346.3204
+##    560 16567314977.6310             nan     0.0500 -13774437.4431
+##    580 16234993611.0253             nan     0.0500 -5251047.4825
+##    600 15895991653.8401             nan     0.0500 -28171362.0151
+##    620 15576906468.9031             nan     0.0500 -6249888.8830
+##    640 15284718113.8470             nan     0.0500 -19379694.2935
+##    660 14972057047.7235             nan     0.0500 -1297524.0640
+##    680 14717157974.3155             nan     0.0500 -12022341.8302
+##    700 14442294239.9017             nan     0.0500 -16836561.6537
+##    720 14200901942.8578             nan     0.0500 -15692619.5557
+##    740 13931803657.5258             nan     0.0500 -8677562.6867
+##    760 13677331957.0521             nan     0.0500 -2594177.5133
+##    780 13462495016.4761             nan     0.0500 -9975521.7596
+##    800 13247003867.6707             nan     0.0500 -5867438.0628
+##    820 13025909794.3190             nan     0.0500 3209899.8004
+##    840 12830231174.3768             nan     0.0500 -2641002.0109
+##    860 12633627472.2446             nan     0.0500 -4280496.4233
+##    880 12471302227.5607             nan     0.0500 -7976938.1678
+##    900 12275922232.6236             nan     0.0500 -115036.5489
+##    920 12093343104.6787             nan     0.0500 -15011981.1700
+##    940 11936987780.9866             nan     0.0500 -6111448.2191
+##    960 11787014782.8474             nan     0.0500 -11467468.5610
+##    980 11638467041.1413             nan     0.0500 -6987665.9372
+##   1000 11475426528.5388             nan     0.0500 -17822682.1647
+##   1020 11325521744.5253             nan     0.0500 -13978043.4160
+##   1040 11162272668.8892             nan     0.0500 -2627996.8707
+##   1060 10978886950.4393             nan     0.0500 -14897115.6624
+##   1080 10820635107.8792             nan     0.0500 -4220121.8955
+##   1100 10688247211.5504             nan     0.0500 -10470243.2729
+##   1120 10555227235.7617             nan     0.0500 -3808133.0762
+##   1140 10433006669.8847             nan     0.0500 -8005977.1351
+##   1160 10321301887.8452             nan     0.0500 -13349388.6427
+##   1180 10183031244.9192             nan     0.0500 -7734792.7876
+##   1200 10071892216.8314             nan     0.0500 -9085863.0799
+##   1220 9941231028.1395             nan     0.0500 -2587628.1854
+##   1240 9829051266.5810             nan     0.0500 -6591424.2098
+##   1260 9701752922.7926             nan     0.0500 -1366447.6359
+##   1280 9590841384.2869             nan     0.0500 -2543759.8275
+##   1300 9479209751.0747             nan     0.0500 -15792012.2073
+##   1320 9359235283.2509             nan     0.0500 -33807.9187
+##   1340 9246705188.1748             nan     0.0500 -3802791.4265
+##   1360 9143149175.8891             nan     0.0500 -7896967.3225
+##   1380 9037994879.4216             nan     0.0500 -3053550.2541
+##   1400 8947764588.8148             nan     0.0500 -7862819.1870
+##   1420 8849245916.7855             nan     0.0500 -2314903.7042
+##   1440 8767298474.2565             nan     0.0500 -9934904.6934
+##   1460 8658106336.2579             nan     0.0500 -3818158.6872
+##   1480 8559464725.5251             nan     0.0500 -10247861.3962
+##   1500 8462116142.4200             nan     0.0500 -177752.6975
+## 
+## Iter   TrainDeviance   ValidDeviance   StepSize   Improve
+##      1 254061589297.6797             nan     0.0500 16707467520.3205
+##      2 237727876492.4179             nan     0.0500 16341916930.8013
+##      3 223250792049.8754             nan     0.0500 13949844036.1071
+##      4 210597930293.1893             nan     0.0500 12996577532.9726
+##      5 198652192665.2593             nan     0.0500 11806650447.0869
+##      6 186625546581.9215             nan     0.0500 10778725861.8742
+##      7 176893152834.0851             nan     0.0500 8918958067.7665
+##      8 166297679018.5577             nan     0.0500 9835802406.7236
+##      9 157571619326.7144             nan     0.0500 8218010207.1319
+##     10 149997070285.4969             nan     0.0500 7561139285.5028
+##     20 96711863945.0235             nan     0.0500 3336591495.7178
+##     40 57134800820.1563             nan     0.0500 921554483.9302
+##     60 44518284490.6246             nan     0.0500 232751469.6994
+##     80 38984317768.0901             nan     0.0500 64681869.7492
+##    100 36037628840.8775             nan     0.0500 -15603862.1741
+##    120 33893332248.7045             nan     0.0500 36574013.0376
+##    140 32322552413.1837             nan     0.0500 14276389.9365
+##    160 30939286279.4923             nan     0.0500 -33730113.9104
+##    180 29775392412.7720             nan     0.0500 -97194805.1931
+##    200 28663486991.3102             nan     0.0500 -3540365.6663
+##    220 27700360966.8449             nan     0.0500 8748848.2965
+##    240 26736155783.5938             nan     0.0500 -41201853.5041
+##    260 25989916027.8502             nan     0.0500 -57744328.4367
+##    280 25287119178.2563             nan     0.0500 -44412715.6066
+##    300 24470943385.5846             nan     0.0500 -49963342.7560
+##    320 23799857488.8041             nan     0.0500 -19067004.7585
+##    340 23183169638.7120             nan     0.0500 -20477871.5461
+##    360 22683072900.0236             nan     0.0500 -42506709.1344
+##    380 22125128108.6084             nan     0.0500 -51340005.9311
+##    400 21623948384.1186             nan     0.0500 -35473910.2428
+##    420 21157446857.0273             nan     0.0500 -22753420.2709
+##    440 20583118511.9698             nan     0.0500 -26880528.0392
+##    460 20176683737.8660             nan     0.0500 -39577606.3761
+##    480 19781244585.3747             nan     0.0500 -25837473.8527
+##    500 19408666881.4744             nan     0.0500 -13570609.1997
+##    520 19053558919.2727             nan     0.0500 -23920631.0353
+##    540 18702947212.8924             nan     0.0500 -29762458.1933
+##    560 18361135336.6851             nan     0.0500 -10106440.8142
+##    580 18057533510.3451             nan     0.0500 -11185155.3344
+##    600 17697920464.6967             nan     0.0500 -23962152.0447
+##    620 17384044560.3564             nan     0.0500 -1980860.3223
+##    640 17092813323.3172             nan     0.0500 3451863.4620
+##    660 16826451520.8222             nan     0.0500 -12484111.8287
+##    680 16526345530.6201             nan     0.0500 -12800386.9243
+##    700 16273595849.4316             nan     0.0500 -15184608.6109
+##    720 15999756545.5648             nan     0.0500 -2329555.7880
+##    740 15700752700.1574             nan     0.0500 -13109842.7084
+##    760 15442364264.2017             nan     0.0500 -21702209.2440
+##    780 15152009205.9528             nan     0.0500 6648059.8984
+##    800 14935381902.6730             nan     0.0500 -15800294.5268
+##    820 14724355671.9934             nan     0.0500 -25300481.7705
+##    840 14497642202.0234             nan     0.0500 -7246855.3086
+##    860 14301229878.1407             nan     0.0500 -17235959.9812
+##    880 14118342559.7032             nan     0.0500 -24505958.8202
+##    900 13867825949.3564             nan     0.0500 -2146673.6135
+##    920 13675825370.8646             nan     0.0500 -11339556.8270
+##    940 13496316501.2680             nan     0.0500 -3193636.2969
+##    960 13326734670.8289             nan     0.0500 -1182916.8065
+##    980 13150610118.5390             nan     0.0500 -9339504.2453
+##   1000 12980442027.6338             nan     0.0500 -7968451.5679
+##   1020 12805816292.9469             nan     0.0500 -13006352.9698
+##   1040 12642013291.1660             nan     0.0500 -1777712.7314
+##   1060 12468608971.9994             nan     0.0500 -8613299.5845
+##   1080 12311180917.6355             nan     0.0500 -14600521.8862
+##   1100 12160230572.6988             nan     0.0500 -9682642.6602
+##   1120 11987462775.5350             nan     0.0500 -12374557.2553
+##   1140 11842061976.5453             nan     0.0500 -7026835.8001
+##   1160 11710632738.8370             nan     0.0500 3810345.3085
+##   1180 11568116271.3770             nan     0.0500 -8856220.3612
+##   1200 11439690894.8156             nan     0.0500 -7870074.7704
+##   1220 11289178575.9091             nan     0.0500 -6932127.5612
+##   1240 11170197237.6925             nan     0.0500 -8821673.1030
+##   1260 11036398698.8110             nan     0.0500 -13423092.0605
+##   1280 10898335689.2964             nan     0.0500 -5092489.6338
+##   1300 10774694486.7303             nan     0.0500 -3030104.0653
+##   1320 10668773961.5829             nan     0.0500 -9842026.1921
+##   1340 10549785829.0096             nan     0.0500 -7735773.5874
+##   1360 10431741671.0151             nan     0.0500 -11927802.4062
+##   1380 10328873683.4323             nan     0.0500 -780244.1208
+##   1400 10230866002.6588             nan     0.0500 -9649780.4170
+##   1420 10132219931.3737             nan     0.0500 -6574881.4469
+##   1440 10033889257.0840             nan     0.0500 -2939305.4942
+##   1460 9935996593.9181             nan     0.0500 679091.0797
+##   1480 9849385202.6572             nan     0.0500 -10371527.3147
+##   1500 9756616797.8631             nan     0.0500 -7318059.3543</code></pre>
+<pre class="r"><code>#combine the results 
+#make sure to use the method names  from above
+multimodel &lt;- list(
+  lm = model_lm, 
+  gbm = gbmFit1,
+  knn=knn_fit_2,
+  glmnet=lasso_fit,
+  rpart = model_tree_2,
+ ramger =rf_fit_2
+  )
+class(multimodel) &lt;- &quot;caretList&quot;</code></pre>
+<p>The figures below compare the 6 models used for stacking visually in terms of RMSE and R².</p>
+<pre class="r"><code>#we can visualize the differences in performance of each algorithm for each fold 
+  dotplot(resamples(multimodel), metric = &quot;Rsquared&quot;) #you can set metric=MAE, RMSE, or Rsquared </code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>    splom(resamples(multimodel), metric = &quot;Rsquared&quot;)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>  dotplot(resamples(multimodel), metric = &quot;RMSE&quot;) #you can set metric=MAE, RMSE, or Rsquared </code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-3.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>    splom(resamples(multimodel), metric = &quot;RMSE&quot;)</code></pre>
+<p><img src="/blogs/blog10_files/figure-html/visualize%20results-4.png" width="768" style="display: block; margin: auto;" /></p>
+<p>The figure below shows the correlation between the models that I stacked together. The linear regression correlated strongly with the LASSO regression, but also with gradient boost and random forest. The selection of very similar variables throughout the whole process could be a reason for this.</p>
+<pre class="r"><code>modelCor(resamples(multimodel))</code></pre>
+<pre><code>##           lm   gbm   knn glmnet rpart ramger
+## lm     1.000 0.926 0.752  0.963 0.726  0.893
+## gbm    0.926 1.000 0.738  0.792 0.577  0.907
+## knn    0.752 0.738 1.000  0.706 0.905  0.951
+## glmnet 0.963 0.792 0.706  1.000 0.766  0.807
+## rpart  0.726 0.577 0.905  0.766 1.000  0.840
+## ramger 0.893 0.907 0.951  0.807 0.840  1.000</code></pre>
+<p>Now, I run the model:</p>
+<pre class="r"><code>#we can now use stacking with the list of models
+library(caretEnsemble)  
+model_list &lt;- caretStack(multimodel,
+    trControl=ctrl,
+    method=&quot;lm&quot;,
+    metric = &quot;RMSE&quot;)
+
+  summary(model_list)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = .outcome ~ ., data = dat)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -3263032   -51716     1810    50039  4408661 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -3.36e+04   3.47e+03   -9.67  &lt; 2e-16 ***
+## lm           1.28e+00   1.16e-01   11.06  &lt; 2e-16 ***
+## gbm          3.80e-01   2.01e-02   18.95  &lt; 2e-16 ***
+## knn          1.36e-01   1.28e-02   10.59  &lt; 2e-16 ***
+## glmnet      -1.13e+00   1.17e-01   -9.68  &lt; 2e-16 ***
+## rpart        6.63e-02   1.32e-02    5.01  5.4e-07 ***
+## ramger       3.28e-01   2.71e-02   12.11  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2e+05 on 10492 degrees of freedom
+## Multiple R-squared:  0.854,  Adjusted R-squared:  0.854 
+## F-statistic: 1.02e+04 on 6 and 10492 DF,  p-value: &lt;2e-16</code></pre>
+<pre class="r"><code>#predict the price of each house in the test data set
+#recall that the output of &quot;train&quot; function (knn_fit) automatically keeps the best model 
+all_prediction &lt;- predict(model_list, newdata = test_data)
+
+all_results&lt;-data.frame(RMSE = RMSE(all_prediction, test_data$price), Rsquare = R2(all_prediction, test_data$price))
+
+all_results</code></pre>
+<pre><code>##     RMSE Rsquare
+## 1 187360   0.866</code></pre>
+</div>
+</div>
+<div id="selection-of-the-model" class="section level1">
+<h1>Selection of the model</h1>
+<p>To compare the performance of the different models I look at RMSE and R², the same parameters I used to optimize them. The best model is the model with the highest R² and the lowest RMSE. A high R² indicated that a high portion of overall variability in the dataset is explained by this model, while RMSE shows the error of the prediction.</p>
+<pre class="r"><code>data.frame(name=c(&quot;Linear Regression&quot;, &quot;LASSO&quot;, &quot;KNN&quot;, &quot;Regression Tree&quot;, &quot;Random Forest&quot;, &quot;Gradient Boosting&quot;, &quot;Stacked Model&quot;),RMSE_Training= c(227300, 234251, 268281, 252842, 207808, 210764, 199600), RSquared_Training= c(0.8133, 0.8026, 0.7472, 0.7694, 0.8432
+, 0.8403, 0.8541))</code></pre>
+<pre><code>##                name RMSE_Training RSquared_Training
+## 1 Linear Regression        227300             0.813
+## 2             LASSO        234251             0.803
+## 3               KNN        268281             0.747
+## 4   Regression Tree        252842             0.769
+## 5     Random Forest        207808             0.843
+## 6 Gradient Boosting        210764             0.840
+## 7     Stacked Model        199600             0.854</code></pre>
+<p>Stacking is clearly the best method, explaining 85.41% of overall variability and having the lowest error. The table shows a difference in R² and RMSE between training and testing data. While the difference is not huge, it is surprising that most models perform better in the testing data than in the training data. This is unexpected but might be caused by the seed I used when splitting the total data into training and testing. I would expect, to have a slightly different result when using another seed.</p>
+<div id="pick-investments" class="section level2">
+<h2>Pick investments</h2>
+<p>To select the 200 houses out of the 2,000 on the market for sale at the moment I applied my best model, the stacking model. I added the by the model predicted price to the dataset and calculated the profit margin comparing the predicted price to the asking price ((predicted price – asking price) /asking prices).
+Finally, I ranked the properties by the calculated profit margin and selected the top 200. These 200 properties give an average return of 69.63%. My model calculates an average return of 3.78% over the whole dataset.</p>
+<pre class="r"><code>numchoose=200
+oos&lt;-london_house_prices_2019_out_of_sample
+
+#predict the value of houses
+oos$predict &lt;- predict(model_list,oos)
+
+#Choose the ones you want to invest here
+
+#Let&#39;s find the profit margin given our predicted price and asking price
+oos_data&lt;- oos%&gt;%
+  mutate(profitMargin=(predict-asking_price)/asking_price)%&gt;%
+  arrange(-profitMargin)
+
+#Make sure you choose exactly 200 of them
+oos_data$buy=0
+oos_data[1:numchoose,]$buy=1
+
+#let&#39;s find the actual profit
+
+oos_data&lt;-oos_data%&gt;%
+  mutate(actualProfit=buy*profitMargin)
+
+#if we invest in everything
+mean(oos_data$profitMargin)</code></pre>
+<pre><code>## [1] 0.0378</code></pre>
+<pre class="r"><code>#just invest in those we chose
+sum(oos_data$actualProfit)/numchoose</code></pre>
+<pre><code>## [1] 0.696</code></pre>
+<p>To control, I calculate how much profit I would make on the training dataset:</p>
+<pre class="r"><code>##try for testing data
+numchoose=200
+
+#predict the value of houses
+train_data$predict &lt;- predict(model_list,train_data)
+
+#Choose the ones you want to invest here
+#Let&#39;s find the profit margin given our predicted price and asking price
+train_data_pred&lt;- train_data%&gt;%
+  mutate(profitMargin=(predict-price)/price)%&gt;%
+  arrange(-profitMargin)
+
+#Make sure you choose exactly 200 of them
+train_data_pred$buy=0
+train_data_pred[1:numchoose,]$buy=1
+
+
+#let&#39;s find the actual profit
+train_data_pred&lt;-train_data_pred%&gt;%
+  mutate(actualProfit=buy*profitMargin)
+
+#if we invest in everything
+mean(train_data_pred$actualProfit)</code></pre>
+<pre><code>## [1] 0.0182</code></pre>
+<pre class="r"><code>#just invest in those we chose
+sum(train_data_pred$actualProfit)/numchoose</code></pre>
+<pre><code>## [1] 0.955</code></pre>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>To sum up, I used available features of houses and historic data of all transactions done in London in 2019 to calculate seven different estimation engines. I used the methods linear regression, k-NN, and trees as well as the ensembled methods random forest, gradient boosting and stacking. While all of them are able to explain the difference in house prices in London at least to 75%, the best performing model, namely the stacking model, manages to explain 85.4%.
+This estimation engine has subsequently been used to select the 200 most promising houses to invest in, with a predicted return of 69.63%.
+Limitations of this project are the available information on the specific houses as well as the assumption that the asking price will not change. In addition, if I would have sufficient computing power, I would tune additional parameters of the models that I have used.
+Other reasonable information that could be useful is commuting time to the center especially for properties that are located far from the center, as well as distance to supermarket and other facilities. Also, the architectural style, brightness of the rooms and interior design could be significant.</p>
+</div>
