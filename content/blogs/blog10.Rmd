@@ -764,7 +764,7 @@ rf_fit_2 <- train(price~
     trControl = control, #same as lm
     tuneGrid = gridRF, # The tuneGrid parameter lets us decide which values the main parameter will take While tuneLength only limit the number of default parameters to use.
     importance = 'permutation',
-    verbose = TRUE)
+    verbose = FALSE)
 
 print(rf_fit_2)
 plot(rf_fit_2)
@@ -828,7 +828,7 @@ gbmFit1 <- train(price~
                  trControl = control,#same as for lm
                  tuneGrid =grid,
                    metric = "RMSE",
-                 verbose = TRUE
+                 verbose = FALSE
                  )
 
 
@@ -874,7 +874,7 @@ gbmFit1 <- train(price~
                  trControl = control,#same as for lm
                  tuneGrid =grid,
                    metric = "RMSE",
-                 verbose = TRUE
+                 verbose = FALSE
                  )
 
 
