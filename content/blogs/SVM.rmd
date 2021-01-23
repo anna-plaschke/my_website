@@ -1,0 +1,268 @@
+---
+categories:
+- ""
+- ""
+date: "2020-09-14T22:42:51-05:00"
+description: SVM
+draft: false
+image: svm.jpg
+keywords: ""
+slug: SVM
+title: SVM (Support Vector Machine): Job Attrition
+---
+
+## Introduction 
+SVM (Support Vector Machine) is a supervised machine learning algorithm that is mainly used to classify data into different classes. The aim of this exercise was to predict job attrition using several individual characteristics such as distance from home, education, environment satisfaction, gender, and hourly rate and to finally predict if two specific employees would leave the job.
+
+
+
+
+```{r setup, include=FALSE}
+rm(list=ls())
+graphics.off()
+# Helper packages
+library(dplyr)     # for data wrangling
+library(ggplot2)   # for awesome graphics
+library(rsample)   # for data splittingg
+library(modeldata) #package that includes couple of useful datasets
+
+# Modeling packages
+library(caret)    # for classification and regression training
+library(kernlab)  # for fitting SVMs
+```
+
+## Preparing data 
+
+```{r}
+data("attrition")
+# Load attrition data
+set.seed(123)  # for reproducibility
+df <- attrition %>% 
+  mutate_if(is.ordered, factor, ordered = FALSE)
+head(df)
+
+# Create training (80%) and test (20%) sets
+set.seed(123)  # for reproducibility
+attrition_split <- initial_split(df, prop = 0.8, strata = "Attrition")
+#If we want to explicitly control the sampling so that our training and test 
+#sets have similar y distributions, we can use stratified sampling
+attrition_train <- training(attrition_split)
+attrition_test  <- testing(attrition_split)
+```
+
+
+## Radial Basis Function - SVM
+
+```{r}
+#caret’s train() function with method = "svmRadialSigma" is used to get 
+#values of C (cost) and \sigma (related with the \gamma of Radial Basis function)
+#through cross-validation
+set.seed(1854)  # for reproducibility
+model_svm_rbf <- train(
+  Attrition ~ ., 
+  data = attrition_train,
+  method = "svmRadial",               
+  preProcess = c("center", "scale"),  #x's standardized (i.e.,centered around zero with a sd of one)
+  trControl = trainControl(method = "cv", number = 10),
+  tuneLength = 10 #select 10 random numbers for the hypertune parameters
+)
+
+# Print results
+print(model_svm_rbf$results)
+model_svm_rbf
+
+
+#tune the hyperparameters with tunegrid
+set.seed(1854)  # for reproducibility
+model_svm_rbf_2 <- train(
+  Attrition ~ ., 
+  data = attrition_train,
+  method = "svmRadial",               
+  preProcess = c("center", "scale"),  #x's standardized (i.e.,centered around zero with a sd of one)
+  trControl = trainControl(method = "cv", number = 10),
+  tuneGrid = expand.grid(C=seq(4, 6, 1), sigma=seq(0.003,0.006,0.0005))
+)
+
+# Print results
+#print(model_svm_rbf_2$results)
+model_svm_rbf_2
+
+
+#Plotting the results, we see that smaller values of the cost parameter
+#( C≈ 2–8) provide better cross-validated accuracy scores for these 
+#training data:
+ggplot(model_svm_rbf_2) + theme_light()
+
+#confusion matrix on training dataset
+confusionMatrix(model_svm_rbf_2)
+
+
+## testing 
+#We test the model on the testing dataset
+test_svm_rbf_2 = predict(model_svm_rbf_2, attrition_test) 
+confusionMatrix(data = test_svm_rbf_2, attrition_test$Attrition)
+
+```
+
+
+After loading the dataset “attrition”, I transform the data to the format of an SVM package (outcome as factor). Then, I set a seed for reproducibility and split the data into a training & testing dataset, explicitly controlling the sampling so that both have a similar distribution of y. To classify the employees based in the given features into “yes” and “no”, we use the radial basis function kernel. 
+This function transforms the data points to generate new features by measuring the distance between all other points to a specific dot centre. Doing so it projects all points into an "infinite" higher dimensional space where the data becomes linearly separable. 
+Before running the model with the method “svmRadial” of caret’s train() function, I again set a seed. I could optimize the model using different metrics such as accuracy and ROC. Here, I use “accuracy” to select the best model. When running the model, I standardize the data by centring and scaling the data. I use cross-sampling (10-fold) as resampling method and tune the value C & γ. TuneLength = 10 takes 10 random values of C & γ and gives the best output amongst these randomly chosen numbers. Subsequently, I further tune the parameters by using tuneGrid around the output of tuneLength. Optimizing “accuracy” the final model I select has sigma = 0.0035, C = 5, and reaches an accuracy of 87.68% with a sensitivity of 99.59% and a specificity of 27.66% .
+Now, I predict the classes on the testing dataset and compare the predicted classification with the labels of the dataset. On the testing dataset, this model reaches an accuracy of 88.05%. (Sensitivity: 99.59%, Specificity: 27.66%, Balanced Accuracy: 63.63%.)
+
+##2 Linear kernel function
+
+```{r}
+#
+set.seed(1854)  # for reproducibility
+# Tell SVM that the kernel is linear, the tune-in parameter cost is 5, and scale equals true. 
+
+##2 linear with caret package
+set.seed(1854)  # for reproducibility
+model_svm_linear_2 <- train(
+  Attrition ~ ., 
+  data = attrition_train,
+  method = "svmLinear",               
+  preProcess = c("center", "scale"),  #x's standardized (i.e.,centered around zero with a sd of one)
+  trControl = trainControl(method = "cv", number = 10),
+  tuneGrid = expand.grid(C=5)
+)
+
+#print results
+print(model_svm_linear_2$results)
+
+## testing
+#We test the model on the testing dataset
+test_svm_linear_2 = predict(model_svm_linear_2, attrition_test) 
+confusionMatrix(data = test_svm_linear_2, attrition_test$Attrition)
+
+```
+
+### Comparison of SVM RBF and SVM with Linear kernel function (c=5)
+
+As second model I use the SVM model with the linear kernel function. Here, I use the same cost factor that I determined in the first model (cost = 5). 
+A linear SVM is a parametric model, and is less expensive to train and predict than a RBF kernel SVM model. Besides being more computational expensive, the latter it much easier to overfit being a complex model with many hyperparameters.	
+
+Here, this model gives an accuracy of 87.00%, what is slightly lower than the accuracy of the SVM EBF model, with an accuracy if 87.68%. The out of sample testing performs better though, with an accuracy of 90.44% (compared to an accuracy of 88.05%).
+
+
+
+##3 Logistic Regression
+
+```{r}
+model_logistic <- glm(Attrition~BusinessTravel + DistanceFromHome + EnvironmentSatisfaction + 
+                      Gender+ JobInvolvement + JobRole  + MaritalStatus+
+                      NumCompaniesWorked + OverTime + RelationshipSatisfaction+ TotalWorkingYears+
+                      TrainingTimesLastYear+ WorkLifeBalance+ YearsInCurrentRole + YearsSinceLastPromotion,
+                    family="binomial", attrition_train)
+
+summary(model_logistic)
+
+#to get accuracy of the training data
+probabilities_attrition_train <- model_logistic %>% predict(attrition_train, type = "response")
+predicted.classes_train <- ifelse(probabilities_attrition_train > 0.5, "Yes", "No")
+mean(predicted.classes_train == attrition_train$Attrition)
+
+
+probabilities_attrition <- model_logistic %>% predict(attrition_test, type = "response")
+predicted.classes <- as.factor(ifelse(probabilities_attrition > 0.5, "Yes", "No"))
+
+#Accuracy: The model accuracy is measured as the proportion of observations that have been correctly classified. 
+#Inversely, the classification error is defined as the proportion of observations that have been misclassified.
+#Proportion of correctly classified observations:
+  
+mean(predicted.classes == attrition_test$Attrition)
+confusionMatrix(data = predicted.classes, attrition_test$Attrition)
+
+```
+
+Now, I create a model using a logistic regression and compare it with the SVM classifier. I select the variables that are significant for the logistic regression such as business travel, distance from home, and environment satisfaction. The logistic regression gives me only a probability for attrition; therefore, I need to set a cut-off value. I set the cut-off value at 50% (every value > 50% = “Yes”).
+The accuracy for this model is 88.11% which is better than both SVM models. Out of sample accuracy amounts to 88.74%.
+
+
+##KNN
+
+```{r}
+set.seed(1234) #I will use cross validation. To be able to replicate the results I set the seed to a fixed number
+
+# Below I use 'train' function from caret library. 
+# 'preProcess': I use this option to center and scale the data
+# 'method' is knn
+# default 'metric' is accuracy
+
+model_knn <- train(Attrition~., data=attrition_train, 
+                 method = "knn",
+                 trControl = trainControl("cv", number = 10), #use cross validation with 10 data points
+                 tuneLength = 10, #number of parameter values train function will try
+                 preProcess = c("center", "scale"))  #center and scale the data in k-nn this is pretty important
+
+model_knn
+plot(model_knn) #we can plot the results
+
+# very low accuracy compared to others - I don't continue to tune with grid.
+
+## testing 
+#We test the model on the testing dataset
+test_knn = predict(model_knn, attrition_test) 
+confusionMatrix(data = test_knn, attrition_test$Attrition)
+
+
+```
+
+KNN Model
+As fourth model I use the k-Nearest Neighbours (k-NN) model. It predicts a value based on a datapoint’s k nearest neighbours. This means, that the probability of attrition is predicted based on the k most similar properties in the training dataset. Amongst the 10 randomly selected k, the model with k= 13 performs best, with an accuracy of 84.45%.
+
+
+## Comparing the models
+
+Comparing the four models based on accuracy, all models other than KNN, perform similarly well. KNN is the weakest model. All four models are not overfitted, having the out of sample accuracy similar or even higher to the accuracy on the training data.
+
+	Accuracy (training data)	Accuracy (testing data)
+SVM RBF	0.8768	0.8805
+SVM Linear	0.8700	0.9044
+Logistic regression	0.8811	0.8874
+KNN	0.8445	0.843
+
+
+Below you find listed some differences between SVM and Logistic Regression:
+
+SVM (RBF)	
+- Optimizes the margin that separates the two classes
+- For unstructured and semi-structured data like text and images 	
+- Less vulnerable to overfitting
+- Based on geometrical properties	
+
+Logistic Regression
+- Can have different decision boundaries with different weights to predict
+- Works with already defined independent variables
+- Based on statistical approach
+- More vulnerable to overfitting
+
+
+
+In general, with a high number of features and a small training set, it is better to use a logistic regression or SVM with linear kernel. Logistic regression and SVM with a linear kernel perform usually similarly but depending on the features, one could be more efficient than the other. 
+In this case, I would recommend using the logistic regression as it is a less complex model, does not over-fit, is not computational heavy and performs as well as the other models. 
+
+
+## Applying the best model
+
+```{r}
+#load dataset
+library(readr)
+two_employees <- read_csv("data/two_employees.csv")
+
+two_employees <- two_employees %>% 
+  mutate_if(is.ordered, factor, ordered = FALSE)
+head(two_employees)
+#predict attrition
+probabilities_attrition_two_employees <- model_logistic %>% predict(two_employees, type = "response")
+predicted.classes_two_employees <- as.factor(ifelse(probabilities_attrition_two_employees > 0.5, "Yes", "No"))
+predicted.classes_two_employees
+```
+
+In this exercise, I predict with the logistic regression if the two employees given their characteristics would be likely to leave their job. 
+
+I use the logistic regression to classify the two employees: 
+According to the logistical model, employee A is likely to leave the job, while employee B not. Given the characteristics of employee A and B, without this prediction with the model I would have rather guessed that employee B could be likely to leave the job (given the los job satisfaction). But it seems that other characteristics have a higher impact on the likeliness of job attrition. 
+To keep the employee A, probably a better life work balance, percentage salary hike, relationship satisfaction and no over time would be needed.
+

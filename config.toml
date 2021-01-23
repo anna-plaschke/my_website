@@ -97,20 +97,26 @@ disqusShortname = ""
       url = "post/post1"
 
    [[params.tiles.showcase]]
-      title = "Smart Investment Decisions: Which house should I buy in London"
-      subtitle = "London House Prices"
+      title = "Smart Investment Decisions: London House Prices"
+      subtitle = "Linear & LASSO regression, knn, tree, random forest, gradient boosting, and stacking"
       image = "houses.jpg"
       url = "blogs/blog10"
 
    [[params.tiles.showcase]]
+      title = "Job Attrition: How likely do employees leave their job?"
+      subtitle = "Support Vector Machines"
+      image = "svm.jpg"
+      url = "blogs/SVM"
+
+   [[params.tiles.showcase]]
       title = "Where in London does the Police Stop & Search most People?"
-      subtitle = "Stop & Search"
+      subtitle = "Data Visualization in R"
       image = "london.jpg"
       url = "blogs/blog1"
 
     [[params.tiles.showcase]]
-      title = "It is Getting Warm in Here!"
-      subtitle = "Climate change and global warming"
+      title = "Climate change: It is Getting Warm in Here!"
+      subtitle = "Data Visualization in R"
       image = "pic03.jpg"
       url = "blogs/blog5"
       
@@ -126,11 +132,11 @@ disqusShortname = ""
 #      image = "pic04.jpg"
 #      url = "blogs/blog7"
 
-    [[params.tiles.showcase]]
-      title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate?"
-      subtitle = "Effects of school enrollment and GDP per capita on the fertility rate"
-      image = "pic10.jpg"
-      url = "blogs/blog8"
+#    [[params.tiles.showcase]]
+#      title = "Does School Enrollment and GDP per Capita Affect the Fertility Rate?"
+#      subtitle = "Effects of school enrollment and GDP per capita on the fertility rate"
+#      image = "pic10.jpg"
+#      url = "blogs/blog8"
 
 #    [[params.tiles.showcase]]
       #title = "Etiam"
