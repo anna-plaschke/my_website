@@ -149,7 +149,7 @@ Here, this model gives an accuracy of 87.00%, what is slightly lower than the ac
 
 
 
-##3 Logistic Regression
+## Logistic Regression
 
 ```{r}
 model_logistic <- glm(Attrition~BusinessTravel + DistanceFromHome + EnvironmentSatisfaction + 
@@ -182,7 +182,7 @@ Now, I create a model using a logistic regression and compare it with the SVM cl
 The accuracy for this model is 88.11% which is better than both SVM models. Out of sample accuracy amounts to 88.74%.
 
 
-##KNN
+## KNN
 
 ```{r}
 set.seed(1234) #I will use cross validation. To be able to replicate the results I set the seed to a fixed number
