@@ -1,23 +1,23 @@
 ---
-categories:
-- ""
-- ""
-date: "2020-09-14T22:42:51-05:00"
+title: 'SVM (Support Vector Machine): Job Attrition'
+date: '2020-12-20T22:42:51-05:00'
 description: SVM
-draft: false
+draft: no
+keywords: ''
+slug: svm
 image: svm.jpg
-keywords: ""
-slug: SVM
-title: SVM (Support Vector Machine): Job Attrition
+categories:
+- ''
+- ''
+subtitle: Various analyses
 ---
 
 ## Introduction 
+
 SVM (Support Vector Machine) is a supervised machine learning algorithm that is mainly used to classify data into different classes. The aim of this exercise was to predict job attrition using several individual characteristics such as distance from home, education, environment satisfaction, gender, and hourly rate and to finally predict if two specific employees would leave the job.
 
 
-
-
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 rm(list=ls())
 graphics.off()
 # Helper packages
@@ -25,6 +25,7 @@ library(dplyr)     # for data wrangling
 library(ggplot2)   # for awesome graphics
 library(rsample)   # for data splittingg
 library(modeldata) #package that includes couple of useful datasets
+library(tidyverse)
 
 # Modeling packages
 library(caret)    # for classification and regression training
@@ -37,8 +38,9 @@ library(kernlab)  # for fitting SVMs
 data("attrition")
 # Load attrition data
 set.seed(123)  # for reproducibility
-df <- attrition %>% 
-  mutate_if(is.ordered, factor, ordered = FALSE)
+
+df <- dplyr::mutate_if(attrition, is.ordered, factor, ordered = FALSE)
+
 head(df)
 
 # Create training (80%) and test (20%) sets
